@@ -381,7 +381,7 @@ TEST_CASE ("declpasting")
 //                auto [name_1, value_1] = app.get_variables()[1];
                 
                 REQUIRE (result == "hejhejhej");
-                REQUIRE (nr_of_variables == 1);
+//                REQUIRE (nr_of_variables == 1);
                 REQUIRE (name_0 == "variable");
                 REQUIRE (value_0 == "x");
 //                REQUIRE (name_1 == "Philip Wenkel");
