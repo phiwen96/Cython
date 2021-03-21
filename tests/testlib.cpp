@@ -132,6 +132,16 @@ TEST_CASE ("nested pastes")
     {
         string input = "@ (last name) {Wenkel}";
         
+        THEN ("we snould get an empty string back and a declared variable")
+        {
+            Cython app {};
+            string result = app.process_text (input);
+            REQUIRE (result == "");
+            auto [name, value] = app.get_variables ().front ();
+            REQUIRE (name == "last name");
+            REQUIRE (value == "Wenkel");
+        }
+        
         AND_GIVEN ("another declared variable")
         {
             input += "@ (j) {name}";
