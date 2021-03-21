@@ -49,7 +49,7 @@ return N; \
 
 
 
-using iter = string::iterator;
+using iter = string::const_iterator;
 
 
 
