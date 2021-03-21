@@ -132,29 +132,51 @@ TEST_CASE ("nested pastes")
     {
         string input = "@ (last name) {Wenkel}";
         
-        THEN ("we snould get an empty string back and a declared variable")
+        THEN ("we snould get an empty string and a declared variable back")
         {
             Cython app {};
             string result = app.process_text (input);
-            REQUIRE (result == "");
             auto [name, value] = app.get_variables ().front ();
+            app.clear_variables ();
+            
+            
+            REQUIRE (result == "");
             REQUIRE (name == "last name");
             REQUIRE (value == "Wenkel");
-        }
-        
-        AND_GIVEN ("another declared variable")
-        {
-            input += "@ (j) {name}";
             
-            THEN ("use a nested paste to paste the first variable")
+            
+            AND_GIVEN ("another declared variable")
             {
-                input += "$ {last ${j}}";
+                input += "@ (j) {name}";
                 
-                REQUIRE (input == "@ (last name) {Wenkel}@ (j) {name}$ {last ${j}}");
-                
-                Cython app {};
-                
-                REQUIRE (app.process_text(input) == "Wenkel");
+                THEN ("we should still get an empty string, but this time with two variables")
+                {
+                    result = app.process_text (input);
+                    auto [name_0, value_0] = app.get_variables()[0];
+                    auto [name_1, value_1] = app.get_variables()[1];
+                    app.clear_variables ();
+                    
+                    
+                    REQUIRE (result == "");
+                    REQUIRE (name_0 == "last name");
+                    REQUIRE (value_0 == "Wenkel");
+                    REQUIRE (name_1 == "j");
+                    REQUIRE (value_1 == "name");
+                    
+                    
+                    AND_WHEN ("adding a nested paste")
+                    {
+                        input += "$ {last ${j}}";
+                        
+                        THEN ("the paste would first become $ {last name}")
+                        {
+                            AND_THEN ("would become Wenkel")
+                            {
+                                REQUIRE (app.process_text(input) == "Wenkel");
+                            }
+                        }
+                    }
+                }
             }
         }
     }
