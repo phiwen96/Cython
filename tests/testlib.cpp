@@ -31,10 +31,21 @@ struct TestApp
 
 TEST_CASE ("declpaste $(x){foo}")
 {
-    GIVEN ("input")
+    SECTION ("no spaces")
     {
-        string input = {"$(förnamn){Philip}"};
-        REQUIRE (TestApp{}.process(input) == "Philip");
+        GIVEN ("input")
+        {
+            string input = {"$(förnamn){Philip}"};
+            REQUIRE (TestApp{}.process(input) == "Philip");
+        }
+    }
+    SECTION ("with spaces")
+    {
+        GIVEN ("input")
+        {
+            string input = {"$ (förnamn) {Philip}"};
+            REQUIRE (TestApp{}.process(input) == "Philip");
+        }
     }
 }
 TEST_CASE ("decl @(x){foo}")

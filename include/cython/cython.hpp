@@ -777,6 +777,9 @@ struct STATE ("$") : BASE_STATE
             
             TRANSITION ("${")
 
+        } else if (*i == ' ')
+        {
+            
         } else
         {
             reset (ctx);
@@ -822,6 +825,10 @@ struct STATE ("$(") : BASE_STATE
 //            variable (ctx) = string (potential(ctx).begin() + 2, potential(ctx).end());
 //            potential (ctx) += ')';
             TRANSITION ("$()")
+            
+        } else if (*i == ' ')
+        {
+            ctx.potential += ' ';
             
         } else if (*i == DECLPASTE)
         {
@@ -875,6 +882,10 @@ struct STATE ("$()") : BASE_STATE
         } else if (*i == DECLPASTE)
         {
             addChildContext <STATE ("$")> (ctx).potential = *i;
+            
+        } else if (*i == ' ')
+        {
+            ctx.potential += ' ';
             
         } else
         {
