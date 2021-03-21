@@ -382,14 +382,27 @@ TEST_CASE ("declpasting")
             }
             SECTION ("as loop variable")
             {
-                input = "$(0 $(variable){x} 3){hej${variable}}";
+                input = "$(0 $(variable){x} 3){hej${variable}2${variable}}";
                 
                 get_result
                 get_nr_of_variables
                 auto [name_0, value_0] = app.get_variables()[0];
                 
-                REQUIRE (result == "hejxhejxhejx");
+                REQUIRE (result == "hejx2xhejx2xhejx2x");
                 REQUIRE (nr_of_variables == 1);
+                REQUIRE (name_0 == "variable");
+                REQUIRE (value_0 == "x");
+            }
+            SECTION ("as loop variable")
+            {
+                input = "$(0 $(variable){x} 3){hej$(k){K}$(kk){KK}${variable}k${x}}";
+                
+                get_result
+                get_nr_of_variables
+                auto [name_0, value_0] = app.get_variables()[0];
+                
+                REQUIRE (result == "hejKKKxk0hejKKKxk1hejKKKxk2");
+                REQUIRE (nr_of_variables == 3);
                 REQUIRE (name_0 == "variable");
                 REQUIRE (value_0 == "x");
             }
@@ -510,6 +523,34 @@ TEST_CASE ("declpaste with paste")
     GIVEN ("input string")
     {
         string inpu = "@(namn)";
+    }
+}
+
+TEST_CASE ("pasting")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    GIVEN ("a variable")
+    {
+        input = "@(x){12}";
+        THEN ("pasting it once")
+        {
+            input += "${x}";
+            get_result
+            REQUIRE (result == "12");
+        }
+        
+        THEN ("pasting it twice")
+        {
+            input += "${x}${x}";
+            get_result
+            REQUIRE (result == "1212");
+        }
+        
     }
 }
 

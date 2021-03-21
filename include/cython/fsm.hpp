@@ -109,6 +109,7 @@ struct Context
     string secondint{""};
     string intvariable{""};
     string loop{""};
+    bool looping {false};
     
     void process (iter);
 };
@@ -256,6 +257,55 @@ void BASE_STATE::chainChildren (iter i, Context& ctx) {
         c->process(i);
     }
 }
+
+template <>
+struct STATE ("begin") : BASE_STATE
+{
+    void _process (iter i, Context& ctx){
+        
+        if (*i == DECLPASTE)
+        {
+            potential (ctx) += *i;
+            TRANSITION ("$")
+            
+        } else if (*i == '#')
+        {
+            potential (ctx) += '#';
+            TRANSITION ("#")
+            
+        } else if (*i == '@')
+        {
+            potential (ctx) += '@';
+            TRANSITION ("@")
+            
+        } else
+        {
+            if (hasParent (ctx))
+            {
+                BASE_STATE::addResultFromChild (string {*i}, ctx);
+                
+            } else
+            {
+                result (ctx) += *i;
+            }
+        }
+       
+
+    }
+    void addResultFromChild (string const& res){
+        throw runtime_error ("oops");
+    }
+    
+    virtual void reset_hasNoParent (Context& ctx){
+        throw runtime_error ("");
+    }
+    virtual void reset_hasParent (Context& ctx){
+        throw runtime_error ("");
+    }
+    virtual string trans (){
+        return "\"\"";
+    }
+};
 
 template <>
 struct STATE ("$(x") : BASE_STATE
@@ -482,7 +532,7 @@ struct STATE ("$(x var y)") : BASE_STATE
         if (*i == '{')
         {
             ctx.bracketStack.push ('{');
-            TRANSITION ("$(x var y){")
+            TRANSITION ("$(x var y){");
         } else if (*i == ' ')
         {
             
@@ -559,12 +609,15 @@ struct STATE ("$(x var y){") : BASE_STATE
                     childstate -> transition <STATE ("begin")> (*childctx);
 //                    ctx.children.push_back (childctx);
     //                addChildContext <STATE ("begin")> (ctx);
+                    childctx -> looping = true;
                     for (iter j = ctx.value.begin (); j < ctx.value.end (); ++j)
                     {
                         
                         childctx -> process (j);
+                    
 //                        chainChildren (j, ctx);
                     }
+                    childctx -> looping = false;
                     
 //                    cout << "kuk" << endl;
                     delete childstate;
@@ -639,6 +692,7 @@ struct STATE ("$(x var y){") : BASE_STATE
     
     void addResultFromChild (string const& res, Context& ctx) {
         ctx.loop += res;
+        cout << res << endl;
 //        ctx.value += res;
 //        throw runtime_error ("oops");
     }
@@ -661,48 +715,65 @@ struct STATE ("${") : BASE_STATE
 //        cout << *i << endl;
         if (*i == '}')
         {
+            ctx.bracketStack.pop ();
             
-//            optional <string> decl = declared (variable (ctx), ctx);
-            for (auto& d : ctx.declaredVariables)
+            if (ctx.bracketStack.empty ())
             {
-//                cout << d.first << endl;
-//                cout << ctx.variable << endl;
-                if (d.first == ctx.variable)
-                {
-                    
-//                    return d->second;
-//                    cout << "::" << d->second << endl;
-                    if (hasParent (ctx))
-                    {
-//                        cout << "kuk::${" << endl;
-                        BASE_STATE::addResultFromChild (d.second, ctx);
-//                        cout << "adding result \"" << d.second << "\" from ${ to parent" << endl;
-                        potential(ctx).clear();
-                        value(ctx).clear();
-                        variable(ctx).clear();
-                        paste(ctx).clear();
-                        removeFromParent (ctx);
-//                        TRANSITION ("done")
-                    } else {
-                        
-                        result(ctx) += d.second;
-//                        cout << "adding result \"" << d.second << "\" from ${ to parent" << endl;
+                //            optional <string> decl = declared (variable (ctx), ctx);
+                            for (auto& d : ctx.declaredVariables)
+                            {
+                //                cout << d.first << endl;
+                //                cout << ctx.variable << endl;
+                                if (d.first == ctx.variable)
+                                {
+                                    
+                //                    return d->second;
+                //                    cout << "::" << d->second << endl;
+                                    if (hasParent (ctx))
+                                    {
+                //                        cout << "kuk::${" << endl;
+                                        BASE_STATE::addResultFromChild (d.second, ctx);
+                //                        cout << "adding result \"" << d.second << "\" from ${ to parent" << endl;
+                                        potential(ctx).clear();
+                                        value(ctx).clear();
+                                        variable(ctx).clear();
+                                        paste(ctx).clear();
+                                        
+                                        if (ctx.looping)
+                                        {
+                                            TRANSITION ("begin")
+                                            
+                                        } else
+                                        {
+                                            removeFromParent(ctx);
+                                        }
+                //                        TRANSITION ("done")
+                                    } else {
+                                        
+                                        result(ctx) += d.second;
+                //                        cout << "adding result \"" << d.second << "\" from ${ to parent" << endl;
 
-//                        cout << result(ctx) << endl;
-                        potential(ctx).clear();
-                        value(ctx).clear();
-                        variable(ctx).clear();
-                        paste(ctx).clear();
-                        cout << ctx.variable << endl;
-                        TRANSITION ("done")
-                    }
-                    return;
-                }
+                //                        cout << result(ctx) << endl;
+                                        potential(ctx).clear();
+                                        value(ctx).clear();
+                                        variable(ctx).clear();
+                                        paste(ctx).clear();
+                                        cout << ctx.variable << endl;
+                                        TRANSITION ("done")
+                                    }
+                                    return;
+                                }
+                            }
+                           
+                            string warning = "variable \"" + variable (ctx) + "\" pasted but it has not yet been declared!";
+                            //            cout << result (ctx) << endl;
+                            throw runtime_error (warning);
             }
-           
-            string warning = "variable \"" + variable (ctx) + "\" pasted but it has not yet been declared!";
-            //            cout << result (ctx) << endl;
-            throw runtime_error (warning);
+            else
+            {
+                ctx.potential += '}';
+                ctx.variable += *i;
+            }
             
         } else if (*i == DECLPASTE)
         {
@@ -715,6 +786,12 @@ struct STATE ("${") : BASE_STATE
         } else if (*i == '#')
         {
             addChildContext<STATE ("#")>(ctx).potential = *i;
+            
+        } else if (*i == '{')
+        {
+            ctx.bracketStack.push ('{');
+            ctx.potential += '{';
+            ctx.variable += *i;
             
         } else
         {
@@ -750,54 +827,7 @@ struct STATE ("${") : BASE_STATE
 
 
 
-template <>
-struct STATE ("begin") : BASE_STATE
-{
-    void _process (iter i, Context& ctx){
-        
-        if (*i == DECLPASTE)
-        {
-            potential (ctx) += *i;
-            TRANSITION ("$")
-            
-        } else if (*i == '#')
-        {
-            potential (ctx) += '#';
-            TRANSITION ("#")
-            
-        } else if (*i == '@')
-        {
-            potential (ctx) += '@';
-            TRANSITION ("@")
-            
-        } else
-        {
-            if (hasParent (ctx))
-            {
-                BASE_STATE::addResultFromChild (string {*i}, ctx);
-                
-            } else
-            {
-                result (ctx) += *i;
-            }
-        }
-       
 
-    }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual string trans (){
-        return "\"\"";
-    }
-};
 
 
 template <>
@@ -814,7 +844,7 @@ struct STATE ("$") : BASE_STATE
 
         } else if (*i == '{')
         {
-            
+            ctx.bracketStack.push ('{');
             TRANSITION ("${")
 
         } else if (*i == ' ')
@@ -982,61 +1012,79 @@ struct STATE ("$(){") : BASE_STATE
         
         if (*i == '}')
         {
-//            ctx.bracketStack.pop ();
-//
-//            if (ctx.bracketStack.empty ())
-//            {
-            bool found = false;
-//            cout << "var: " << variable(ctx) << endl << "val: " << value(ctx) << endl;
-            for (auto& j : ctx.declaredVariables){
-                if (j.first == variable(ctx)){
-//                    value(ctx) = j->second;
-                    j.second = value (ctx);
-//                    cout << "found:" << j->first << " = " << j->second << endl;
-                    found = true;
-                    break;
-                }
-            }
-//            optional <string> found = declared (ctx.variable, ctx);
-            if (not found){
-//                cout << "found:" << variable(ctx) << " = " << value(ctx) << endl;
-                ctx.declaredVariables.emplace_back(variable(ctx), value(ctx));
-//                cout << "v::" << value(ctx) << endl;
-            }
-            if (hasParent(ctx))
+            ctx.bracketStack.pop ();
+            if (ctx.bracketStack.empty ())
             {
-//                BASE_STATE::addResultFromChild(value(ctx), ctx);
-                BASE_STATE::addResultFromChild (value(ctx), ctx);
-                variable (ctx).clear();
-                value (ctx).clear();
-                potential (ctx).clear();
-//                ctx.bracketStack = stack <char> {};
-                removeFromParent(ctx);
-//                TRANSITION ("begin")
-            } else {
-                result (ctx) += value (ctx);
-                variable (ctx).clear();
-                value (ctx).clear();
-                potential (ctx).clear();
-                TRANSITION ("done")
-//                ctx.bracketStack = stack <char> {};
-//                TRANSITION ("done")
+                //
+                //            if (ctx.bracketStack.empty ())
+                //            {
+                            bool found = false;
+                //            cout << "var: " << variable(ctx) << endl << "val: " << value(ctx) << endl;
+                            for (auto& j : ctx.declaredVariables){
+                                if (j.first == variable(ctx)){
+                //                    value(ctx) = j->second;
+                                    j.second = value (ctx);
+                //                    cout << "found:" << j->first << " = " << j->second << endl;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                //            optional <string> found = declared (ctx.variable, ctx);
+                            if (not found){
+                //                cout << "found:" << variable(ctx) << " = " << value(ctx) << endl;
+                                ctx.declaredVariables.emplace_back(variable(ctx), value(ctx));
+                //                cout << "v::" << value(ctx) << endl;
+                            }
+                            if (hasParent(ctx))
+                            {
+                //                BASE_STATE::addResultFromChild(value(ctx), ctx);
+                                BASE_STATE::addResultFromChild (value(ctx), ctx);
+                                variable (ctx).clear();
+                                value (ctx).clear();
+                                potential (ctx).clear();
+                                
+                                if (ctx.looping)
+                                {
+                                    TRANSITION ("begin")
+                                    
+                                } else
+                                {
+                                    removeFromParent(ctx);
+                                }
+                //                ctx.bracketStack = stack <char> {};
+                                
+//                                TRANSITION ("done")
+//                                TRANSITION ("begin")
+                            } else {
+                                result (ctx) += value (ctx);
+                                variable (ctx).clear();
+                                value (ctx).clear();
+                                potential (ctx).clear();
+                                TRANSITION ("done")
+                //                ctx.bracketStack = stack <char> {};
+                //                TRANSITION ("done")
+                            }
+                            
+                //                declare (variable (ctx), value (ctx), ctx);
+                //                reset(ctx);
+                //            } else
+                //            {
+                //                value (ctx) += '}';
+                //            }
+            } else
+            {
+                ctx.potential += '}';
+                ctx.value += *i;
             }
-            
-//                declare (variable (ctx), value (ctx), ctx);
-//                reset(ctx);
-//            } else
-//            {
-//                value (ctx) += '}';
-//            }
+
             
         }
-//        else if (*i == '{')
-//        {
-//            ctx.bracketStack.push ('{');
-//            value(ctx) += *i;
-//
-//        }
+        else if (*i == '{')
+        {
+            ctx.bracketStack.push ('{');
+            value(ctx) += *i;
+            ctx.potential += '{';
+        }
         else if (*i == DECLPASTE)
         {
             addChildContext <STATE ("$")> (ctx).potential = *i;
@@ -1142,7 +1190,7 @@ struct STATE ("#") : BASE_STATE
 {
     virtual void _process (iter i, Context& ctx){
         
-        potential (ctx) += *i ;
+        potential (ctx) += *i;
         
         if (*i == '{')
         {
@@ -1320,6 +1368,7 @@ struct STATE ("@()") : BASE_STATE
         
         if (*i == '{')
         {
+            ctx.bracketStack.push ('{');
             TRANSITION ("@(){")
         } else if (*i == ' ')
         {
@@ -1359,12 +1408,26 @@ struct STATE ("@(){") : BASE_STATE
         
         if (*i == '}')
         {
-            declare (variable (ctx), value (ctx), ctx);
-            ctx.potential.clear();
-            ctx.variable.clear();
-            ctx.value.clear();
-            TRANSITION ("done")
+            ctx.bracketStack.pop ();
+            if (ctx.bracketStack.empty ())
+            {
+                declare (variable (ctx), value (ctx), ctx);
+                ctx.potential.clear();
+                ctx.variable.clear();
+                ctx.value.clear();
+                TRANSITION ("done")
+                
+            } else
+            {
+                ctx.potential += '}';
+            }
+            
             //            reset (ctx);
+            
+        } else if (*i == '{')
+        {
+            ctx.bracketStack.push ('{');
+            ctx.potential += '{';
             
         } else if (*i == DECLPASTE)
         {
