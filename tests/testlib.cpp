@@ -134,6 +134,16 @@ TEST_CASE ("test loop $(0 x y){}")
             REQUIRE (nr_of_variables == 0);
         }
     }
+    
+    SECTION ("nested looping")
+    {
+        string input = "$(0 x 3){$(0 x 2){h}}";
+        get_result
+        get_nr_of_variables
+        
+        REQUIRE (result == "hhhhhh");
+        REQUIRE (nr_of_variables == 0);
+    }
 }
 
 TEST_CASE ("declaring variables")
