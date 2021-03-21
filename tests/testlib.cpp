@@ -139,47 +139,50 @@ TEST_CASE ("nested pastes")
     {
         input = "@ (last name) {bajs}";
         
-        THEN ("pasting this variable when declaring a new one")
+        AND_THEN ("pasting it")
         {
-            SECTION ("into name")
+            WHEN ("declaring a new one")
             {
-                input += "@ (gillar $ {last name}){true}";
-                
-                THEN ("gillar bajs = true")
+                SECTION ("in the paranthesis")
                 {
-                    result = app.process_text (input);
-                    nr_of_variables = app.get_variables().size();
-                    auto [name_0, value_0] = app.get_variables()[0];
-                    auto [name_1, value_1] = app.get_variables()[1];
-                    app.clear_variables ();
+                    input += "@ (gillar $ {last name}){true}";
                     
-                    REQUIRE (result == "");
-                    REQUIRE (nr_of_variables == 2);
-                    REQUIRE (name_0 == "last name");
-                    REQUIRE (value_0 == "bajs");
-                    REQUIRE (name_1 == "gillar bajs");
-                    REQUIRE (value_1 == "true");
+                    THEN ("gillar bajs = true")
+                    {
+                        result = app.process_text (input);
+                        nr_of_variables = app.get_variables().size();
+                        auto [name_0, value_0] = app.get_variables()[0];
+                        auto [name_1, value_1] = app.get_variables()[1];
+                        app.clear_variables ();
+                        
+                        REQUIRE (result == "");
+                        REQUIRE (nr_of_variables == 2);
+                        REQUIRE (name_0 == "last name");
+                        REQUIRE (value_0 == "bajs");
+                        REQUIRE (name_1 == "gillar bajs");
+                        REQUIRE (value_1 == "true");
+                    }
                 }
-            }
-            
-            SECTION ("into value")
-            {
-                input += "@ (gillar){$ {last name} true}";
                 
-                THEN ("gillar = bajs true")
+                SECTION ("in the curly brackets")
                 {
-                    result = app.process_text (input);
-                    nr_of_variables = app.get_variables().size();
-                    auto [name_0, value_0] = app.get_variables()[0];
-                    auto [name_1, value_1] = app.get_variables()[1];
-                    app.clear_variables ();
+                    input += "@ (gillar){$ {last name} true}";
                     
-                    REQUIRE (result == "");
-                    REQUIRE (nr_of_variables == 2);
-                    REQUIRE (name_0 == "last name");
-                    REQUIRE (value_0 == "bajs");
-                    REQUIRE (name_1 == "gillar");
-                    REQUIRE (value_1 == "bajs true");
+                    THEN ("gillar = bajs true")
+                    {
+                        result = app.process_text (input);
+                        nr_of_variables = app.get_variables().size();
+                        auto [name_0, value_0] = app.get_variables()[0];
+                        auto [name_1, value_1] = app.get_variables()[1];
+                        app.clear_variables ();
+                        
+                        REQUIRE (result == "");
+                        REQUIRE (nr_of_variables == 2);
+                        REQUIRE (name_0 == "last name");
+                        REQUIRE (value_0 == "bajs");
+                        REQUIRE (name_1 == "gillar");
+                        REQUIRE (value_1 == "bajs true");
+                    }
                 }
             }
         }
