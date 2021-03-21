@@ -143,6 +143,8 @@ TEST_CASE ("declpaste with paste")
                 WHEN ("also pasting the first variable inside the decleration")
                 {
                     input += "$(philip ${last name}){en god människa}";
+                    REQUIRE (app.process_text(input) == "en god människa");
+                    
 //                    REQUIRE (Cython{}.process_text(input) == "en god människa");
                 }
             }
@@ -161,11 +163,15 @@ TEST_CASE ("declpaste with paste")
 int main( int argc, char* argv[] ) {
  
     
-//    Cython app {};
-//    app.process_text("@(namn){Philip Wenkel}");
-//    auto [variable_name, variable_value] = app.get_variables().front();
-//    cout << "name:" << variable_name << endl;
-//    cout << "value:" << variable_value << endl;
+    Cython app {};
+    cout << app.process_text ("@(last namn) {Wenkel}${last namn}") << endl;
+    auto [variable_name, variable_value] = app.get_variables().front();
+    cout << "name:" << variable_name << endl;
+    cout << "value:" << variable_value << endl;
+//    cout << app.process_text ("${last namn}") << endl;
+//    cout << app.process_text("@(last namn){Wenkel} $(philip ${last name}){en god människa}") << endl;
+    return 0;
+    
 //    return 0;
 //    cout << Cython{}.process_text ("$(0 x 3){hej}") << endl;
     

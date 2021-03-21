@@ -643,7 +643,10 @@ struct STATE ("${") : BASE_STATE
 //            optional <string> decl = declared (variable (ctx), ctx);
             for (auto& d : ctx.declaredVariables)
             {
-                if (d.first == variable (ctx)) {
+//                cout << d.first << endl;
+//                cout << ctx.variable << endl;
+                if (d.first == ctx.variable) {
+                    
 //                    return d->second;
 //                    cout << "::" << d->second << endl;
                     if (hasParent(ctx))
@@ -656,7 +659,7 @@ struct STATE ("${") : BASE_STATE
                         variable(ctx).clear();
                         paste(ctx).clear();
 //                        removeFromParent (ctx);
-                        TRANSITION ("begin")
+                        TRANSITION ("done")
                     } else {
                         
                         result(ctx) += d.second;
@@ -667,15 +670,16 @@ struct STATE ("${") : BASE_STATE
                         value(ctx).clear();
                         variable(ctx).clear();
                         paste(ctx).clear();
+//                        cout << ctx.variable << endl;
                         TRANSITION ("done")
                     }
                     return;
                 }
             }
            
-                string warning = "variable \"" + variable (ctx) + "\" pasted but it has not yet been declared!";
-                //            cout << result (ctx) << endl;
-                throw runtime_error (warning);
+            string warning = "variable \"" + variable (ctx) + "\" pasted but it has not yet been declared!";
+            //            cout << result (ctx) << endl;
+            throw runtime_error (warning);
             
         } else if (*i == DECLPASTE)
         {
@@ -683,16 +687,16 @@ struct STATE ("${") : BASE_STATE
             
         } else if (*i == '@')
         {
-            addChildContext<STATE ("@")>(ctx).potential = '@';
+            addChildContext<STATE ("@")>(ctx).potential = *i;
             
         } else if (*i == '#')
         {
-            addChildContext<STATE ("#")>(ctx).potential = '#';
+            addChildContext<STATE ("#")>(ctx).potential = *i;
             
         } else
         {
-            variable (ctx) += *i;
-            potential(ctx) += *i;
+            ctx.variable += *i;
+            ctx.potential += *i;
 //            cout << *i << endl;
         }
     }
@@ -1335,15 +1339,19 @@ struct STATE ("@(){") : BASE_STATE
         if (*i == '}')
         {
             declare (variable (ctx), value (ctx), ctx);
-            reset (ctx);
+            ctx.potential.clear();
+            ctx.variable.clear();
+            ctx.value.clear();
+            TRANSITION ("done")
+            //            reset (ctx);
             
         } else if (*i == DECLPASTE)
         {
             addChildContext <STATE ("$")>(ctx).potential = *i;
         } else
         {
-            potential (ctx) += *i;
-            value (ctx) += *i;
+            ctx.potential += *i;
+            ctx.value += *i;
         }
     }
     
