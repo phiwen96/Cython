@@ -135,13 +135,13 @@ TEST_CASE ("test loop $(0 x y){}")
         }
     }
     
-    SECTION ("nested looping")
+    SECTION ("2 nested looping")
     {
-        string input = "$(0 x 3){$(0 x 2){h}}";
+        string input = "$(0 a 3){$(0 b 2){${a}${b}}}";
         get_result
         get_nr_of_variables
         
-        REQUIRE (result == "hhhhhh");
+        REQUIRE (result == "000110112021");
         REQUIRE (nr_of_variables == 0);
     }
 }
