@@ -126,6 +126,7 @@ TEST_CASE ("test loop $(0 x y){}")
         }
     }
 }
+
 TEST_CASE ("declaring variables")
 {
     Cython app {};
@@ -262,6 +263,75 @@ TEST_CASE ("declaring variables")
         }
     }
 }
+
+TEST_CASE ("declpasting")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    
+    
+    GIVEN ("a declpaste")
+    {
+        input = "$(first name){Philip}";
+        
+        THEN ("we should get text: Philip; variable:name: first name; variable:value: Philip")
+        {
+            result = app.process_text (input);
+            nr_of_variables = app.get_variables().size();
+            auto [name, value] = app.get_variables().front();
+            
+            
+            REQUIRE(result == "Philip");
+            REQUIRE(nr_of_variables == 1);
+            REQUIRE(name == "first name");
+            REQUIRE(value == "Philip");
+        }
+        
+       
+        AND_GIVEN ("another declpaste")
+        {
+            WHEN ("the new one has the same variable name")
+            {
+                input += "$(first name){Kalle}";
+                
+                THEN ("we should get both pastes but still just get one variable")
+                {
+                    result = app.process_text (input);
+                    nr_of_variables = app.variables.size();
+                    auto [name, value] = app.get_variables().front();
+                    
+                    REQUIRE(result == "PhilipKalle");
+                    REQUIRE(nr_of_variables == 1);
+                    REQUIRE(name == "first name");
+                    REQUIRE(value == "Kalle");;
+                }
+            }
+            WHEN ("the new one has a different variable name")
+            {
+                input += "$(age){24}";
+                THEN ("we should get both pastes and 2 variables")
+                {
+                    result = app.process_text (input);
+                    nr_of_variables = app.variables.size();
+                    auto [name_0, value_0] = app.get_variables()[0];
+                    auto [name_1, value_1] = app.get_variables()[1];
+                    
+                    REQUIRE(result == "Philip24");
+                    REQUIRE(nr_of_variables == 2);
+                    REQUIRE(name_0 == "first name");
+                    REQUIRE(value_0 == "Philip");;
+                    REQUIRE(name_1 == "age");
+                    REQUIRE(value_1 == "24");
+                }
+            }
+        }
+    }
+}
+
 TEST_CASE ("declpaste with paste")
 {
     SECTION ("declare, then declpaste with a paste")

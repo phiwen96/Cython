@@ -848,10 +848,6 @@ struct STATE ("$(") : BASE_STATE
 //            potential (ctx) += ')';
             TRANSITION ("$()")
             
-        } else if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
