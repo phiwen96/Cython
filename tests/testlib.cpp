@@ -264,6 +264,9 @@ TEST_CASE ("declaring variables")
     }
 }
 
+#define get_result result = app.process_text(input);
+#define get_nr_of_variables nr_of_variables = app.get_variables().size();
+
 TEST_CASE ("declpasting")
 {
     Cython app {};
@@ -272,10 +275,39 @@ TEST_CASE ("declpasting")
     string result = "";
     int nr_of_variables = 0;
     
+    WHEN ("declpasting during a variable decleration")
+    {
+        SECTION ("in the paranthesis")
+        {
+            input = "@($(name){Philip} Wenkel){är bäst}";
+            
+            THEN ("we should get")
+            {
+                get_result
+                get_nr_of_variables
+                auto [name_0, value_0] = app.get_variables()[0];
+                auto [name_1, value_1] = app.get_variables()[1];
+                
+                REQUIRE (result == "");
+                REQUIRE (nr_of_variables == 2);
+                REQUIRE (name_0 == "name");
+                REQUIRE (value_0 == "Philip");
+                REQUIRE (name_1 == "Philip Wenkel");
+                REQUIRE (value_1 == "är bäst");
+            }
+        }
+        
+        SECTION ("in the curly brackets")
+        {
+            
+        }
+    }
+    
     
     
     GIVEN ("a declpaste")
     {
+        
         input = "$(first name){Philip}";
         
         THEN ("we should get text: Philip; variable:name: first name; variable:value: Philip")
@@ -290,6 +322,8 @@ TEST_CASE ("declpasting")
             REQUIRE(name == "first name");
             REQUIRE(value == "Philip");
         }
+        
+        
         
        
         AND_GIVEN ("another declpaste")
@@ -329,6 +363,8 @@ TEST_CASE ("declpasting")
                 }
             }
         }
+        
+    
     }
 }
 

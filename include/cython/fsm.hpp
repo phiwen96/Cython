@@ -989,17 +989,18 @@ struct STATE ("$(){") : BASE_STATE
                 value (ctx).clear();
                 potential (ctx).clear();
 //                ctx.bracketStack = stack <char> {};
-//                removeFromParent(ctx);
+                removeFromParent(ctx);
 //                TRANSITION ("begin")
             } else {
                 result (ctx) += value (ctx);
                 variable (ctx).clear();
                 value (ctx).clear();
                 potential (ctx).clear();
+                TRANSITION ("done")
 //                ctx.bracketStack = stack <char> {};
 //                TRANSITION ("done")
             }
-            TRANSITION ("done")
+            
 //                declare (variable (ctx), value (ctx), ctx);
 //                reset(ctx);
 //            } else
