@@ -110,6 +110,29 @@ TEST_CASE ("comment #{foo}")
         }
     }
 }
+TEST_CASE ("test loop $(0 x y){}")
+{
+    SECTION ("with plain text")
+    {
+        SECTION ("basic")
+        {
+            GIVEN ("input string")
+            {
+                string input = "$(0 x 3){hej}";
+                REQUIRE (TestApp{}.process(input) == "hejhejhej");
+            }
+        }
+        
+    }
+    SECTION ("using loop variable in plain text")
+    {
+        GIVEN ("input string")
+        {
+            string input = "$(0 x 3){hej${x}}";
+            REQUIRE (TestApp{}.process(input) == "hej0hej1hej2");
+        }
+    }
+}
 
 
 
@@ -124,6 +147,7 @@ int main( int argc, char* argv[] ) {
         .declaredVariables = variables,
         .state = new STATE ("begin")
     };
+    cout << TestApp{}.process ("$(0 x 3){hej}") << endl;
     
 //    string input = {"@(namn){Philip}"};
 //    cout << TestApp{}.process(input) << endl;
