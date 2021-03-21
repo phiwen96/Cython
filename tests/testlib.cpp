@@ -21,6 +21,12 @@ struct TestApp
         
         return ctx.result;
     }
+    
+    ~TestApp ()
+    {
+        ctx.result.clear ();
+    }
+    
 };
 
 TEST_CASE ("declpaste $(x){foo}")
@@ -62,7 +68,10 @@ int main( int argc, char* argv[] ) {
         .state = new STATE ("begin")
     };
     
-    
+//    string input = {"@(namn){Philip}"};
+//    cout << TestApp{}.process(input) << endl;
+//
+//    return 0;
 //
 //    string inp
 //{R"V0G0N($(förnamn){Philip}
