@@ -780,6 +780,10 @@ struct STATE ("$") : BASE_STATE
         } else if (*i == ' ')
         {
             
+        } else if (*i == '\n')
+        {
+
+            
         } else
         {
             reset (ctx);
@@ -829,6 +833,10 @@ struct STATE ("$(") : BASE_STATE
         } else if (*i == ' ')
         {
             ctx.potential += ' ';
+            
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
             
         } else if (*i == DECLPASTE)
         {
@@ -886,6 +894,10 @@ struct STATE ("$()") : BASE_STATE
         } else if (*i == ' ')
         {
             ctx.potential += ' ';
+            
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
             
         } else
         {
@@ -1099,6 +1111,13 @@ struct STATE ("#") : BASE_STATE
             ctx.bracketStack.push ('{');
             TRANSITION ("#{")
 
+        } else if (*i == ' ')
+        {
+            
+        } else if (*i == '\n')
+        {
+
+            
         } else
         {
             reset (ctx);
@@ -1193,6 +1212,12 @@ struct STATE ("@") : BASE_STATE
                 TRANSITION ("@(")
                 break;
                 
+            case ' ':
+                break;
+                
+            case '\n':
+                break;
+                
             default:
                 reset (ctx);
                 break;
@@ -1255,6 +1280,14 @@ struct STATE ("@()") : BASE_STATE
         if (*i == '{')
         {
             TRANSITION ("@(){")
+        } else if (*i == ' ')
+        {
+
+            
+        } else if (*i == '\n')
+        {
+
+            
         } else
         {
             reset (ctx);

@@ -33,7 +33,7 @@ TEST_CASE ("declpaste $(x){foo}")
 {
     SECTION ("no spaces")
     {
-        GIVEN ("input")
+        GIVEN ("input string")
         {
             string input = {"$(förnamn){Philip}"};
             REQUIRE (TestApp{}.process(input) == "Philip");
@@ -41,27 +41,73 @@ TEST_CASE ("declpaste $(x){foo}")
     }
     SECTION ("with spaces")
     {
-        GIVEN ("input")
+        GIVEN ("input string")
         {
-            string input = {"$ (förnamn) {Philip}"};
+            string input = {"$  (förnamn)  {Philip}"};
+            REQUIRE (TestApp{}.process(input) == "Philip");
+        }
+    }
+    SECTION ("with new lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"$\n\n(förnamn)\n\n{Philip}"};
             REQUIRE (TestApp{}.process(input) == "Philip");
         }
     }
 }
 TEST_CASE ("decl @(x){foo}")
 {
-    GIVEN ("input")
+    SECTION ("no spaces")
     {
-        string input = {"@(förnamn){Philip}"};
-        REQUIRE (TestApp{}.process(input) == "");
+        GIVEN ("input string")
+        {
+            string input = {"@(förnamn){Philip}"};
+            REQUIRE (TestApp{}.process(input) == "");
+        }
+    }
+    SECTION ("with spaces")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"@  (förnamn)  {Philip}"};
+            REQUIRE (TestApp{}.process(input) == "");
+        }
+    }
+    SECTION ("with new lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"@\n\n(förnamn)\n\n{Philip}"};
+            REQUIRE (TestApp{}.process(input) == "");
+        }
     }
 }
 TEST_CASE ("comment #{foo}")
 {
-    GIVEN ("input")
+    SECTION ("no spaces or new lines")
     {
-        string input = {"#{Philip}"};
-        REQUIRE (TestApp{}.process(input) == "");
+        GIVEN ("input string")
+        {
+            string input = {"#{Philip}"};
+            REQUIRE (TestApp{}.process(input) == "");
+        }
+    }
+    SECTION ("white lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"#  {Philip}"};
+            REQUIRE (TestApp{}.process(input) == "");
+        }
+    }
+    SECTION ("with new lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"#\n\n{Philip}"};
+            REQUIRE (TestApp{}.process(input) == "");
+        }
     }
 }
 
