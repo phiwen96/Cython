@@ -557,6 +557,15 @@ struct STATE ("$(x var y){") : BASE_STATE
                     delete childstate;
                     delete childctx;
                 }
+                for (auto i = ctx.declaredVariables.begin(); i < ctx.declaredVariables.end(); ++i)
+                {
+                    if (ctx.intvariable == i -> first)
+                    {
+                        ctx.declaredVariables.erase (i);
+                        break;
+                    }
+                }
+                
                 
                 if (hasParent (ctx))
                 {
