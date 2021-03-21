@@ -1,6 +1,7 @@
 #include "headers.hpp"
 
-
+#define get_result result = app.process_text(input);
+#define get_nr_of_variables nr_of_variables = app.get_variables().size();
 
 TEST_CASE ("declpaste $(x){foo}")
 {
@@ -90,6 +91,10 @@ TEST_CASE ("comment #{foo}")
 }
 TEST_CASE ("test loop $(0 x y){}")
 {
+    Cython app {};
+    string result = "";
+    int nr_of_variables = 0;
+    
     SECTION ("with plain text")
     {
         SECTION ("basic")
@@ -117,12 +122,16 @@ TEST_CASE ("test loop $(0 x y){}")
             }
         }
     }
-    SECTION ("using loop variable in plain text")
+    SECTION ("pasting loop variable in plain text")
     {
         GIVEN ("input string")
         {
             string input = "$(0 x 3){hej${x}}";
-            REQUIRE (Cython{}.process_text(input) == "hej0hej1hej2");
+            get_result
+            get_nr_of_variables
+            
+            REQUIRE (result == "hej0hej1hej2");
+            REQUIRE (nr_of_variables == 0);
         }
     }
 }
@@ -264,8 +273,7 @@ TEST_CASE ("declaring variables")
     }
 }
 
-#define get_result result = app.process_text(input);
-#define get_nr_of_variables nr_of_variables = app.get_variables().size();
+
 
 TEST_CASE ("declpasting")
 {
@@ -352,6 +360,54 @@ TEST_CASE ("declpasting")
             REQUIRE (value_0 == "Wenkel");
             REQUIRE (name_1 == "name");
             REQUIRE (value_1 == "Philip Wenkel");
+        }
+    }
+    
+    WHEN ("declpasting during a loop")
+    {
+        SECTION ("inside paranthesis")
+        {
+            SECTION ("as first number")
+            {
+                
+            }
+            SECTION ("as loop variable")
+            {
+                input = "$(0 $(variable){x} 3){hej}";
+                
+                get_result
+                get_nr_of_variables
+                auto [name_0, value_0] = app.get_variables()[0];
+//                auto [name_1, value_1] = app.get_variables()[1];
+                
+                REQUIRE (result == "hejhejhej");
+                REQUIRE (nr_of_variables == 1);
+                REQUIRE (name_0 == "variable");
+                REQUIRE (value_0 == "x");
+//                REQUIRE (name_1 == "Philip Wenkel");
+//                REQUIRE (value_1 == "is the best");
+            }
+            SECTION ("as second number")
+            {
+                
+            }
+        }
+        
+        SECTION ("inside curly brackets")
+        {
+            input = "$(Philip $(last name){Wenkel}){is the best}";
+            
+            get_result
+            get_nr_of_variables
+            auto [name_0, value_0] = app.get_variables()[0];
+            auto [name_1, value_1] = app.get_variables()[1];
+            
+            REQUIRE (result == "is the best");
+            REQUIRE (nr_of_variables == 2);
+            REQUIRE (name_0 == "last name");
+            REQUIRE (value_0 == "Wenkel");
+            REQUIRE (name_1 == "Philip Wenkel");
+            REQUIRE (value_1 == "is the best");
         }
     }
     
