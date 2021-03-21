@@ -299,7 +299,22 @@ TEST_CASE ("declpasting")
         
         SECTION ("in the curly brackets")
         {
+            input = "@(person){$(name){Philip} är bäst}";
             
+            THEN ("we should get")
+            {
+                get_result
+                get_nr_of_variables
+                auto [name_0, value_0] = app.get_variables()[0];
+                auto [name_1, value_1] = app.get_variables()[1];
+                
+                REQUIRE (result == "");
+                REQUIRE (nr_of_variables == 2);
+                REQUIRE (name_0 == "name");
+                REQUIRE (value_0 == "Philip");
+                REQUIRE (name_1 == "person");
+                REQUIRE (value_1 == "Philip är bäst");
+            }
         }
     }
     
