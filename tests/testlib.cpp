@@ -318,6 +318,43 @@ TEST_CASE ("declpasting")
         }
     }
     
+    WHEN ("declpasting during a declpaste")
+    {
+        SECTION ("inside the paranthesis")
+        {
+            input = "$(Philip $(last name){Wenkel}){is the best}";
+            
+            get_result
+            get_nr_of_variables
+            auto [name_0, value_0] = app.get_variables()[0];
+            auto [name_1, value_1] = app.get_variables()[1];
+            
+            REQUIRE (result == "is the best");
+            REQUIRE (nr_of_variables == 2);
+            REQUIRE (name_0 == "last name");
+            REQUIRE (value_0 == "Wenkel");
+            REQUIRE (name_1 == "Philip Wenkel");
+            REQUIRE (value_1 == "is the best");
+        }
+        
+        SECTION ("inside the curly brackets")
+        {
+            input = "$(name){Philip $(last name){Wenkel}}";
+            
+            get_result
+            get_nr_of_variables
+            auto [name_0, value_0] = app.get_variables()[0];
+            auto [name_1, value_1] = app.get_variables()[1];
+            
+            REQUIRE (result == "Philip Wenkel");
+            REQUIRE (nr_of_variables == 2);
+            REQUIRE (name_0 == "last name");
+            REQUIRE (value_0 == "Wenkel");
+            REQUIRE (name_1 == "name");
+            REQUIRE (value_1 == "Philip Wenkel");
+        }
+    }
+    
     
     
     GIVEN ("a declpaste")
