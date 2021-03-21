@@ -126,7 +126,7 @@ TEST_CASE ("test loop $(0 x y){}")
         }
     }
 }
-TEST_CASE ("nested pastes")
+TEST_CASE ("declaring variables")
 {
     Cython app {};
     string input = "";
@@ -138,6 +138,21 @@ TEST_CASE ("nested pastes")
     GIVEN ("a declared variable")
     {
         input = "@ (last name) {bajs}";
+        
+        THEN ("we snould get an empty string and 1 declared variable back")
+        {
+//            Cython app {};
+            string result = app.process_text (input);
+            int nr_of_variables = app.get_variables().size();
+            auto [name, value] = app.get_variables ().front ();
+            app.clear_variables ();
+            
+            
+            REQUIRE (result == "");
+            REQUIRE (nr_of_variables == 1);
+            REQUIRE (name == "last name");
+            REQUIRE (value == "bajs");
+        }
         
         AND_THEN ("pasting it")
         {
@@ -185,73 +200,61 @@ TEST_CASE ("nested pastes")
                     }
                 }
             }
+            
+            input += "${last name}";
+            REQUIRE (app.process_text(input) == "bajs");
         }
         
-        THEN ("we snould get an empty string and 1 declared variable back")
+        AND_WHEN ("declaring the same variable again but with a different value")
         {
-//            Cython app {};
-            string result = app.process_text (input);
-            int nr_of_variables = app.get_variables().size();
-            auto [name, value] = app.get_variables ().front ();
-            app.clear_variables ();
+            input += "@ (last name) {Wenkel}";
             
-            
-            REQUIRE (result == "");
-            REQUIRE (nr_of_variables == 1);
-            REQUIRE (name == "last name");
-            REQUIRE (value == "bajs");
-            
-            AND_WHEN ("declaring the same variable again but with a different value")
+            THEN ("we should get the same variable but now with a another value")
             {
-                input += "@ (last name) {Wenkel}";
+                Cython app {};
+                string result = app.process_text (input);
+                int nr_of_variables = app.get_variables ().size ();
+                auto [name, value] = app.get_variables ().front ();
+                app.clear_variables ();
                 
-                THEN ("we should get the same variable but now with a different value")
+                REQUIRE (result == "");
+                REQUIRE (nr_of_variables == 1);
+                REQUIRE (name == "last name");
+                REQUIRE (value == "Wenkel");
+                
+            }
+        }
+        
+        AND_GIVEN ("another declared variable")
+        {
+            input += "@ (j) {name}";
+            
+            THEN ("we should still get an empty string, but this time with 2 variables")
+            {
+                result = app.process_text (input);
+                nr_of_variables = app.get_variables().size();
+                auto [name_0, value_0] = app.get_variables()[0];
+                auto [name_1, value_1] = app.get_variables()[1];
+                app.clear_variables ();
+                
+                
+                REQUIRE (result == "");
+                REQUIRE (nr_of_variables == 2);
+                REQUIRE (name_0 == "last name");
+                REQUIRE (value_0 == "bajs");
+                REQUIRE (name_1 == "j");
+                REQUIRE (value_1 == "name");
+                
+                
+                AND_WHEN ("adding a nested paste to use these two variables")
                 {
-                    Cython app {};
-                    string result = app.process_text (input);
-                    int nr_of_variables = app.get_variables ().size ();
-                    auto [name, value] = app.get_variables ().front ();
-                    app.clear_variables ();
+                    input += "$ {last ${j}}";
                     
-                    REQUIRE (result == "");
-                    REQUIRE (nr_of_variables == 1);
-                    REQUIRE (name == "last name");
-                    REQUIRE (value == "Wenkel");
-                    
-                    
-                    AND_GIVEN ("another declared variable")
+                    THEN ("the paste would first become $ {last name}")
                     {
-                        input += "@ (j) {name}";
-                        
-                        THEN ("we should still get an empty string, but this time with 2 variables")
+                        AND_THEN ("the whole paste would just become bajs")
                         {
-                            result = app.process_text (input);
-                            nr_of_variables = app.get_variables().size();
-                            auto [name_0, value_0] = app.get_variables()[0];
-                            auto [name_1, value_1] = app.get_variables()[1];
-                            app.clear_variables ();
-                            
-                            
-                            REQUIRE (result == "");
-                            REQUIRE (nr_of_variables == 2);
-                            REQUIRE (name_0 == "last name");
-                            REQUIRE (value_0 == "Wenkel");
-                            REQUIRE (name_1 == "j");
-                            REQUIRE (value_1 == "name");
-                            
-                            
-                            AND_WHEN ("adding a nested paste")
-                            {
-                                input += "$ {last ${j}}";
-                                
-                                THEN ("the paste would first become $ {last name}")
-                                {
-                                    AND_THEN ("would become Wenkel")
-                                    {
-                                        REQUIRE (app.process_text(input) == "Wenkel");
-                                    }
-                                }
-                            }
+                            REQUIRE (app.process_text(input) == "bajs");
                         }
                     }
                 }
