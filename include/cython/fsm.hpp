@@ -114,16 +114,16 @@ struct Context
 };
 
 
-void BASE_STATE::declare (string const& var, string const& val, Context& ctx) {
+void BASE_STATE::declare (string const& variable_name, string const& variable_value, Context& ctx) {
 //    throw runtime_error ("");
     auto declared = ctx.declaredVariables.begin ();
     for (; declared < ctx.declaredVariables.end (); ++declared) {
-        if (declared -> first == var) {
-            declared -> second = val;
+        if (declared -> first == variable_name) {
+            declared -> second = variable_value;
             return;
         }
     }
-    ctx.declaredVariables.emplace_back (var, val);
+    ctx.declaredVariables.emplace_back (variable_name, variable_value);
 }
 optional <string> BASE_STATE::declared (string const& p, Context& ctx) {
     throw runtime_error ("");
@@ -1258,10 +1258,11 @@ struct STATE ("@(") : BASE_STATE
 {
     virtual void _process (iter i, Context& ctx){
         
-        potential(ctx) += *i;
+        
         
         if (*i == ')')
         {
+//            cout << ctx.variable << endl;
             TRANSITION ("@()")
             
         } else if (*i == DECLPASTE)
@@ -1270,7 +1271,8 @@ struct STATE ("@(") : BASE_STATE
 
         } else
         {
-            variable (ctx) += *i;
+            ctx.potential += *i;
+            ctx.variable += *i;
         }
         
     }
@@ -1288,6 +1290,7 @@ template <>
 struct STATE ("@()") : BASE_STATE
 {
     virtual void _process (iter i, Context& ctx){
+        
         potential(ctx) += *i;
         
         if (*i == '{')
@@ -1328,7 +1331,6 @@ struct STATE ("@(){") : BASE_STATE
 {
     virtual void _process (iter i, Context& ctx){
         
-        potential (ctx) += *i;
         
         if (*i == '}')
         {
@@ -1340,6 +1342,7 @@ struct STATE ("@(){") : BASE_STATE
             addChildContext <STATE ("$")>(ctx).potential = *i;
         } else
         {
+            potential (ctx) += *i;
             value (ctx) += *i;
         }
     }

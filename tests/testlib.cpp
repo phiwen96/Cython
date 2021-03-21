@@ -160,15 +160,14 @@ TEST_CASE ("declpaste with paste")
 
 int main( int argc, char* argv[] ) {
  
-    vector <pair <string, string>> variables;
     
-    Context ctx
-    {
-        .parent = nullptr,
-        .declaredVariables = variables,
-        .state = new STATE ("begin")
-    };
-    cout << Cython{}.process_text ("$(0 x 3){hej}") << endl;
+//    Cython app {};
+//    app.process_text("@(namn){Philip Wenkel}");
+//    auto [variable_name, variable_value] = app.get_variables().front();
+//    cout << "name:" << variable_name << endl;
+//    cout << "value:" << variable_value << endl;
+//    return 0;
+//    cout << Cython{}.process_text ("$(0 x 3){hej}") << endl;
     
 //    string input = {"@(namn){Philip}"};
 //    cout << Cython{}.process_text(input) << endl;

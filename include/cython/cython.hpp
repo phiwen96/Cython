@@ -4,7 +4,7 @@ using namespace std;
 
 struct Cython
 {
-    vector <pair <string, string>> variables {100};
+    vector <pair <string, string>> variables;
     STATE ("begin") begin_state;
     
     Context ctx
