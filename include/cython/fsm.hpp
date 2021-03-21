@@ -309,28 +309,41 @@ template <>
 struct STATE ("$(x ") : BASE_STATE
 {
     void _process (iter i, Context& ctx){
-        ctx.potential += *i;
-        if (isnumber (*i))
+        
+        
+        if (*i == ' ')
         {
-            throw runtime_error ("");
-        } else if (*i == ' ')
-        {
+            ctx.potential += *i;
             
-        } else
+        } else if (*i == DECLPASTE)
         {
+            cout << "kuk" << endl;
+            addChildContext<STATE ("$")>(ctx).potential = DECLPASTE;
+            
+        }
+//        else if (isnumber (*i))
+//        {
+//            throw runtime_error ("is not a number");
+//            
+//        }
+        else
+        {
+            ctx.potential += *i;
             ctx.intvariable += *i;
             TRANSITION ("$(x var");
         }
     }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
+    void addResultFromChild (string const& res, Context& ctx){
+        ctx.intvariable += res;
+        TRANSITION ("$(x var");
+//        throw runtime_error ("oops");
     }
     
     virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f");
     }
     virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f");
     }
     virtual string trans (){
         return "$(x ";
@@ -356,10 +369,10 @@ struct STATE ("$(x var") : BASE_STATE
     }
     
     virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f1");
     }
     virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f1");
     }
     virtual string trans (){
         return "$(x var";
@@ -404,10 +417,10 @@ struct STATE ("$(x var ") : BASE_STATE
     }
     
     virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f2");
     }
     virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f2");
     }
     virtual string trans (){
         return "$(x var y";
@@ -451,10 +464,10 @@ struct STATE ("$(x var y") : BASE_STATE
     }
     
     virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f3");
     }
     virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f3");
     }
     virtual string trans (){
         return "$(x var y";
@@ -504,10 +517,10 @@ struct STATE ("$(x var y)") : BASE_STATE
     }
     
     virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f4");
     }
     virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f4");
     }
     virtual string trans (){
         return "$(x var y)";
@@ -631,10 +644,10 @@ struct STATE ("$(x var y){") : BASE_STATE
     }
     
     virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f5");
     }
     virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
+        throw runtime_error ("f5");
     }
     virtual string trans (){
         return "$(x var y){";

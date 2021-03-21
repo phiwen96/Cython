@@ -518,6 +518,17 @@ int main( int argc, char* argv[] ) {
  
     
 //    Cython app {};
+//    string input = "";
+//    string res = "";
+//    int nr_of_variables = 0;
+//    input = "$(0 $(variable){x} 3){hej}";
+//    res = app.process_text (input);
+//    cout << res << endl;
+////    get_result
+////    get_nr_of_variables
+////    auto [name_0, value_0] = app.get_variables()[0];
+//
+//    return 0;
 //    cout << app.process_text ("@(j){name}@(last name) {Wenkel}$(name){Philip ${last ${j}}}") << endl;
 //    auto [variable_name, variable_value] = app.get_variables().front();
 //    cout << "name:" << variable_name << endl;
