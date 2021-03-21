@@ -406,6 +406,19 @@ TEST_CASE ("declpasting")
                 REQUIRE (name_0 == "variable");
                 REQUIRE (value_0 == "x");
             }
+            SECTION ("as loop variable")
+            {
+                input = "$(0 $(variable){x} 3){@(j${x}){aa}hej#{kuk}${x}}";
+                
+                get_result
+                get_nr_of_variables
+                auto [name_0, value_0] = app.get_variables()[0];
+                
+                REQUIRE (result == "hej0hej1hej2");
+                REQUIRE (nr_of_variables == 4);
+                REQUIRE (name_0 == "variable");
+                REQUIRE (value_0 == "x");
+            }
             SECTION ("as second number")
             {
                 

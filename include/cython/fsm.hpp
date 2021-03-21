@@ -644,7 +644,16 @@ struct STATE ("$(x var y){") : BASE_STATE
                     ctx.intvariable.clear ();
                     ctx.loop.clear ();
                     ctx.bracketStack = stack <char> {};
-                    TRANSITION ("begin")
+                    
+                    if (ctx.looping)
+                    {
+                        TRANSITION ("begin")
+                        
+                    } else
+                    {
+                        removeFromParent (ctx);
+                    }
+                    
 //                    removeFromParent (ctx);
                 } else
                 {
@@ -1257,7 +1266,13 @@ struct STATE ("#{") : BASE_STATE
         transition<STATE ("#{} done")>(ctx);
     }
     virtual void reset_hasParent (Context& ctx){
-        removeFromParent (ctx);
+        if (ctx.looping)
+        {
+            TRANSITION ("begin");
+        } else
+        {
+            removeFromParent (ctx);
+        }
     }
     virtual string trans (){
         return "#{";
