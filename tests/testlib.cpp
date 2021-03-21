@@ -1,33 +1,6 @@
 #include "headers.hpp"
 
-#define CONTEXT(x) Context x{.parent = nullptr, .declaredVariables = variables, .state = new STATE ("begin")}
-#define VARIABLES(x) vector <pair <string, string>> x
 
-struct TestApp
-{
-    vector <pair <string, string>> variables;
-    
-    Context ctx
-    {
-        .parent = nullptr,
-        .declaredVariables = variables,
-        .state = new STATE ("begin")
-    };
-    
-    string process (string const& str)
-    {
-        for (auto i = str.begin(); i < str.end(); ++i)
-            ctx.process (i);
-        
-        return ctx.result;
-    }
-    
-    ~TestApp ()
-    {
-        ctx.result.clear ();
-    }
-    
-};
 
 TEST_CASE ("declpaste $(x){foo}")
 {
@@ -36,7 +9,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$(förnamn){Philip}"};
-            REQUIRE (TestApp{}.process(input) == "Philip");
+            REQUIRE (Cython{}.process_text(input) == "Philip");
         }
     }
     SECTION ("with spaces")
@@ -44,7 +17,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$  (förnamn)  {Philip}"};
-            REQUIRE (TestApp{}.process(input) == "Philip");
+            REQUIRE (Cython{}.process_text(input) == "Philip");
         }
     }
     SECTION ("with new lines")
@@ -52,7 +25,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$\n\n(förnamn)\n\n{Philip}"};
-            REQUIRE (TestApp{}.process(input) == "Philip");
+            REQUIRE (Cython{}.process_text(input) == "Philip");
         }
     }
 }
@@ -62,8 +35,13 @@ TEST_CASE ("decl @(x){foo}")
     {
         GIVEN ("input string")
         {
+            Cython app {};
             string input = {"@(förnamn){Philip}"};
-            REQUIRE (TestApp{}.process(input) == "");
+            REQUIRE (app.process_text(input) == "");
+            
+            auto [variable_name, variable_value] = app.get_variables ().front ();
+            REQUIRE (variable_name == "förnamn");
+            REQUIRE (variable_value == "Philip");
         }
     }
     SECTION ("with spaces")
@@ -71,7 +49,7 @@ TEST_CASE ("decl @(x){foo}")
         GIVEN ("input string")
         {
             string input = {"@  (förnamn)  {Philip}"};
-            REQUIRE (TestApp{}.process(input) == "");
+            REQUIRE (Cython{}.process_text(input) == "");
         }
     }
     SECTION ("with new lines")
@@ -79,7 +57,7 @@ TEST_CASE ("decl @(x){foo}")
         GIVEN ("input string")
         {
             string input = {"@\n\n(förnamn)\n\n{Philip}"};
-            REQUIRE (TestApp{}.process(input) == "");
+            REQUIRE (Cython{}.process_text(input) == "");
         }
     }
 }
@@ -90,7 +68,7 @@ TEST_CASE ("comment #{foo}")
         GIVEN ("input string")
         {
             string input = {"#{Philip}"};
-            REQUIRE (TestApp{}.process(input) == "");
+            REQUIRE (Cython{}.process_text(input) == "");
         }
     }
     SECTION ("white lines")
@@ -98,7 +76,7 @@ TEST_CASE ("comment #{foo}")
         GIVEN ("input string")
         {
             string input = {"#  {Philip}"};
-            REQUIRE (TestApp{}.process(input) == "");
+            REQUIRE (Cython{}.process_text(input) == "");
         }
     }
     SECTION ("with new lines")
@@ -106,7 +84,7 @@ TEST_CASE ("comment #{foo}")
         GIVEN ("input string")
         {
             string input = {"#\n\n{Philip}"};
-            REQUIRE (TestApp{}.process(input) == "");
+            REQUIRE (Cython{}.process_text(input) == "");
         }
     }
 }
@@ -119,7 +97,7 @@ TEST_CASE ("test loop $(0 x y){}")
             GIVEN ("input string")
             {
                 string input = "$(0 x 3){hej}";
-                REQUIRE (TestApp{}.process(input) == "hejhejhej");
+                REQUIRE (Cython{}.process_text(input) == "hejhejhej");
             }
         }
         SECTION ("with spaces")
@@ -127,7 +105,7 @@ TEST_CASE ("test loop $(0 x y){}")
             GIVEN ("input string")
             {
                 string input = "$  (0 x 3)  {hej}";
-                REQUIRE (TestApp{}.process(input) == "hejhejhej");
+                REQUIRE (Cython{}.process_text(input) == "hejhejhej");
             }
         }
         SECTION ("with new lines")
@@ -135,7 +113,7 @@ TEST_CASE ("test loop $(0 x y){}")
             GIVEN ("input string")
             {
                 string input = "$\n\n(0 x 3)\n\n{hej}";
-                REQUIRE (TestApp{}.process(input) == "hejhejhej");
+                REQUIRE (Cython{}.process_text(input) == "hejhejhej");
             }
         }
     }
@@ -144,8 +122,36 @@ TEST_CASE ("test loop $(0 x y){}")
         GIVEN ("input string")
         {
             string input = "$(0 x 3){hej${x}}";
-            REQUIRE (TestApp{}.process(input) == "hej0hej1hej2");
+            REQUIRE (Cython{}.process_text(input) == "hej0hej1hej2");
         }
+    }
+}
+TEST_CASE ("declpaste with paste")
+{
+    SECTION ("declare, then declpaste with a paste")
+    {
+        GIVEN ("a declared variable")
+        {
+            Cython app;
+            string input = "@ (last name) {Wenkel}";
+            REQUIRE (app.process_text (input) == "");
+            REQUIRE (app.get_variables().front().first == "last name");
+            REQUIRE (app.get_variables().front().second == "Wenkel");
+            
+            THEN ("declpaste a new variable")
+            {
+                WHEN ("also pasting the first variable inside the decleration")
+                {
+                    input += "$(philip ${last name}){en god människa}";
+//                    REQUIRE (Cython{}.process_text(input) == "en god människa");
+                }
+            }
+        }
+        
+    }
+    GIVEN ("input string")
+    {
+        string inpu = "@(namn)";
     }
 }
 
@@ -162,10 +168,10 @@ int main( int argc, char* argv[] ) {
         .declaredVariables = variables,
         .state = new STATE ("begin")
     };
-    cout << TestApp{}.process ("$(0 x 3){hej}") << endl;
+    cout << Cython{}.process_text ("$(0 x 3){hej}") << endl;
     
 //    string input = {"@(namn){Philip}"};
-//    cout << TestApp{}.process(input) << endl;
+//    cout << Cython{}.process_text(input) << endl;
 //
 //    return 0;
 //
@@ -177,7 +183,7 @@ int main( int argc, char* argv[] ) {
 //horans)V0G0N"};
 //
 //    for (auto i = inp.begin(); i < inp.end(); ++i)
-//        ctx.process (i);
+//        ctx.process_text (i);
     
     
     
