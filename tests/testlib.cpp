@@ -122,7 +122,22 @@ TEST_CASE ("test loop $(0 x y){}")
                 REQUIRE (TestApp{}.process(input) == "hejhejhej");
             }
         }
-        
+        SECTION ("with spaces")
+        {
+            GIVEN ("input string")
+            {
+                string input = "$  (0 x 3)  {hej}";
+                REQUIRE (TestApp{}.process(input) == "hejhejhej");
+            }
+        }
+        SECTION ("with new lines")
+        {
+            GIVEN ("input string")
+            {
+                string input = "$\n\n(0 x 3)\n\n{hej}";
+                REQUIRE (TestApp{}.process(input) == "hejhejhej");
+            }
+        }
     }
     SECTION ("using loop variable in plain text")
     {

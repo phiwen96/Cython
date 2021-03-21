@@ -313,6 +313,9 @@ struct STATE ("$(x ") : BASE_STATE
         if (isnumber (*i))
         {
             throw runtime_error ("");
+        } else if (*i == ' ')
+        {
+            
         } else
         {
             ctx.intvariable += *i;
@@ -372,6 +375,9 @@ struct STATE ("$(x var ") : BASE_STATE
         {
             ctx.secondint += *i;
             TRANSITION ("$(x var y")
+        } else if (*i == ' ')
+        {
+            
         } else
         {
             if (hasParent (ctx))
@@ -464,7 +470,14 @@ struct STATE ("$(x var y)") : BASE_STATE
         {
             ctx.bracketStack.push ('{');
             TRANSITION ("$(x var y){")
-        } else
+        } else if (*i == ' ')
+        {
+            
+        } else if (*i == '\n')
+        {
+
+            
+        }else
         {
             if (hasParent (ctx))
             {
