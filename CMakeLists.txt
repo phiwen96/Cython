@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.19.4)
 
 project (
-	ph_macros
+	Cython
 	VERSION 1.0
 	DESCRIPTION "Very nice project"
 	LANGUAGES CXX
@@ -9,6 +9,8 @@ project (
 
 
 add_subdirectory (cmake/phake)
+add_subdirectory (dependencies/const_str)
+add_subdirectory (dependencies/ph_type_list)
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	
