@@ -369,23 +369,29 @@ TEST_CASE ("declpasting")
         {
             SECTION ("as first number")
             {
-                
+//                input = "$($(variable){0} x 3){hej${x}}";
+//                
+//                get_result
+//                get_nr_of_variables
+//                auto [name_0, value_0] = app.get_variables()[0];
+//                
+//                REQUIRE (result == "hej0hej1hej2");
+//                REQUIRE (nr_of_variables == 1);
+//                REQUIRE (name_0 == "variable");
+//                REQUIRE (value_0 == "x");
             }
             SECTION ("as loop variable")
             {
-                input = "$(0 $(variable){x} 3){hej}";
+                input = "$(0 $(variable){x} 3){hej${variable}}";
                 
                 get_result
                 get_nr_of_variables
                 auto [name_0, value_0] = app.get_variables()[0];
-//                auto [name_1, value_1] = app.get_variables()[1];
                 
-                REQUIRE (result == "hejhejhej");
-//                REQUIRE (nr_of_variables == 1);
+                REQUIRE (result == "hejxhejxhejx");
+                REQUIRE (nr_of_variables == 1);
                 REQUIRE (name_0 == "variable");
                 REQUIRE (value_0 == "x");
-//                REQUIRE (name_1 == "Philip Wenkel");
-//                REQUIRE (value_1 == "is the best");
             }
             SECTION ("as second number")
             {
@@ -512,6 +518,10 @@ TEST_CASE ("declpaste with paste")
  todo
  "@(last namn) {Wenkel}${last namn}"
  fix so that one space between }$ works as non, } $
+ 
+ 
+ "$(0 $(variable){x} 3){hej${variable}}"
+ let ${${variable}} bli till loop siffran
  */
 
 int main( int argc, char* argv[] ) {
