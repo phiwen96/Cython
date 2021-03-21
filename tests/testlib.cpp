@@ -158,19 +158,23 @@ TEST_CASE ("declpaste with paste")
 }
 
 
-
+/**
+ todo
+ "@(last namn) {Wenkel}${last namn}"
+ fix so that one space between }$ works as non, } $
+ */
 
 int main( int argc, char* argv[] ) {
  
     
-    Cython app {};
-    cout << app.process_text ("@(last namn) {Wenkel}${last namn}") << endl;
-    auto [variable_name, variable_value] = app.get_variables().front();
-    cout << "name:" << variable_name << endl;
-    cout << "value:" << variable_value << endl;
-//    cout << app.process_text ("${last namn}") << endl;
-//    cout << app.process_text("@(last namn){Wenkel} $(philip ${last name}){en god människa}") << endl;
-    return 0;
+//    Cython app {};
+//    app.process_text ("@(last namn) {Wenkel}$(name){Philip ${last namn}}");
+//    auto [variable_name, variable_value] = app.get_variables().front();
+//    cout << "name:" << variable_name << endl;
+//    cout << "value:" << variable_value << endl;
+////    cout << app.process_text ("${last namn}") << endl;
+////    cout << app.process_text("@(last namn){Wenkel} $(philip ${last name}){en god människa}") << endl;
+//    return 0;
     
 //    return 0;
 //    cout << Cython{}.process_text ("$(0 x 3){hej}") << endl;

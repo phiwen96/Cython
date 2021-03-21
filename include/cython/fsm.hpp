@@ -645,11 +645,12 @@ struct STATE ("${") : BASE_STATE
             {
 //                cout << d.first << endl;
 //                cout << ctx.variable << endl;
-                if (d.first == ctx.variable) {
+                if (d.first == ctx.variable)
+                {
                     
 //                    return d->second;
 //                    cout << "::" << d->second << endl;
-                    if (hasParent(ctx))
+                    if (hasParent (ctx))
                     {
 //                        cout << "kuk::${" << endl;
                         BASE_STATE::addResultFromChild (d.second, ctx);
@@ -658,8 +659,8 @@ struct STATE ("${") : BASE_STATE
                         value(ctx).clear();
                         variable(ctx).clear();
                         paste(ctx).clear();
-//                        removeFromParent (ctx);
-                        TRANSITION ("done")
+                        removeFromParent (ctx);
+//                        TRANSITION ("done")
                     } else {
                         
                         result(ctx) += d.second;
@@ -670,7 +671,7 @@ struct STATE ("${") : BASE_STATE
                         value(ctx).clear();
                         variable(ctx).clear();
                         paste(ctx).clear();
-//                        cout << ctx.variable << endl;
+                        cout << ctx.variable << endl;
                         TRANSITION ("done")
                     }
                     return;
@@ -991,7 +992,7 @@ struct STATE ("$(){") : BASE_STATE
                 variable (ctx).clear();
                 value (ctx).clear();
                 potential (ctx).clear();
-                ctx.bracketStack = stack <char> {};
+//                ctx.bracketStack = stack <char> {};
 //                removeFromParent(ctx);
 //                TRANSITION ("begin")
             } else {
@@ -999,7 +1000,7 @@ struct STATE ("$(){") : BASE_STATE
                 variable (ctx).clear();
                 value (ctx).clear();
                 potential (ctx).clear();
-                ctx.bracketStack = stack <char> {};
+//                ctx.bracketStack = stack <char> {};
 //                TRANSITION ("done")
             }
             TRANSITION ("done")
@@ -1023,11 +1024,11 @@ struct STATE ("$(){") : BASE_STATE
 
         } else if (*i == '@')
         {
-            addChildContext <STATE ("@")> (ctx).potential = '@';
+            addChildContext <STATE ("@")> (ctx).potential = *i;
 
         } else if (*i == '#')
         {
-            addChildContext <STATE ("#")> (ctx).potential = '#';
+            addChildContext <STATE ("#")> (ctx).potential = *i;
 
         } else
         {
@@ -1039,6 +1040,7 @@ struct STATE ("$(){") : BASE_STATE
     virtual void addResultFromChild (string const& res, Context& ctx){
         value (ctx) += res;
 //        cout << "kuk::$(){" << endl;
+//        cout << res << endl;
 //        throw runtime_error ("oops");
     }
     
