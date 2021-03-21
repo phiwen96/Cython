@@ -126,6 +126,29 @@ TEST_CASE ("test loop $(0 x y){}")
         }
     }
 }
+TEST_CASE ("nested pastes")
+{
+    GIVEN ("a declared variable")
+    {
+        string input = "@ (last name) {Wenkel}";
+        
+        AND_GIVEN ("another declared variable")
+        {
+            input += "@ (j) {name}";
+            
+            THEN ("use a nested paste to paste the first variable")
+            {
+                input += "$ {last ${j}}";
+                
+                REQUIRE (input == "@ (last name) {Wenkel}@ (j) {name}$ {last ${j}}");
+                
+                Cython app {};
+                
+                REQUIRE (app.process_text(input) == "Wenkel");
+            }
+        }
+    }
+}
 TEST_CASE ("declpaste with paste")
 {
     SECTION ("declare, then declpaste with a paste")
@@ -168,7 +191,7 @@ int main( int argc, char* argv[] ) {
  
     
 //    Cython app {};
-//    app.process_text ("@(last namn) {Wenkel}$(name){Philip ${last namn}}");
+//    cout << app.process_text ("@(j){name}@(last name) {Wenkel}$(name){Philip ${last ${j}}}") << endl;
 //    auto [variable_name, variable_value] = app.get_variables().front();
 //    cout << "name:" << variable_name << endl;
 //    cout << "value:" << variable_value << endl;
