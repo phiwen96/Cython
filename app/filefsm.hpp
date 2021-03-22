@@ -1,5 +1,7 @@
 #pragma once
 using namespace std;
+#include "common.hpp"
+
 
 #define PROCESS process (filesystem::path const& path, Context& ctx)
 
@@ -19,15 +21,43 @@ using namespace std;
 
 
 struct type {
-    struct file;
-    struct folder;
+    struct file
+    {
+        
+    };
+    struct folder
+    {
+        
+    };
 };
 
 struct existance {
 //    inline static constexpr bool yes = true;
 //    inline static constexpr bool no = true;
-    struct yes;
-    struct no;
+    template <class... T>
+    struct yes : T...
+    {
+        yes (){}
+        yes (filesystem::path const& path) : T(path)... {
+            if constexpr (sizeof... (T) == 0)
+            {
+                THROW_PATH_DOES_NOT_EXIST
+            }
+        }
+    };
+    
+    template <class... T>
+    struct no : T...
+    {
+        no (){}
+        no (filesystem::path const& path) : T(path)... {
+            if constexpr (sizeof... (T) == 0)
+            {
+                THROW_PATH_ALREADY_EXISTS
+            }
+        }
+    };
+    
 };
 
 
@@ -63,14 +93,15 @@ struct Context
 //    }
 };
 
-template <>
-struct State <existance::yes>
+
+template <class... T>
+struct State <existance::yes <T...>>
 {
     State (filesystem::path const& path);
 };
 
-template <>
-struct State <existance::no>
+template <class... T>
+struct State <existance::no <T...>>
 {
     State (filesystem::path const& path);
 };
@@ -91,24 +122,24 @@ struct State <exist, type::folder>
 
 
 
-
-State<existance::yes>::State (filesystem::path const& path)
+template <class... T>
+State<existance::yes <T...>>::State (filesystem::path const& path)
 {
     if (not PATH_EXISTS)
     {
-        THROW_PATH_DOES_NOT_EXIST
+        existance::yes <T...> f (path);
     }
     
     if (IS_DIRECTORY)
     {
 //        ctx.transition <existance::yes, type::folder> ();¨
-        State <existance::yes, type::folder> s (path);
+        State <existance::yes <T...>, type::folder> s (path);
         delete this;
         
     } else if (IS_FILE)
     {
 //        ctx.transition <existance::yes, type::file> ();
-        State <existance::yes, type::file> s (path);
+        State <existance::yes <T...>, type::file> s (path);
         
     } else
     {
@@ -117,8 +148,8 @@ State<existance::yes>::State (filesystem::path const& path)
 }
 
 
-
-State<existance::no>::State (filesystem::path const& path)
+template <class... T>
+State<existance::no <T...>>::State (filesystem::path const& path)
 {
     if (PATH_EXISTS)
     {
@@ -127,11 +158,11 @@ State<existance::no>::State (filesystem::path const& path)
     
     if (IS_DIRECTORY)
     {
-        State <existance::no, type::folder> s (path);
+        State <existance::no <T...>, type::folder> s (path);
 
     } else if (IS_FILE)
     {
-        State <existance::no, type::file> s (path);
+        State <existance::no <T...>, type::file> s (path);
 
     } else
     {
@@ -142,7 +173,14 @@ State<existance::no>::State (filesystem::path const& path)
 template <class exist>
 State <exist, type::file>::State (filesystem::path const& path)
 {
-    
+//    string input = readFileIntoString (inputPath);
+//        ofstream outputFile (outputPath);
+//
+//        if (!outputFile.is_open ())
+//            throw runtime_error ("could not open file " + outputPath.string());
+//
+//        outputFile << p.process (input);
+//        outputFile.close ();
 }
 
 template <class exist>

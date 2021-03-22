@@ -17,13 +17,23 @@ auto main (int argc,  char** argv) -> int
         
     
     
-    
+    struct file_does_not_exist
+    {
+        file_does_not_exist ()
+        {
+            
+        }
+        file_does_not_exist (filesystem::path const& path)
+        {
+            throw runtime_error ("path does not exist");
+        }
+    };
     
     
     
     auto [input_file, output_files] = inputfsm (argc, argv);
     
-    filefsm <existance::yes> f (input_file);
+    filefsm <existance::yes <file_does_not_exist>> f ("hej");
     
     
     
