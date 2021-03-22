@@ -19,7 +19,7 @@ template <class>
 struct InputPathErrorHandler;
 
 template <>
-struct InputPathErrorHandler <path_error_tags::must_exist>
+struct InputPathErrorHandler <tag::error::path::must_exist>
 {
     static void error (filesystem::path const& path)
     {
@@ -32,7 +32,7 @@ template <class>
 struct OutputPathErrorHandler;
 
 template <>
-struct OutputPathErrorHandler <path_error_tags::must_not_exist>
+struct OutputPathErrorHandler <tag::error::path::must_not_exist>
 {
     static void error (filesystem::path const& path)
     {
@@ -66,16 +66,17 @@ struct OutputFileTypeErrorHandler
 
 
 
-template <class, class...>
+template <class...>
 struct InputPathHandler;
 
 template <class... Mixins>
-struct InputPathHandler <filetype::file, Mixins...> : Mixins...
+struct InputPathHandler <tag::file_type::file, Mixins...> : Mixins...
 {
     string text;
     
     InputPathHandler (filesystem::path const& path) : text (readFileIntoString(path)), Mixins {path}...
     {
+        cout << "FILE" << endl;
         cout << text << endl;
     }
 };
@@ -83,14 +84,15 @@ struct InputPathHandler <filetype::file, Mixins...> : Mixins...
 
 
 
+
 template <class... Mixins>
-struct InputPathHandler <filetype::folder, Mixins...> : Mixins...
+struct InputPathHandler <tag::file_type::folder, Mixins...> : Mixins...
 {
     
     
     InputPathHandler (filesystem::path const& path) : Mixins {path}...
     {
-        
+        cout << "FOLDER" << endl;
     }
 };
 
@@ -124,10 +126,19 @@ struct does_not_exist
 };
 
 #if defined (Debug)
+#define AS_FILE
+
+
 auto main (int,  char**) -> int
 {
     int argc = 5;
-    char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/GitHub/phan/tests/test_phan_app/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/GitHub/phan/tests/test_phan_app/testFiles_post/1.hpp"}};
+#if defined (AS_FILE)
+    char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}};
+#else
+    char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFolders_pre/&(root){philips bibliotek}"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFolders_pre/&(root){philips bibliotek}"}};
+#endif
+    
+    
     
 #elif defined (Release)
 auto main (int argc,  char** argv) -> int
@@ -141,17 +152,21 @@ auto main (int argc,  char** argv) -> int
     
 //    path_error::must_exist <InputPathErrorHandler> a;
     
-    auto [input_file, output_files] = inputfsm (argc, argv);
-    constexpr bool existance = 0;
+    auto [input_path, output_paths] = inputfsm (argc, argv);
     
     
     
     
-    using input_reader = filefsm <InputPathHandler, path_error_tags::must_exist, InputPathErrorHandler, file_error_tags::can_be_any, InputFileTypeErrorHandler>;
-    input_reader reader (input_file);
     
     
-    reader.yeah(input_file, type_list <int, char> {}, type_list <string, int> {});
+    using input_reader = system_file_path_checker <InputPathHandler, tag::error::path::must_exist, InputPathErrorHandler, tag::error::file_type::can_be_any, InputFileTypeErrorHandler>;
+//    using input_file_handler_mixins =
+    input_reader reader (input_path, type_list <int, char> {}, type_list <string, int> {});
+    
+    
+    
+    
+//    reader.yeah(input_file, type_list <int, char> {}, type_list <string, int> {});
     
     
     /**

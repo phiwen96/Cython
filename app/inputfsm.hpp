@@ -99,5 +99,15 @@ struct inputfsm
         
         input = ctx.input;
         outputs = ctx.outputs;
+        
+        if (input.empty ())
+        {
+            throw runtime_error ("input path not given");
+        }
+        
+        if (outputs.empty ())
+        {
+            throw runtime_error ("no output paths where given");
+        }
     }
 };

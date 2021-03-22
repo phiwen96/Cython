@@ -32,59 +32,88 @@ struct filetype {
     };
 };
 
-struct file_error_tags
+//struct tag::error::file_type
+//{
+//    struct must_be_file
+//    {
+//
+//    };
+//    struct must_be_folder
+//    {
+//
+//    };
+//    struct can_be_any
+//    {
+//
+//    };
+//};
+
+
+
+
+struct tag
 {
-    struct must_be_file
+    struct file_type
     {
+        struct file
+        {
+            
+        };
         
+        struct folder
+        {
+            
+        };
     };
-    struct must_be_folder
-    {
-        
-    };
-    struct can_be_any
-    {
-        
-    };
-};
-
-struct path_error_tags {
-    struct must_exist;
-    struct must_not_exist;
-};
-
-
-template <template <class...> class SuccessHandler, class PathErrorTag, template <class...> class PathErrorHandler, class FileErrorTag, template <class...> class FileTypeErrorHandler>
-requires requires (filesystem::path const& path) {
-    is_same_v <PathErrorTag, path_error_tags::must_exist> or is_same_v <PathErrorTag, path_error_tags::must_not_exist>;
-    is_same_v <FileErrorTag, file_error_tags::must_be_file> or is_same_v <FileErrorTag, file_error_tags::must_be_folder> or is_same_v <FileErrorTag, file_error_tags::can_be_any>;
     
-    PathErrorHandler <PathErrorTag>::error (path);
-    SuccessHandler <filetype::file> {path};
-    SuccessHandler <filetype::folder> {path};
+    struct error
+    {
+        struct path
+        {
+            struct must_exist;
+            struct must_not_exist;
+        };
+        
+        struct file_type
+        {
+            struct must_be_file;
+            struct must_be_folder;
+            struct can_be_any;
+        };
+    };
+};
+
+
+template <template <class...> class SuccessHandler, class tag_error_path, template <class...> class PathErrorHandler, class tag_error_file_type, template <class...> class FileTypeErrorHandler>
+requires requires (filesystem::path const& path) {
+    is_same_v <tag_error_path, tag::error::path::must_exist> or is_same_v <tag_error_path, tag::error::path::must_not_exist>;
+    is_same_v <tag_error_file_type, tag::error::file_type::must_be_file> or is_same_v <tag_error_file_type, tag::error::file_type::must_be_folder> or is_same_v <tag_error_file_type, tag::error::file_type::can_be_any>;
+    
+    PathErrorHandler <tag_error_path>::error (path);
+    SuccessHandler <tag::file_type::file> {path};
+    SuccessHandler <tag::file_type::folder> {path};
 }
 struct Info
 {
-    inline static constexpr bool path_must_exist = is_same_v <PathErrorTag, path_error_tags::must_exist>;
-    inline static constexpr bool path_must_not_exist = is_same_v <PathErrorTag, path_error_tags::must_not_exist>;
+    inline static constexpr bool path_must_exist = is_same_v <tag_error_path, tag::error::path::must_exist>;
+    inline static constexpr bool path_must_not_exist = is_same_v <tag_error_path, tag::error::path::must_not_exist>;
     
-    inline static constexpr bool must_be_file = is_same_v <FileErrorTag, file_error_tags::must_be_file>;
-    inline static constexpr bool must_be_folder = is_same_v <FileErrorTag, file_error_tags::must_be_folder>;
-    inline static constexpr bool can_be_any = is_same_v <FileErrorTag, file_error_tags::can_be_any>;
+    inline static constexpr bool must_be_file = is_same_v <tag_error_file_type, tag::error::file_type::must_be_file>;
+    inline static constexpr bool must_be_folder = is_same_v <tag_error_file_type, tag::error::file_type::must_be_folder>;
+    inline static constexpr bool can_be_any = is_same_v <tag_error_file_type, tag::error::file_type::can_be_any>;
     
-//    using file_type = conditional_t <must_be_file, filetype::file, conditional_t <must_be_folder, filetype::folder, <#class _Then#>>>
+//    using file_type = conditional_t <must_be_file, tag::file_type::file, conditional_t <must_be_folder, tag::file_type::folder, <#class _Then#>>>
     
     
     template <class... T, class... U, class... V>
     static void process (filesystem::path const& path, type_list <T...> sucessHandlerMixins = type_list <> {}, type_list <U...> pathErrorHandlerMixins = type_list <> {}, type_list <V...> fileTypeErrorHandlerMixins = type_list <> {})
     {
         
-        using path_error_handler = PathErrorHandler <PathErrorTag, U...>;
-        using file_type_error_handler = FileTypeErrorHandler <FileErrorTag, V...>;
+        using path_error_handler = PathErrorHandler <tag_error_path, U...>;
+        using file_type_error_handler = FileTypeErrorHandler <tag_error_file_type, V...>;
     
         if constexpr (path_must_exist)
         {
-            using bajs = int;
             if (not PATH_EXISTS)
             {
 //                type_list <T...>::
@@ -106,7 +135,7 @@ struct Info
                 file_type_error_handler::error (path);
             }
             
-            SuccessHandler<filetype::file, T...> {path};
+            SuccessHandler<tag::file_type::file, T...> {path};
             
         } else if constexpr (must_be_folder)
         {
@@ -115,17 +144,17 @@ struct Info
                 file_type_error_handler::error (path);
             }
             
-            SuccessHandler<filetype::folder, T...> {path};
-        }
-        else if constexpr (can_be_any)
+            SuccessHandler<tag::file_type::folder, T...> {path};
+            
+        } else if constexpr (can_be_any)
         {
             if (IS_FILE)
             {
-                SuccessHandler<filetype::file, T...> {path};
+                SuccessHandler<tag::file_type::file, T...> {path};
                 
             } else if (IS_DIRECTORY)
             {
-                SuccessHandler<filetype::folder, T...> {path};
+                SuccessHandler<tag::file_type::folder, T...> {path};
                 
             } else
             {
@@ -142,23 +171,15 @@ struct Info
 
 
 
-template <template <class...> class SuccessHandler, class PathErrorTag, template <class...> class PathErrorHandler, class FileErrorTag, template <class...> class FileTypeErrorHandler>
-struct filefsm
+template <template <class...> class SuccessHandler, class tag_error_path, template <class...> class PathErrorHandler, class tag_error_file_type, template <class...> class FileTypeErrorHandler>
+struct system_file_path_checker
 {
-//    file::Impl <>* Impl;
-    
-    filefsm (filesystem::path const& path)
-    {
-        
-        Info <SuccessHandler, PathErrorTag, PathErrorHandler, FileErrorTag, FileTypeErrorHandler>::process (path);
-    }
-    
     
     template <class... T, class... U, class... V>
-    static void yeah (filesystem::path const& path, type_list <T...> sucessHandlerMixins = type_list <> {}, type_list <U...> pathErrorHandlerMixins = type_list <> {}, type_list <V...> fileTypeErrorHandlerMixins = type_list <> {})
+    system_file_path_checker (filesystem::path const& path, type_list <T...> sucessHandlerMixins = type_list <> {}, type_list <U...> pathErrorHandlerMixins = type_list <> {}, type_list <V...> fileTypeErrorHandlerMixins = type_list <> {})
     {
-        Info <SuccessHandler, PathErrorTag, PathErrorHandler, FileErrorTag, FileTypeErrorHandler>::process (path);
+        
+        Info <SuccessHandler, tag_error_path, PathErrorHandler, tag_error_file_type, FileTypeErrorHandler>::process (path);
     }
-    
     
 };
