@@ -31,11 +31,17 @@ auto main (int argc,  char** argv) -> int
     
     
     
+    
     auto [input_file, output_files] = inputfsm (argc, argv);
     
-    filefsm <existance::yes <file_does_not_exist>> f ("hej");
+    filefsm <existance::yes <file_does_not_exist>> f (input_file);
     
     
+    /**
+     takes existance::yes<type> where type constructor const(filesystem::path const&) is called if file does not exist
+     takes existance::no<type> where type constructor const(filesystem::path const&) is called if file exists
+
+     */
     
     
     

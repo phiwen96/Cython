@@ -94,52 +94,53 @@ struct Context
 };
 
 
-template <class... T>
-struct State <existance::yes <T...>>
+template <class Error, class... Mixins>
+struct State <existance::yes <Error>, Mixins...>
 {
     State (filesystem::path const& path);
 };
 
-template <class... T>
-struct State <existance::no <T...>>
-{
-    State (filesystem::path const& path);
-};
-
-
-
-template <class exist>
-struct State <exist, type::file>
-{
-    State (filesystem::path const& path);
-};
-
-template <class exist>
-struct State <exist, type::folder>
+template <class Error, class... Mixins>
+struct State <existance::no <Error>, Mixins...>
 {
     State (filesystem::path const& path);
 };
 
 
 
-template <class... T>
-State<existance::yes <T...>>::State (filesystem::path const& path)
+template <class... Mixins>
+struct State <type::file, Mixins...>
+{
+    State (filesystem::path const& path);
+};
+
+template <class... Mixins>
+struct State <type::folder, Mixins...>
+{
+    State (filesystem::path const& path);
+};
+
+
+
+template <class Error, class... Mixins>
+State<existance::yes <Error>, Mixins...>::State (filesystem::path const& path)
 {
     if (not PATH_EXISTS)
     {
-        existance::yes <T...> f (path);
+        existance::yes <Error> f (path);
     }
     
     if (IS_DIRECTORY)
     {
-//        ctx.transition <existance::yes, type::folder> ();¨
-        State <existance::yes <T...>, type::folder> s (path);
-        delete this;
+//        ctx.transition <existance::yes, type::folder> ();
+        State <type::folder, Mixins...> s (path);
+//        delete this;
         
     } else if (IS_FILE)
     {
+        State <type::file, Mixins...> s (path);
 //        ctx.transition <existance::yes, type::file> ();
-        State <existance::yes <T...>, type::file> s (path);
+//        State <existance::yes <T...>, type::file> s (path);
         
     } else
     {
@@ -148,8 +149,8 @@ State<existance::yes <T...>>::State (filesystem::path const& path)
 }
 
 
-template <class... T>
-State<existance::no <T...>>::State (filesystem::path const& path)
+template <class Error, class... Mixins>
+State<existance::no <Error>, Mixins...>::State (filesystem::path const& path)
 {
     if (PATH_EXISTS)
     {
@@ -158,11 +159,13 @@ State<existance::no <T...>>::State (filesystem::path const& path)
     
     if (IS_DIRECTORY)
     {
-        State <existance::no <T...>, type::folder> s (path);
+        State <type::folder, Mixins...> s (path);
+//        State <existance::no <T...>, type::folder> s (path);
 
     } else if (IS_FILE)
     {
-        State <existance::no <T...>, type::file> s (path);
+        State <type::file, Mixins...> s (path);
+//        State <existance::no <T...>, type::file> s (path);
 
     } else
     {
@@ -170,8 +173,10 @@ State<existance::no <T...>>::State (filesystem::path const& path)
     }
 }
 
-template <class exist>
-State <exist, type::file>::State (filesystem::path const& path)
+
+
+template <class... Mixins>
+State <type::file, Mixins...>::State (filesystem::path const& path)
 {
 //    string input = readFileIntoString (inputPath);
 //        ofstream outputFile (outputPath);
@@ -183,8 +188,8 @@ State <exist, type::file>::State (filesystem::path const& path)
 //        outputFile.close ();
 }
 
-template <class exist>
-State <exist, type::folder>::State (filesystem::path const& path)
+template <class... Mixins>
+State <type::folder, Mixins...>::State (filesystem::path const& path)
 {
     
 }
