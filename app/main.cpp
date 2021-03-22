@@ -13,36 +13,36 @@ using namespace std;
 //
 //};
 
-template <template <template <class> class> class ExistanceError, class FiltypeError>
-struct FileError;
+template <class>
+struct FileError{};
 
 
 template <>
-struct FileError <existance_error::must_exist, filetype_error::any_type>
+struct FileError <existance_error::must_exist>
 {
     FileError (filesystem::path const& path)
     {
-        
+
     }
 };
 
-template <>
-struct FileError <existance_error::must_not_exist, filetype_error::must_be_file>
-{
-    FileError (filesystem::path const& path)
-    {
-        
-    }
-};
-
-template <>
-struct FileError <existance_error::must_not_exist, filetype_error::must_be_folder>
-{
-    FileError (filesystem::path const& path)
-    {
-        
-    }
-};
+//template <>
+//struct FileError <existance_error::must_not_exist, filetype_error::must_be_file>
+//{
+//    FileError (filesystem::path const& path)
+//    {
+//
+//    }
+//};
+//
+//template <>
+//struct FileError <existance_error::must_not_exist, filetype_error::must_be_folder>
+//{
+//    FileError (filesystem::path const& path)
+//    {
+//
+//    }
+//};
 
 
 
@@ -66,15 +66,16 @@ auto main (int argc,  char** argv) -> int
     
     
     
-
+//    FileError<existance_error::must_exist> aa ;
+    existance_error::must_exist::error<FileError>("hej");
     
-    
-    
+//    existance_error::must_exist <FileError> a;
     
     auto [input_file, output_files] = inputfsm (argc, argv);
     
     constexpr bool existance = 0;
-    filefsm <existance_error::must_exist <does_not_exist>, filetype_error::any_type> f ("hej");
+    
+//    filefsm <existance_error::must_exist> f ("hej");
     
     
     /**
