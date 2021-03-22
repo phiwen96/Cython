@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.19.4)
 
 project (
-	Cython
+	cython
 	VERSION 1.0
 	DESCRIPTION "Very nice project"
 	LANGUAGES CXX
