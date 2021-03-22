@@ -11,6 +11,8 @@ project (
 add_subdirectory (cmake/phake)
 add_subdirectory (dependencies/const_str)
 add_subdirectory (dependencies/ph_type_list)
+add_subdirectory (dependencies/ph_system_file_path_checker)
+
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	

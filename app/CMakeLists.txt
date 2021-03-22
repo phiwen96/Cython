@@ -12,8 +12,8 @@ foreach (file ${HEADER_LIST})
 endforeach ()
 
 set_target_properties(${self} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-target_include_directories (${self} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS} Catch2::Catch2 ${PROJECT_NAME} ph_type_list const_str)
-target_link_libraries (${self} PRIVATE ${PROJECT_NAME} ph_type_list const_str Catch2::Catch2 ${Boost_LIBRARIES})
+target_include_directories (${self} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS} Catch2::Catch2 ${PROJECT_NAME} ph_system_file_path_checker ph_type_list const_str)
+target_link_libraries (${self} PRIVATE ${PROJECT_NAME} ph_system_file_path_checker ph_type_list const_str Catch2::Catch2 ${Boost_LIBRARIES})
 ph_precompile (TARGET ${self} PRIVATE PCH ${std_pch} ${catch_pch} ${boost_pch})
 target_compile_definitions (${self} PRIVATE $<$<CONFIG:Debug>:Debug> $<$<CONFIG:Release>:Release> $<$<CONFIG:Kuk>:Kuk>)
 
