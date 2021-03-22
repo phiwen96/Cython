@@ -71,26 +71,31 @@ struct Info
     inline static constexpr bool must_be_file = is_same_v <FileErrorTag, file_error_tags::must_be_file>;
     inline static constexpr bool must_be_folder = is_same_v <FileErrorTag, file_error_tags::must_be_folder>;
     inline static constexpr bool can_be_any = is_same_v <FileErrorTag, file_error_tags::can_be_any>;
-
+    
+//    using file_type = conditional_t <must_be_file, filetype::file, conditional_t <must_be_folder, filetype::folder, <#class _Then#>>>
     
     
     template <class... T, class... U, class... V>
     static void process (filesystem::path const& path, type_list <T...> sucessHandlerMixins = type_list <> {}, type_list <U...> pathErrorHandlerMixins = type_list <> {}, type_list <V...> fileTypeErrorHandlerMixins = type_list <> {})
     {
+        
+        using path_error_handler = PathErrorHandler <PathErrorTag, U...>;
+        using file_type_error_handler = FileTypeErrorHandler <FileErrorTag, V...>;
+    
         if constexpr (path_must_exist)
         {
-            
+            using bajs = int;
             if (not PATH_EXISTS)
             {
 //                type_list <T...>::
-                PathErrorHandler<PathErrorTag>::error(path);
+                path_error_handler::error(path);
             }
             
         } else if constexpr (path_must_not_exist)
         {
             if (PATH_EXISTS)
             {
-                PathErrorHandler<PathErrorTag>::error (path);
+                path_error_handler::error (path);
             }
         }
        
@@ -98,19 +103,26 @@ struct Info
         {
             if (not IS_FILE)
             {
-                
+                file_type_error_handler::error (path);
             }
+            
+            SuccessHandler<filetype::file, T...> {path};
+            
         } else if constexpr (must_be_folder)
         {
             if (not IS_DIRECTORY)
             {
-
+                file_type_error_handler::error (path);
             }
+            
+            SuccessHandler<filetype::folder, T...> {path};
         }
         else if constexpr (can_be_any)
         {
             
         }
+        
+//        using success_handler = SuccessHandler <class>
     }
 };
 
