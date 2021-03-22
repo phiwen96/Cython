@@ -18,7 +18,7 @@ template <class>
 struct InputPathErrorHandler;
 
 template <>
-struct InputPathErrorHandler <path_error::must_exist>
+struct InputPathErrorHandler <path_constraint::must_exist>
 {
     InputPathErrorHandler (filesystem::path const& path)
     {
@@ -30,7 +30,7 @@ template <class>
 struct OutputPathErrorHandler;
 
 template <>
-struct OutputPathErrorHandler <path_error::must_not_exist>
+struct OutputPathErrorHandler <path_constraint::must_not_exist>
 {
     OutputPathErrorHandler (filesystem::path const& path)
     {
@@ -116,7 +116,7 @@ auto main (int argc,  char** argv) -> int
     constexpr bool existance = 0;
     
     
-    using input_reader = filefsm <path_error::must_exist, InputPathErrorHandler, InputPathHandler>;
+    using input_reader = filefsm <path_constraint::must_exist, InputPathErrorHandler, InputPathHandler>;
     input_reader reader (input_file);
     
     

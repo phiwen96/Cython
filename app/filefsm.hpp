@@ -47,7 +47,7 @@ struct filetype_error
     };
 };
 
-struct path_error {
+struct path_constraint {
 //    inline static constexpr bool yes = true;
 //    inline static constexpr bool no = true;
     struct must_exist
@@ -112,7 +112,7 @@ struct Context
 
 template <class PathError, template <class> class PathErrorHandler, template <class> class SuccessHandler>
 requires requires (filesystem::path const& path) {
-    is_same_v <PathError, path_error::must_exist> or is_same_v <PathError, path_error::must_not_exist>;
+    is_same_v <PathError, path_constraint::must_exist> or is_same_v <PathError, path_constraint::must_not_exist>;
     
     PathErrorHandler <PathError> {path};
     SuccessHandler <filetype::file> {path};
@@ -120,8 +120,8 @@ requires requires (filesystem::path const& path) {
 }
 struct Info
 {
-    inline static constexpr bool must_exist = is_same_v <PathError, path_error::must_exist>;
-    inline static constexpr bool must_not_exist = is_same_v <PathError, path_error::must_not_exist>;
+    inline static constexpr bool must_exist = is_same_v <PathError, path_constraint::must_exist>;
+    inline static constexpr bool must_not_exist = is_same_v <PathError, path_constraint::must_not_exist>;
 
     
     Info (filesystem::path const& path)
@@ -130,14 +130,14 @@ struct Info
         {
             if (not PATH_EXISTS)
             {
-                path_error::must_exist::error<PathErrorHandler> (path);
+                path_constraint::must_exist::error<PathErrorHandler> (path);
             }
             
         } else if constexpr (must_not_exist)
         {
             if (PATH_EXISTS)
             {
-                path_error::must_exist::error<PathErrorHandler> (path);
+                path_constraint::must_exist::error<PathErrorHandler> (path);
             }
         }
        
@@ -168,13 +168,13 @@ struct Info
 
 
 //template <template <template <template <template <template <class> class> class ExistanceError, class FiltypeError> class> class Error2> class Error>
-//struct Info //<path_error::must_exist <Error>>
+//struct Info //<path_constraint::must_exist <Error>>
 //{
 //    Info (filesystem::path const& path);
 //};
 //
 //template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
-//struct Info <path_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>
+//struct Info <path_constraint::must_not_exist <ExistanceError>, FiletypeError, Mixins...>
 //{
 //    Info (filesystem::path const& path);
 //};
@@ -197,13 +197,13 @@ struct Info
 
 
 //template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
-//Info<path_error::must_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
+//Info<path_constraint::must_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
 //{
 //
 //
 //    if (not PATH_EXISTS)
 //    {
-//        path_error::must_exist <ExistanceError>::error (path);
+//        path_constraint::must_exist <ExistanceError>::error (path);
 ////        existance::must_exist <Error> f (path);
 //    }
 //
@@ -227,7 +227,7 @@ struct Info
 //
 //
 //template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
-//Info<path_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
+//Info<path_constraint::must_not_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
 //{
 //    if (PATH_EXISTS)
 //    {
