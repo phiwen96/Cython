@@ -70,11 +70,11 @@ template <class, class...>
 struct InputPathHandler;
 
 template <class... Mixins>
-struct InputPathHandler <filetype::file, Mixins...>
+struct InputPathHandler <filetype::file, Mixins...> : Mixins...
 {
     string text;
     
-    InputPathHandler (filesystem::path const& path) : text (readFileIntoString(path))
+    InputPathHandler (filesystem::path const& path) : text (readFileIntoString(path)), Mixins {path}...
     {
         cout << text << endl;
     }
@@ -84,11 +84,11 @@ struct InputPathHandler <filetype::file, Mixins...>
 
 
 template <class... Mixins>
-struct InputPathHandler <filetype::folder, Mixins...>
+struct InputPathHandler <filetype::folder, Mixins...> : Mixins...
 {
     
     
-    InputPathHandler (filesystem::path const& path)
+    InputPathHandler (filesystem::path const& path) : Mixins {path}...
     {
         
     }

@@ -119,7 +119,18 @@ struct Info
         }
         else if constexpr (can_be_any)
         {
-            
+            if (IS_FILE)
+            {
+                SuccessHandler<filetype::file, T...> {path};
+                
+            } else if (IS_DIRECTORY)
+            {
+                SuccessHandler<filetype::folder, T...> {path};
+                
+            } else
+            {
+                file_type_error_handler::error (path);
+            }
         }
         
 //        using success_handler = SuccessHandler <class>
