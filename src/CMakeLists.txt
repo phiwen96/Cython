@@ -3,9 +3,9 @@
 file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/*.hpp")
 file(GLOB SOURCE_LIST ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
-set (self ${PROJECT_NAME}_lib)
+set (self ${PROJECT_NAME})
 
-add_library (${self}
+add_library (${self} SHARED
 	${SOURCE_LIST}  ${HEADER_LIST} 
 )
 
@@ -30,4 +30,11 @@ target_include_directories(${self} PRIVATE
 target_include_directories(${self} PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+)
+
+
+install(TARGETS ${self}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

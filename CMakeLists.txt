@@ -47,6 +47,7 @@ endif()
 find_package (Boost 1.74 REQUIRED)
 
 add_subdirectory (src)
+add_subdirectory (app)
 
 
 if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MODERN_CMAKE_BUILD_TESTING) AND BUILD_TESTING)
