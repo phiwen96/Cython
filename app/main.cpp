@@ -2,6 +2,7 @@ using namespace std;
 #include "inputfsm.hpp"
 #include "filefsm.hpp"
 #include "common.hpp"
+#include <ph_type_list/type_list.hpp>
 
 
 
@@ -65,11 +66,11 @@ struct OutputFileTypeErrorHandler
 
 
 
-template <class>
+template <class, class...>
 struct InputPathHandler;
 
-template <>
-struct InputPathHandler <filetype::file>
+template <class... Mixins>
+struct InputPathHandler <filetype::file, Mixins...>
 {
     string text;
     
@@ -79,9 +80,14 @@ struct InputPathHandler <filetype::file>
     }
 };
 
-template <>
-struct InputPathHandler <filetype::folder>
+
+
+
+template <class... Mixins>
+struct InputPathHandler <filetype::folder, Mixins...>
 {
+    
+    
     InputPathHandler (filesystem::path const& path)
     {
         
@@ -143,6 +149,9 @@ auto main (int argc,  char** argv) -> int
     
     using input_reader = filefsm <InputPathHandler, path_error_tags::must_exist, InputPathErrorHandler, file_error_tags::can_be_any, InputFileTypeErrorHandler>;
     input_reader reader (input_file);
+    
+    
+    reader.yeah(input_file, type_list <int, char> {}, type_list <string, int> {});
     
     
     /**

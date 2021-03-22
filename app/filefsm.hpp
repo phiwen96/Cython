@@ -1,6 +1,7 @@
 #pragma once
 using namespace std;
 #include "common.hpp"
+#include <ph_type_list/type_list.hpp>
 
 
 #define PROCESS process (filesystem::path const& path, Context& ctx)
@@ -53,7 +54,7 @@ struct path_error_tags {
 };
 
 
-template <template <class> class SuccessHandler, class PathErrorTag, template <class> class PathErrorHandler, class FileErrorTag, template <class> class FileTypeErrorHandler>
+template <template <class...> class SuccessHandler, class PathErrorTag, template <class...> class PathErrorHandler, class FileErrorTag, template <class...> class FileTypeErrorHandler>
 requires requires (filesystem::path const& path) {
     is_same_v <PathErrorTag, path_error_tags::must_exist> or is_same_v <PathErrorTag, path_error_tags::must_not_exist>;
     is_same_v <FileErrorTag, file_error_tags::must_be_file> or is_same_v <FileErrorTag, file_error_tags::must_be_folder> or is_same_v <FileErrorTag, file_error_tags::can_be_any>;
@@ -73,13 +74,15 @@ struct Info
 
     
     
-    Info (filesystem::path const& path)
+    template <class... T, class... U, class... V>
+    static void process (filesystem::path const& path, type_list <T...> sucessHandlerMixins = type_list <> {}, type_list <U...> pathErrorHandlerMixins = type_list <> {}, type_list <V...> fileTypeErrorHandlerMixins = type_list <> {})
     {
         if constexpr (path_must_exist)
         {
             if (not PATH_EXISTS)
             {
-            PathErrorHandler<PathErrorTag>::error(path);
+//                type_list <T...>::
+                PathErrorHandler<PathErrorTag>::error(path);
             }
             
         } else if constexpr (path_must_not_exist)
@@ -115,7 +118,7 @@ struct Info
 
 
 
-template <template <class> class SuccessHandler, class PathErrorTag, template <class> class PathErrorHandler, class FileErrorTag, template <class> class FileTypeErrorHandler>
+template <template <class...> class SuccessHandler, class PathErrorTag, template <class...> class PathErrorHandler, class FileErrorTag, template <class...> class FileTypeErrorHandler>
 struct filefsm
 {
 //    file::Impl <>* Impl;
@@ -123,10 +126,15 @@ struct filefsm
     filefsm (filesystem::path const& path)
     {
         
-        auto s = Info <SuccessHandler, PathErrorTag, PathErrorHandler, FileErrorTag, FileTypeErrorHandler> (path);
+        Info <SuccessHandler, PathErrorTag, PathErrorHandler, FileErrorTag, FileTypeErrorHandler>::process (path);
     }
     
     
+    template <class... T, class... U, class... V>
+    static void yeah (filesystem::path const& path, type_list <T...> sucessHandlerMixins = type_list <> {}, type_list <U...> pathErrorHandlerMixins = type_list <> {}, type_list <V...> fileTypeErrorHandlerMixins = type_list <> {})
+    {
+        Info <SuccessHandler, PathErrorTag, PathErrorHandler, FileErrorTag, FileTypeErrorHandler>::process (path);
+    }
     
     
 };
