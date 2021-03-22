@@ -7,3 +7,6 @@
 [submodule "dependencies/const_str"]
 	path = dependencies/const_str
 	url = https://github.com/phiwen96/const_str
+[submodule "dependencies/ph_system_file_path_checker"]
+	path = dependencies/ph_system_file_path_checker
+	url = https://github.com/phiwen96/ph_system_file_path_checker
