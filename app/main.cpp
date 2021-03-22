@@ -18,9 +18,9 @@ template <class>
 struct InputPathErrorHandler;
 
 template <>
-struct InputPathErrorHandler <path_constraint::must_exist>
+struct InputPathErrorHandler <path_error_tags::must_exist>
 {
-    InputPathErrorHandler (filesystem::path const& path)
+    static void error (filesystem::path const& path)
     {
         throw runtime_error ("given path does not exist on system");
     }
@@ -30,9 +30,9 @@ template <class>
 struct OutputPathErrorHandler;
 
 template <>
-struct OutputPathErrorHandler <path_constraint::must_not_exist>
+struct OutputPathErrorHandler <path_error_tags::must_not_exist>
 {
-    OutputPathErrorHandler (filesystem::path const& path)
+    static void error (filesystem::path const& path)
     {
         throw runtime_error ("given path already exist on system");
     }
@@ -116,7 +116,7 @@ auto main (int argc,  char** argv) -> int
     constexpr bool existance = 0;
     
     
-    using input_reader = filefsm <path_constraint::must_exist, InputPathErrorHandler, InputPathHandler>;
+    using input_reader = filefsm <InputPathErrorHandler, InputPathHandler, path_error_tags::must_exist, file_error_tags::can_be_any>;
     input_reader reader (input_file);
     
     
