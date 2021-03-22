@@ -579,11 +579,10 @@ struct STATE ("$(x var y)") : BASE_STATE
 
 
 
-
 template <>
 struct STATE ("$(x var y){") : BASE_STATE
 {
-    void _process (iter i, Context& ctx)
+    virtual void _process (iter i, Context& ctx)
     {
         ctx.potential += *i;
         
@@ -681,6 +680,10 @@ struct STATE ("$(x var y){") : BASE_STATE
         {
             ctx.value += *i;
             ctx.bracketStack.push ('{');
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            TRANSITION ("$(x var y){\n")
         }
 //        else if (*i == ' ')
 //        {
@@ -716,6 +719,22 @@ struct STATE ("$(x var y){") : BASE_STATE
         return "$(x var y){";
     }
 };
+
+template <>
+struct STATE ("$(x var y){\n") : STATE ("$(x var y){")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == '\n')
+        {
+            ctx.value += *i;
+        } else
+        {
+            STATE ("$(x var y){")::_process (i, ctx);
+        }
+    }
+};
+
 
 template <>
 struct STATE ("${") : BASE_STATE
@@ -833,6 +852,8 @@ struct STATE ("${") : BASE_STATE
     }
  
 };
+
+
 
 
 
@@ -1106,6 +1127,10 @@ struct STATE ("$(){") : BASE_STATE
         {
             addChildContext <STATE ("#")> (ctx).potential = *i;
 
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            
         } else
         {
             value (ctx) += *i;

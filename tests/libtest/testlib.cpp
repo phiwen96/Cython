@@ -684,10 +684,10 @@ TEST_CASE ("")
     string result = "";
     int nr_of_variables = 0;
     
-    input = R"V0G0N($ (0 x 5)
-{
-    2
-})V0G0N";
+    input = "$ (0 x 5)"
+"{\n"
+"    2\n"
+"}";
     
     get_result
     string facit = R"V0G0N(    2
