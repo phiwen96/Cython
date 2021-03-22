@@ -10,6 +10,7 @@ ph_precompile (TARGET ${self} PRIVATE PCH ${std_pch} ${catch_pch} ${boost_pch})
 
 
 install(TARGETS ${self}
-          DESTINATION ${CMAKE_INSTALL_BINDIR}
+    CONFIGURATIONS Release
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
