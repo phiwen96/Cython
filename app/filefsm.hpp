@@ -16,11 +16,11 @@ using namespace std;
 #define IS_DIRECTORY filesystem::is_directory (path)
 #define IS_FILE filesystem::is_regular_file (path)
 
-#define TRANSITION(...) ctx.state = transition <__VA_ARGS__> ();
+#define TRANSITION(...) ctx.Impl = transition <__VA_ARGS__> ();
 
 
 
-struct type {
+struct filetype {
     struct file
     {
         
@@ -31,30 +31,42 @@ struct type {
     };
 };
 
-struct existance {
+struct filetype_error
+{
+    struct must_be_file
+    {
+        
+    };
+    struct must_be_folder
+    {
+        
+    };
+    struct any_type
+    {
+        
+    };
+};
+
+struct existance_error {
 //    inline static constexpr bool yes = true;
 //    inline static constexpr bool no = true;
-    template <class... T>
-    struct yes : T...
+    template <template <class filetype> class Error>
+    struct must_exist
     {
-        yes (){}
-        yes (filesystem::path const& path) : T(path)... {
-            if constexpr (sizeof... (T) == 0)
-            {
-                THROW_PATH_DOES_NOT_EXIST
-            }
+        template <class filetype>
+        void error (filesystem::path const& path)
+        {
+            Error <filetype> e (path);
         }
     };
     
-    template <class... T>
-    struct no : T...
+    template <template <class filetype> class Error>
+    struct must_not_exist
     {
-        no (){}
-        no (filesystem::path const& path) : T(path)... {
-            if constexpr (sizeof... (T) == 0)
-            {
-                THROW_PATH_ALREADY_EXISTS
-            }
+        template <class filetype>
+        void error (filesystem::path const& path)
+        {
+            Error <filetype> e (path);
         }
     };
     
@@ -66,81 +78,91 @@ struct existance {
 namespace file{
 struct Context;
 
-template <class...>
-struct State;
+template <bool, class...>
+struct Impl;
 
 //template <>
-//struct State <>
+//struct Impl <>
 //{
 //    virtual void PROCESS {}
 //};
 
 struct Context
 {
-//    State<>* state {nullptr};
+//    Impl<>* Impl {nullptr};
 //
 //    Context& process (filesystem::path const& inputPath)
 //    {
-//        state -> process (inputPath, *this);
+//        Impl -> process (inputPath, *this);
 //        return *this;
 //    }
 //
 //    template <class... T>
 //    void transition ()
 //    {
-//        delete state;
-//        state = new State <T...>;
+//        delete Impl;
+//        Impl = new Impl <T...>;
 //    }
 };
+/**
+ takes existance::yes<type> where type constructor const(filesystem::path const&) is called if file does not exist
+ takes existance::no<type> where type constructor const(filesystem::path const&) is called if file exists
+ */
+template <class...>
+struct Info;
 
 
-template <class Error, class... Mixins>
-struct State <existance::yes <Error>, Mixins...>
+template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
+struct Info <existance_error::must_exist <ExistanceError>, FiletypeError, Mixins...>
 {
-    State (filesystem::path const& path);
+    Info (filesystem::path const& path);
 };
 
-template <class Error, class... Mixins>
-struct State <existance::no <Error>, Mixins...>
+template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
+struct Info <existance_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>
 {
-    State (filesystem::path const& path);
-};
-
-
-
-template <class... Mixins>
-struct State <type::file, Mixins...>
-{
-    State (filesystem::path const& path);
-};
-
-template <class... Mixins>
-struct State <type::folder, Mixins...>
-{
-    State (filesystem::path const& path);
+    Info (filesystem::path const& path);
 };
 
 
 
-template <class Error, class... Mixins>
-State<existance::yes <Error>, Mixins...>::State (filesystem::path const& path)
+
+//template <class... Mixins>
+//struct Impl <type::file, Mixins...>
+//{
+//    Impl (filesystem::path const& path);
+//};
+//
+//template <class... Mixins>
+//struct Impl <type::folder, Mixins...>
+//{
+//    Impl (filesystem::path const& path);
+//};
+
+
+
+template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
+Info<existance_error::must_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
 {
+    
+//    if constexpr ()
+    
     if (not PATH_EXISTS)
     {
-        existance::yes <Error> f (path);
+//        existance::must_exist <Error> f (path);
     }
     
     if (IS_DIRECTORY)
     {
 //        ctx.transition <existance::yes, type::folder> ();
-        State <type::folder, Mixins...> s (path);
+//        Impl <type::folder, Mixins...> s (path);
 //        delete this;
         
     } else if (IS_FILE)
     {
-        State <type::file, Mixins...> s (path);
+//        Impl <type::file, Mixins...> s (path);
 //        ctx.transition <existance::yes, type::file> ();
-//        State <existance::yes <T...>, type::file> s (path);
+//        Impl <existance::yes <T...>, type::file> s (path);
         
     } else
     {
@@ -149,8 +171,8 @@ State<existance::yes <Error>, Mixins...>::State (filesystem::path const& path)
 }
 
 
-template <class Error, class... Mixins>
-State<existance::no <Error>, Mixins...>::State (filesystem::path const& path)
+template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
+Info<existance_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
 {
     if (PATH_EXISTS)
     {
@@ -159,13 +181,13 @@ State<existance::no <Error>, Mixins...>::State (filesystem::path const& path)
     
     if (IS_DIRECTORY)
     {
-        State <type::folder, Mixins...> s (path);
-//        State <existance::no <T...>, type::folder> s (path);
+//        Impl <0, type::folder, Mixins...> s (path);
+//        Impl <existance::no <T...>, type::folder> s (path);
 
     } else if (IS_FILE)
     {
-        State <type::file, Mixins...> s (path);
-//        State <existance::no <T...>, type::file> s (path);
+//        Impl <0, type::file, Mixins...> s (path);
+//        Impl <existance::no <T...>, type::file> s (path);
 
     } else
     {
@@ -174,25 +196,24 @@ State<existance::no <Error>, Mixins...>::State (filesystem::path const& path)
 }
 
 
-
-template <class... Mixins>
-State <type::file, Mixins...>::State (filesystem::path const& path)
-{
-//    string input = readFileIntoString (inputPath);
-//        ofstream outputFile (outputPath);
+//template <class... Mixins>
+//Impl <type::file, Mixins...>::Impl (filesystem::path const& path)
+//{
+////    string input = readFileIntoString (inputPath);
+////        ofstream outputFile (outputPath);
+////
+////        if (!outputFile.is_open ())
+////            throw runtime_error ("could not open file " + outputPath.string());
+////
+////        outputFile << p.process (input);
+////        outputFile.close ();
+//}
 //
-//        if (!outputFile.is_open ())
-//            throw runtime_error ("could not open file " + outputPath.string());
+//template <class... Mixins>
+//Impl <type::folder, Mixins...>::Impl (filesystem::path const& path)
+//{
 //
-//        outputFile << p.process (input);
-//        outputFile.close ();
-}
-
-template <class... Mixins>
-State <type::folder, Mixins...>::State (filesystem::path const& path)
-{
-    
-}
+//}
 
 
 }
@@ -212,11 +233,11 @@ struct fileinfo
 template <class... T>
 struct filefsm
 {
-//    file::State <>* state;
+//    file::Impl <>* Impl;
     
     filefsm (filesystem::path const& path)
     {
-        auto s = file::State<T...>(path);
+        auto s = file::Info<T...>(path);
     }
     
     

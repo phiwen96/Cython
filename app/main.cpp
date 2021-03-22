@@ -2,6 +2,56 @@ using namespace std;
 #include "inputfsm.hpp"
 #include "filefsm.hpp"
 
+
+
+
+
+
+//template <bool file>
+//struct error <file_info::file_must_not_exist, file_info::is_file>
+//{
+//
+//};
+
+template <template <template <class> class> class ExistanceError, class FiltypeError>
+struct FileError;
+
+
+template <>
+struct FileError <existance_error::must_exist, filetype_error::any_type>
+{
+    FileError (filesystem::path const& path)
+    {
+        
+    }
+};
+
+template <>
+struct FileError <existance_error::must_not_exist, filetype_error::must_be_file>
+{
+    FileError (filesystem::path const& path)
+    {
+        
+    }
+};
+
+template <>
+struct FileError <existance_error::must_not_exist, filetype_error::must_be_folder>
+{
+    FileError (filesystem::path const& path)
+    {
+        
+    }
+};
+
+
+
+template <class filetype>
+struct does_not_exist
+{
+    
+};
+
 #if defined (Debug)
 auto main (int,  char**) -> int
 {
@@ -14,27 +64,17 @@ auto main (int argc,  char** argv) -> int
 #endif
 
     
-        
     
     
-    struct file_does_not_exist
-    {
-        file_does_not_exist ()
-        {
-            
-        }
-        file_does_not_exist (filesystem::path const& path)
-        {
-            throw runtime_error ("path does not exist");
-        }
-    };
+
     
     
     
     
     auto [input_file, output_files] = inputfsm (argc, argv);
     
-    filefsm <existance::yes <file_does_not_exist>> f (input_file);
+    constexpr bool existance = 0;
+    filefsm <existance_error::must_exist <does_not_exist>, filetype_error::any_type> f ("hej");
     
     
     /**
