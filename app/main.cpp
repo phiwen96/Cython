@@ -105,18 +105,16 @@ auto main (int argc,  char** argv) -> int
 
     
     
-    
 //    InputPathErrorHandler<path_error::must_exist> aa ;
 //    path_error::must_exist::error<InputPathErrorHandler>("hej");
     
 //    path_error::must_exist <InputPathErrorHandler> a;
     
     auto [input_file, output_files] = inputfsm (argc, argv);
-    
     constexpr bool existance = 0;
     
     
-    using input_reader = filefsm <InputPathErrorHandler, InputPathHandler, path_error_tags::must_exist, file_error_tags::can_be_any>;
+    using input_reader = filefsm <InputPathHandler, InputPathErrorHandler, path_error_tags::must_exist, file_error_tags::can_be_any>;
     input_reader reader (input_file);
     
     
