@@ -9,9 +9,17 @@ project (
 
 
 add_subdirectory (cmake/phake)
-add_subdirectory (dependencies/const_str)
-add_subdirectory (dependencies/ph_type_list)
-add_subdirectory (dependencies/ph_system_file_path_checker)
+
+
+if (NOT TARGET const_str)
+	add_subdirectory (dependencies/const_str)
+endif ()
+if (NOT TARGET ph_type_list)
+	add_subdirectory (dependencies/ph_type_list)
+endif ()
+if (NOT TARGET ph_system_file_path_checker)
+	add_subdirectory (dependencies/ph_system_file_path_checker)
+endif ()
 
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -55,3 +63,4 @@ add_subdirectory (app)
 if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MODERN_CMAKE_BUILD_TESTING) AND BUILD_TESTING)
 	add_subdirectory (tests)
 endif()
+
