@@ -53,7 +53,7 @@ struct path_error_tags {
 };
 
 
-template <template <class> class SuccessHandler, template <class> class PathErrorHandler, class PathErrorTag, class FileErrorTag>
+template <template <class> class SuccessHandler, class PathErrorTag, template <class> class PathErrorHandler, class FileErrorTag, template <class> class FileTypeErrorHandler>
 requires requires (filesystem::path const& path) {
     is_same_v <PathErrorTag, path_error_tags::must_exist> or is_same_v <PathErrorTag, path_error_tags::must_not_exist>;
     is_same_v <FileErrorTag, file_error_tags::must_be_file> or is_same_v <FileErrorTag, file_error_tags::must_be_folder> or is_same_v <FileErrorTag, file_error_tags::can_be_any>;
@@ -94,7 +94,7 @@ struct Info
         {
             if (not IS_FILE)
             {
-
+                
             }
         } else if constexpr (must_be_folder)
         {
@@ -102,6 +102,10 @@ struct Info
             {
 
             }
+        }
+        else if constexpr (can_be_any)
+        {
+            
         }
     }
 };
@@ -111,7 +115,7 @@ struct Info
 
 
 
-template <template <class> class SuccessHandler, template <class> class PathErrorHandler, class PathErrorTag, class FileErrorTag>
+template <template <class> class SuccessHandler, class PathErrorTag, template <class> class PathErrorHandler, class FileErrorTag, template <class> class FileTypeErrorHandler>
 struct filefsm
 {
 //    file::Impl <>* Impl;
@@ -119,7 +123,7 @@ struct filefsm
     filefsm (filesystem::path const& path)
     {
         
-        auto s = Info <SuccessHandler, PathErrorHandler, PathErrorTag, FileErrorTag> (path);
+        auto s = Info <SuccessHandler, PathErrorTag, PathErrorHandler, FileErrorTag, FileTypeErrorHandler> (path);
     }
     
     

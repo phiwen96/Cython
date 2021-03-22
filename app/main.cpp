@@ -26,6 +26,7 @@ struct InputPathErrorHandler <path_error_tags::must_exist>
     }
 };
 
+
 template <class>
 struct OutputPathErrorHandler;
 
@@ -37,6 +38,30 @@ struct OutputPathErrorHandler <path_error_tags::must_not_exist>
         throw runtime_error ("given path already exist on system");
     }
 };
+
+
+template <class>
+struct InputFileTypeErrorHandler
+{
+    static void error (filesystem::path const& path)
+    {
+        throw runtime_error ("given path already exist on system");
+    }
+};
+
+template <class>
+struct OutputFileTypeErrorHandler
+{
+    static void error (filesystem::path const& path)
+    {
+        throw runtime_error ("given path already exist on system");
+    }
+};
+
+
+
+
+
 
 
 
@@ -96,7 +121,7 @@ struct does_not_exist
 auto main (int,  char**) -> int
 {
     int argc = 5;
-    char** argv = new char*[argc]{new char[]{}, new char[]{"--input"}, new char[]{"/Users/philipwenkel/GitHub/phan/tests/test_phan_app/testFiles_pre/1.hpp"}, new char[]{"--output"}, new char[]{"/Users/philipwenkel/GitHub/phan/tests/test_phan_app/testFiles_post/1.hpp"}};
+    char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/GitHub/phan/tests/test_phan_app/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/GitHub/phan/tests/test_phan_app/testFiles_post/1.hpp"}};
     
 #elif defined (Release)
 auto main (int argc,  char** argv) -> int
@@ -114,14 +139,15 @@ auto main (int argc,  char** argv) -> int
     constexpr bool existance = 0;
     
     
-    using input_reader = filefsm <InputPathHandler, InputPathErrorHandler, path_error_tags::must_exist, file_error_tags::can_be_any>;
+    
+    
+    using input_reader = filefsm <InputPathHandler, path_error_tags::must_exist, InputPathErrorHandler, file_error_tags::can_be_any, InputFileTypeErrorHandler>;
     input_reader reader (input_file);
     
     
     /**
      takes existance::yes<type> where type constructor const(filesystem::path const&) is called if file does not exist
      takes existance::no<type> where type constructor const(filesystem::path const&) is called if file exists
-
      */
     
     
