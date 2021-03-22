@@ -59,13 +59,12 @@ struct existance_error {
         }
     };
     
-    template <template <class filetype> class Error>
     struct must_not_exist
     {
-        template <class filetype>
+        template <template <class> class ErrorImpl>
         static void error (filesystem::path const& path)
         {
-            Error <filetype> e (path);
+            ErrorImpl <must_exist> e (path);
         }
     };
     
@@ -107,8 +106,39 @@ struct Context
  takes existance::yes<type> where type constructor const(filesystem::path const&) is called if file does not exist
  takes existance::no<type> where type constructor const(filesystem::path const&) is called if file exists
  */
-template <template <template <template <template <class> class> class ExistanceError, class FiltypeError> class> class Error>
+template <class FileExistsError, template <class> class FileExistsErrorImpl, template <class> class Handler>
 struct Info;
+
+template <template <class> class FileExistsErrorImpl, template <class> class Handler>
+struct Info <existance_error::must_exist, FileExistsErrorImpl, Handler>
+{
+    Info (filesystem::path const& path)
+    {
+        if (not PATH_EXISTS)
+        {
+            existance_error::must_exist::error<FileExistsErrorImpl> (path);
+        }
+
+        if (IS_DIRECTORY)
+        {
+            Handler <filetype::folder> f (path);
+    //        ctx.transition <existance::yes, type::folder> ();
+    //        Impl <type::folder, Mixins...> s (path);
+    //        delete this;
+
+        } else if (IS_FILE)
+        {
+            Handler <filetype::file> f (path);
+    //        Impl <type::file, Mixins...> s (path);
+    //        ctx.transition <existance::yes, type::file> ();
+    //        Impl <existance::yes <T...>, type::file> s (path);
+
+        } else
+        {
+            THROW_UNKNOWN_FILE_TYPE
+        }
+    }
+};
 
 
 //template <template <template <template <template <template <class> class> class ExistanceError, class FiltypeError> class> class Error2> class Error>
@@ -229,7 +259,7 @@ struct fileinfo
 
 
 
-template <template <template <template <template <class> class> class ExistanceError, class FiltypeError> class> class>
+template <class FileExistsError, template <class> class FileExistsErrorImpl, template <class> class Handler>
 struct filefsm
 {
 //    file::Impl <>* Impl;
@@ -237,7 +267,7 @@ struct filefsm
     filefsm (filesystem::path const& path)
     {
         
-//        auto s = file::Info<T...>(path);
+        auto s = file::Info <FileExistsError, FileExistsErrorImpl, Handler> (path);
     }
     
     

@@ -1,6 +1,7 @@
 using namespace std;
 #include "inputfsm.hpp"
 #include "filefsm.hpp"
+#include "common.hpp"
 
 
 
@@ -14,7 +15,7 @@ using namespace std;
 //};
 
 template <class>
-struct FileError{};
+struct FileError;
 
 
 template <>
@@ -22,9 +23,46 @@ struct FileError <existance_error::must_exist>
 {
     FileError (filesystem::path const& path)
     {
-
+        throw runtime_error ("given path does not exist on system");
     }
 };
+
+template <>
+struct FileError <existance_error::must_not_exist>
+{
+    FileError (filesystem::path const& path)
+    {
+        throw runtime_error ("given path already exist on system");
+    }
+};
+
+
+
+template <class>
+struct ReadInput;
+
+template <>
+struct ReadInput <filetype::file>
+{
+    string text;
+    
+    ReadInput (filesystem::path const& path) : text (readFileIntoString(path))
+    {
+        cout << text << endl;
+    }
+};
+
+template <>
+struct ReadInput <filetype::folder>
+{
+    ReadInput (filesystem::path const& path)
+    {
+        
+    }
+};
+
+
+
 
 //template <>
 //struct FileError <existance_error::must_not_exist, filetype_error::must_be_file>
@@ -67,7 +105,7 @@ auto main (int argc,  char** argv) -> int
     
     
 //    FileError<existance_error::must_exist> aa ;
-    existance_error::must_exist::error<FileError>("hej");
+//    existance_error::must_exist::error<FileError>("hej");
     
 //    existance_error::must_exist <FileError> a;
     
@@ -75,7 +113,9 @@ auto main (int argc,  char** argv) -> int
     
     constexpr bool existance = 0;
     
-//    filefsm <existance_error::must_exist> f ("hej");
+    
+    using input_reader = filefsm <existance_error::must_exist, FileError, ReadInput>;
+    input_reader reader (input_file);
     
     
     /**
