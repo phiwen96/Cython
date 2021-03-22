@@ -15,22 +15,24 @@ using namespace std;
 //};
 
 template <class>
-struct FileError;
-
+struct InputPathError;
 
 template <>
-struct FileError <existance_error::must_exist>
+struct InputPathError <existance_error::must_exist>
 {
-    FileError (filesystem::path const& path)
+    InputPathError (filesystem::path const& path)
     {
         throw runtime_error ("given path does not exist on system");
     }
 };
 
+template <class>
+struct OutputPathError;
+
 template <>
-struct FileError <existance_error::must_not_exist>
+struct OutputPathError <existance_error::must_not_exist>
 {
-    FileError (filesystem::path const& path)
+    OutputPathError (filesystem::path const& path)
     {
         throw runtime_error ("given path already exist on system");
     }
@@ -65,18 +67,18 @@ struct ReadInput <filetype::folder>
 
 
 //template <>
-//struct FileError <existance_error::must_not_exist, filetype_error::must_be_file>
+//struct InputPathError <existance_error::must_not_exist, filetype_error::must_be_file>
 //{
-//    FileError (filesystem::path const& path)
+//    InputPathError (filesystem::path const& path)
 //    {
 //
 //    }
 //};
 //
 //template <>
-//struct FileError <existance_error::must_not_exist, filetype_error::must_be_folder>
+//struct InputPathError <existance_error::must_not_exist, filetype_error::must_be_folder>
 //{
-//    FileError (filesystem::path const& path)
+//    InputPathError (filesystem::path const& path)
 //    {
 //
 //    }
@@ -104,17 +106,17 @@ auto main (int argc,  char** argv) -> int
     
     
     
-//    FileError<existance_error::must_exist> aa ;
-//    existance_error::must_exist::error<FileError>("hej");
+//    InputPathError<existance_error::must_exist> aa ;
+//    existance_error::must_exist::error<InputPathError>("hej");
     
-//    existance_error::must_exist <FileError> a;
+//    existance_error::must_exist <InputPathError> a;
     
     auto [input_file, output_files] = inputfsm (argc, argv);
     
     constexpr bool existance = 0;
     
     
-    using input_reader = filefsm <existance_error::must_exist, FileError, ReadInput>;
+    using input_reader = filefsm <existance_error::must_exist, InputPathError, ReadInput>;
     input_reader reader (input_file);
     
     
