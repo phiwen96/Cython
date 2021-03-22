@@ -15,24 +15,24 @@ using namespace std;
 //};
 
 template <class>
-struct InputPathError;
+struct InputPathErrorHandler;
 
 template <>
-struct InputPathError <existance_error::must_exist>
+struct InputPathErrorHandler <path_error::must_exist>
 {
-    InputPathError (filesystem::path const& path)
+    InputPathErrorHandler (filesystem::path const& path)
     {
         throw runtime_error ("given path does not exist on system");
     }
 };
 
 template <class>
-struct OutputPathError;
+struct OutputPathErrorHandler;
 
 template <>
-struct OutputPathError <existance_error::must_not_exist>
+struct OutputPathErrorHandler <path_error::must_not_exist>
 {
-    OutputPathError (filesystem::path const& path)
+    OutputPathErrorHandler (filesystem::path const& path)
     {
         throw runtime_error ("given path already exist on system");
     }
@@ -41,23 +41,23 @@ struct OutputPathError <existance_error::must_not_exist>
 
 
 template <class>
-struct ReadInput;
+struct InputPathHandler;
 
 template <>
-struct ReadInput <filetype::file>
+struct InputPathHandler <filetype::file>
 {
     string text;
     
-    ReadInput (filesystem::path const& path) : text (readFileIntoString(path))
+    InputPathHandler (filesystem::path const& path) : text (readFileIntoString(path))
     {
         cout << text << endl;
     }
 };
 
 template <>
-struct ReadInput <filetype::folder>
+struct InputPathHandler <filetype::folder>
 {
-    ReadInput (filesystem::path const& path)
+    InputPathHandler (filesystem::path const& path)
     {
         
     }
@@ -67,18 +67,18 @@ struct ReadInput <filetype::folder>
 
 
 //template <>
-//struct InputPathError <existance_error::must_not_exist, filetype_error::must_be_file>
+//struct InputPathErrorHandler <path_error::must_not_exist, filetype_error::must_be_file>
 //{
-//    InputPathError (filesystem::path const& path)
+//    InputPathErrorHandler (filesystem::path const& path)
 //    {
 //
 //    }
 //};
 //
 //template <>
-//struct InputPathError <existance_error::must_not_exist, filetype_error::must_be_folder>
+//struct InputPathErrorHandler <path_error::must_not_exist, filetype_error::must_be_folder>
 //{
-//    InputPathError (filesystem::path const& path)
+//    InputPathErrorHandler (filesystem::path const& path)
 //    {
 //
 //    }
@@ -106,17 +106,17 @@ auto main (int argc,  char** argv) -> int
     
     
     
-//    InputPathError<existance_error::must_exist> aa ;
-//    existance_error::must_exist::error<InputPathError>("hej");
+//    InputPathErrorHandler<path_error::must_exist> aa ;
+//    path_error::must_exist::error<InputPathErrorHandler>("hej");
     
-//    existance_error::must_exist <InputPathError> a;
+//    path_error::must_exist <InputPathErrorHandler> a;
     
     auto [input_file, output_files] = inputfsm (argc, argv);
     
     constexpr bool existance = 0;
     
     
-    using input_reader = filefsm <existance_error::must_exist, InputPathError, ReadInput>;
+    using input_reader = filefsm <path_error::must_exist, InputPathErrorHandler, InputPathHandler>;
     input_reader reader (input_file);
     
     

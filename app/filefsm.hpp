@@ -47,7 +47,7 @@ struct filetype_error
     };
 };
 
-struct existance_error {
+struct path_error {
 //    inline static constexpr bool yes = true;
 //    inline static constexpr bool no = true;
     struct must_exist
@@ -106,28 +106,38 @@ struct Context
  takes existance::yes<type> where type constructor const(filesystem::path const&) is called if file does not exist
  takes existance::no<type> where type constructor const(filesystem::path const&) is called if file exists
  */
-template <class PathError, template <class> class PathErrorImpl, template <class> class SuccessHandler>
-requires (is_same_v <PathError, existance_error::must_exist> or is_same_v <PathError, existance_error::must_not_exist>)
+
+
+
+
+template <class PathError, template <class> class PathErrorHandler, template <class> class SuccessHandler>
+requires requires (filesystem::path const& path) {
+    is_same_v <PathError, path_error::must_exist> or is_same_v <PathError, path_error::must_not_exist>;
+    
+    PathErrorHandler <PathError> {path};
+    SuccessHandler <filetype::file> {path};
+    SuccessHandler <filetype::folder> {path};
+}
 struct Info
 {
-    inline static constexpr bool must_exists = is_same_v <PathError, existance_error::must_exist>;
-    inline static constexpr bool must_not_exists = is_same_v <PathError, existance_error::must_not_exist>;
+    inline static constexpr bool must_exist = is_same_v <PathError, path_error::must_exist>;
+    inline static constexpr bool must_not_exist = is_same_v <PathError, path_error::must_not_exist>;
 
     
     Info (filesystem::path const& path)
     {
-        if constexpr (must_exists)
+        if constexpr (must_exist)
         {
             if (not PATH_EXISTS)
             {
-                existance_error::must_exist::error<PathErrorImpl> (path);
+                path_error::must_exist::error<PathErrorHandler> (path);
             }
             
-        } else if constexpr (must_not_exists)
+        } else if constexpr (must_not_exist)
         {
             if (PATH_EXISTS)
             {
-                existance_error::must_exist::error<PathErrorImpl> (path);
+                path_error::must_exist::error<PathErrorHandler> (path);
             }
         }
        
@@ -135,14 +145,14 @@ struct Info
 
         if (IS_DIRECTORY)
         {
-            SuccessHandler <filetype::folder> f (path);
+            SuccessHandler <filetype::folder> {path};
     //        ctx.transition <existance::yes, type::folder> ();
     //        Impl <type::folder, Mixins...> s (path);
     //        delete this;
 
         } else if (IS_FILE)
         {
-            SuccessHandler <filetype::file> f (path);
+            SuccessHandler <filetype::file> {path};
     //        Impl <type::file, Mixins...> s (path);
     //        ctx.transition <existance::yes, type::file> ();
     //        Impl <existance::yes <T...>, type::file> s (path);
@@ -158,13 +168,13 @@ struct Info
 
 
 //template <template <template <template <template <template <class> class> class ExistanceError, class FiltypeError> class> class Error2> class Error>
-//struct Info //<existance_error::must_exist <Error>>
+//struct Info //<path_error::must_exist <Error>>
 //{
 //    Info (filesystem::path const& path);
 //};
 //
 //template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
-//struct Info <existance_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>
+//struct Info <path_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>
 //{
 //    Info (filesystem::path const& path);
 //};
@@ -187,13 +197,13 @@ struct Info
 
 
 //template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
-//Info<existance_error::must_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
+//Info<path_error::must_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
 //{
 //
 //
 //    if (not PATH_EXISTS)
 //    {
-//        existance_error::must_exist <ExistanceError>::error (path);
+//        path_error::must_exist <ExistanceError>::error (path);
 ////        existance::must_exist <Error> f (path);
 //    }
 //
@@ -217,7 +227,7 @@ struct Info
 //
 //
 //template <template <class filetype> class ExistanceError, class FiletypeError, class... Mixins>
-//Info<existance_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
+//Info<path_error::must_not_exist <ExistanceError>, FiletypeError, Mixins...>::Info (filesystem::path const& path)
 //{
 //    if (PATH_EXISTS)
 //    {
@@ -275,7 +285,7 @@ struct fileinfo
 
 
 
-template <class PathError, template <class> class PathErrorImpl, template <class> class SuccessHandler>
+template <class PathError, template <class> class PathErrorHandler, template <class> class SuccessHandler>
 struct filefsm
 {
 //    file::Impl <>* Impl;
@@ -283,7 +293,7 @@ struct filefsm
     filefsm (filesystem::path const& path)
     {
         
-        auto s = file::Info <PathError, PathErrorImpl, SuccessHandler> (path);
+        auto s = file::Info <PathError, PathErrorHandler, SuccessHandler> (path);
     }
     
     
