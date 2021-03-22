@@ -1,9 +1,9 @@
 using namespace std;
 #include "inputfsm.hpp"
-#include "filefsm.hpp"
 #include "common.hpp"
 #include <ph_type_list/type_list.hpp>
-
+#include <ph_system_file_path_checker/system_file_path_checker.hpp>
+#include <ph_system_file_path_checker/handles.hpp>
 
 
 
@@ -15,49 +15,9 @@ using namespace std;
 //
 //};
 
-template <class>
-struct InputPathErrorHandler;
-
-template <>
-struct InputPathErrorHandler <tag::error::path::must_exist>
-{
-    static void error (filesystem::path const& path)
-    {
-        throw runtime_error ("given path does not exist on system");
-    }
-};
 
 
-template <class>
-struct OutputPathErrorHandler;
 
-template <>
-struct OutputPathErrorHandler <tag::error::path::must_not_exist>
-{
-    static void error (filesystem::path const& path)
-    {
-        throw runtime_error ("given path already exist on system");
-    }
-};
-
-
-template <class>
-struct InputFileTypeErrorHandler
-{
-    static void error (filesystem::path const& path)
-    {
-        throw runtime_error ("given path already exist on system");
-    }
-};
-
-template <class>
-struct OutputFileTypeErrorHandler
-{
-    static void error (filesystem::path const& path)
-    {
-        throw runtime_error ("given path already exist on system");
-    }
-};
 
 
 
@@ -159,7 +119,7 @@ auto main (int argc,  char** argv) -> int
     
     
     
-    using input_reader = system_file_path_checker <InputPathHandler, tag::error::path::must_exist, InputPathErrorHandler, tag::error::file_type::can_be_any, InputFileTypeErrorHandler>;
+    using input_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::must_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
 //    using input_file_handler_mixins =
     input_reader reader (input_path, type_list <int, char> {}, type_list <string, int> {});
     
