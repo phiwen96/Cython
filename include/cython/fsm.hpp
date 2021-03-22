@@ -261,7 +261,7 @@ void BASE_STATE::chainChildren (iter i, Context& ctx) {
 template <>
 struct STATE ("begin") : BASE_STATE
 {
-    void _process (iter i, Context& ctx){
+    virtual void _process (iter i, Context& ctx){
         
         if (*i == DECLPASTE)
         {
@@ -292,7 +292,7 @@ struct STATE ("begin") : BASE_STATE
        
 
     }
-    void addResultFromChild (string const& res){
+    virtual void addResultFromChild (string const& res){
         throw runtime_error ("oops");
     }
     
@@ -1430,7 +1430,7 @@ struct STATE ("@(){") : BASE_STATE
                 ctx.potential.clear();
                 ctx.variable.clear();
                 ctx.value.clear();
-                TRANSITION ("done")
+                TRANSITION ("@(){} done")
                 
             } else
             {
@@ -1484,15 +1484,22 @@ template <>
 struct STATE ("@(){} done") : STATE ("done")
 {
     virtual void _process (iter i, Context& ctx) {
-        if (*i != '\n')
+        if (*i == '\n')
         {
+            ctx.potential += '\n';
+            
+//            STATE ("begin")::_process (i, ctx);
+//            STATE ("done")::_process (i, ctx);
+//            TRANSITION ("done")
+        } else
+        {
+            TRANSITION ("done")
             STATE ("done")::_process (i, ctx);
-            TRANSITION ("done")
         }
-        else
-        {
-            TRANSITION ("done")
-        }
+//        else
+//        {
+//            TRANSITION ("done")
+//        }
             
         
     }

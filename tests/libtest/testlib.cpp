@@ -585,9 +585,12 @@ TEST_CASE ("")
     string result = "";
     int nr_of_variables = 0;
     
-    input = "@(k){K}\n${k}";
+    input = R"V0G0N(@(k){K}
+${k}
+#{kuk}
+${k})V0G0N";
     get_result
-    REQUIRE (result == "K");
+    REQUIRE (result == "K\nK");
 }
 
 
