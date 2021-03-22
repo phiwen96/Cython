@@ -588,10 +588,46 @@ TEST_CASE ("")
     input = R"V0G0N(@(k){K}
 ${k}
 #{kuk}
-${k})V0G0N";
+${k}
+)V0G0N";
     get_result
-    REQUIRE (result == "K\nK");
+    REQUIRE (result == "K\nK\n");
+    
+    app.clear_variables();
 }
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){K}
+${k}
+#{kuk}
+)V0G0N";
+    get_result
+    REQUIRE (result == "K\n");
+}
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){K}
+${k}
+@(k){kuk}
+)V0G0N";
+    get_result
+    REQUIRE (result == "K\n");
+}
+
+
+
 
 
 /**
