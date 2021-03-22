@@ -577,6 +577,19 @@ TEST_CASE ("pasting")
     }
 }
 
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = "@(k){K}\n${k}";
+    get_result
+    REQUIRE (result == "K");
+}
+
 
 /**
  todo
