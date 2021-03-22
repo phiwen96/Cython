@@ -1,7 +1,7 @@
 #pragma once
 using namespace std;
 
-namespace {
+namespace _input{
 struct Context;
 struct State
 {
@@ -90,7 +90,7 @@ struct inputfsm
     
     inputfsm (int argc, char** argv)
     {
-        Context ctx {new Begin};
+        _input::Context ctx {new _input::Begin};
         
         for (char** it = argv + 1; it < argv + argc; ++it)
         {

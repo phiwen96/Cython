@@ -1,5 +1,6 @@
 using namespace std;
 #include "inputfsm.hpp"
+#include "filefsm.hpp"
 
 #if defined (Debug)
 auto main (int,  char**) -> int
@@ -22,8 +23,7 @@ auto main (int argc,  char** argv) -> int
     
     auto [input_file, output_files] = inputfsm (argc, argv);
     
-    
-    
+    filefsm <existance::yes> f (input_file);
     
     
     
