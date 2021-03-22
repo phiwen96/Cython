@@ -113,14 +113,7 @@ auto main (int argc,  char** argv) -> int
 //    path_error::must_exist <InputPathErrorHandler> a;
     
     auto [input_path, output_paths] = inputfsm (argc, argv);
-    
-    
-    
-    
-    
-    
     using input_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::must_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
-//    using input_file_handler_mixins =
     input_reader reader (input_path, type_list <int, char> {}, type_list <string, int> {});
     
     
