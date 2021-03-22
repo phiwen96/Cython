@@ -1284,8 +1284,18 @@ template <>
 struct STATE ("#{} done") : STATE ("done")
 {
     virtual void _process (iter i, Context& ctx) {
-        if (*i != '\n')
+        if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            TRANSITION ("done")
+            
+        } else
+        {
+            TRANSITION ("done")
             STATE ("done")::_process (i, ctx);
+        }
+        
+        
     }
     virtual void addResultFromChild (string const& res, Context& ctx){
         throw runtime_error ("");
@@ -1490,7 +1500,7 @@ struct STATE ("@(){} done") : STATE ("done")
             
 //            STATE ("begin")::_process (i, ctx);
 //            STATE ("done")::_process (i, ctx);
-//            TRANSITION ("done")
+            TRANSITION ("done")
         } else
         {
             TRANSITION ("done")
