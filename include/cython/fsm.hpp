@@ -1010,12 +1010,31 @@ struct State <STR ("x"), T> : T
         
         if (*i == '(')
         {
-            T::finish_paran (ctx);
-            
+            if constexpr (is_same_v <T, STATE ("@")>)
+            {
+
+                T::template transition <STATE ("@(")> (ctx);
+                
+            } else if constexpr (is_same_v <T, STATE ("$")>)
+            {
+                T::template transition <STATE ("$(")> (ctx);
+            }
+           
         } else if (*i == '{')
         {
             ctx.bracketStack.push ('{');
-            T::finish_bracket (ctx);
+            
+            if constexpr (is_same_v <T, STATE ("$")>)
+            {
+                T::template transition <State <STR ("{"), STATE ("${")>> (ctx);
+                
+            } else if constexpr (is_same_v <T, STATE ("@")>)
+            {
+//                T::template transition <State <STR ("{"), STATE ("${")>> (ctx);
+                reset (ctx);
+            }
+            
+//            T::finish_bracket (ctx);
 
         } else if (*i == ' ')
         {
@@ -1060,43 +1079,13 @@ struct State <STR ("x"), T> : T
 template <>
 struct STATE ("$") : BASE_STATE
 {
-    void finish_paran (Context& ctx)
-    {
-        TRANSITION ("$(")
-    }
-    
-    void finish_bracket (Context& ctx)
-    {
-        transition <State <STR ("{"), STATE ("${")>> (ctx);
-    }
+  
 };
 
 template <>
 struct STATE ("@") : BASE_STATE
 {
-    void finish_paran (Context& ctx)
-    {
-        TRANSITION ("@(")
-    }
-    void finish_bracket (Context& ctx)
-    {
-        reset (ctx);
-//        transition <State <STR ("{"), STATE ("{")>> (ctx);
-    }
-    virtual void reset_hasNoParent(Context& ctx){
-        result (ctx) += potential (ctx);
-        potential (ctx).clear ();
-        TRANSITION ("begin")
-    }
-    virtual void reset_hasParent(Context& ctx){
-        BASE_STATE::addResultFromChild (potential (ctx), ctx);
-        potential (ctx).clear ();
-        TRANSITION ("begin")
-//        removeFromParent (ctx);
-    }
-    virtual string trans (){
-        return "@";
-    }
+  
  
 };
 
