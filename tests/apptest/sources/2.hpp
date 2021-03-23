@@ -5,19 +5,15 @@ hej
     snopp
 kuk
 kuk
-    2
 hej
 fitta
-
 hej
 SNOPP
 SNOPP
 
-
-
-
-    wenkel
-
+kuk
+kuk
+hej
 
 
 

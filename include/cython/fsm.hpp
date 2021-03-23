@@ -1560,11 +1560,11 @@ struct STATE ("@()") : BASE_STATE
             TRANSITION ("@(){")
         } else if (*i == ' ')
         {
-
+            ctx.potential += ' ';
             
         } else if (*i == '\n')
         {
-
+            ctx.potential += '\n';
             
         } else
         {
@@ -1599,6 +1599,33 @@ struct STATE ("@(){") : BASE_STATE
             ctx.bracketStack.pop ();
             if (ctx.bracketStack.empty ())
             {
+                if (ctx.value.back () == '\n')
+                {
+                    /**
+                     fix so that:
+                     
+                         $ (0 i 2)
+                         {
+                             hej
+                         }
+                         kuk
+                     
+                     becomes:
+                     
+                        hej
+                        kuk
+                     
+                     and not:
+                        hej
+                        
+                        kuk
+                     
+                     
+                     
+                     */
+                    ctx.value.pop_back ();
+                }
+                
                 declare (variable (ctx), value (ctx), ctx);
                 ctx.potential.clear();
                 ctx.variable.clear();
@@ -1620,7 +1647,14 @@ struct STATE ("@(){") : BASE_STATE
         } else if (*i == DECLPASTE)
         {
             addChildContext <STATE ("$")>(ctx).potential = *i;
-        } else
+        }
+        else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            TRANSITION ("@(){\n")
+            
+        }
+        else
         {
             ctx.potential += *i;
             ctx.value += *i;
@@ -1650,6 +1684,52 @@ struct STATE ("@(){") : BASE_STATE
     }
     virtual string trans (){
         return "@(){";
+    }
+};
+
+template <>
+struct STATE ("@(){\n") : STATE ("@(){")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == '\n')
+        {
+            ctx.value += *i;
+            ctx.indention.first = false;
+            
+        } else if (*i == ' ' and ctx.indention.first == false)
+        {
+//            cout << "hi" << endl;
+            ++ctx.indention.second;
+            TRANSITION ("@(){\nx")
+            
+        } else
+        {
+            STATE ("@(){")::_process (i, ctx);
+        }
+    }
+};
+
+template <>
+struct STATE ("@(){\nx") : STATE ("@(){\n")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == ' ')
+        {
+            ctx.potential += ' ';
+            if (++ctx.indention.second == ctx.max_indention)
+            {
+                ctx.indention.second = 0;
+                ctx.indention.first = true;
+                TRANSITION ("@(){\n");
+            }
+        } else
+        {
+            ctx.indention.second = 0;
+            TRANSITION ("@(){\n")
+            STATE ("@(){\n")::_process (i, ctx);
+        }
     }
 };
 

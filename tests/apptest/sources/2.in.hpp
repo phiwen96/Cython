@@ -7,12 +7,11 @@ $ (0 i 2)
 kuk
 $ (i)
 {
-        2
     hej
 }
 fitta
-
-$(kuk){
+$(kuk)
+{
     hej
     $(snopp)
     {
@@ -20,13 +19,13 @@ $(kuk){
     }
     ${snopp}
 }
-
-
+kuk
+kuk
 @(ph)
 {
     wenkel
 }
-${ph}
+hej
 
 
 $(k)
