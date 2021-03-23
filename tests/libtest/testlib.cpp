@@ -47,7 +47,7 @@ TEST_CASE ("declpaste $(x){foo}")
             kuk
          
          and not:
-            hej
+                hej
             
             kuk
          */
@@ -181,8 +181,9 @@ hej})V0G0N";
                 string input = R"V0G0N($(0 x 3)
 {
 hej
-})V0G0N";
-                REQUIRE (Cython{}.process_text(input) == "hej\nhej\nhej");
+}
+kuk)V0G0N";
+                REQUIRE (Cython{}.process_text(input) == "hej\nhej\nhej\nkuk");
             }
         }
     }
@@ -207,6 +208,41 @@ hej
         
         REQUIRE (result == "000110112021");
         REQUIRE (nr_of_variables == 0);
+    }
+    
+    SECTION ("indention, with new line after first bracket then indention")
+    {
+        /**
+         fix so that:
+         
+             $ (0 i 2)
+             {
+                 hej
+             }
+             kuk
+         
+         becomes:
+         
+            hej
+            kuk
+         
+         and not:
+                hej
+            
+            kuk
+         */
+        GIVEN ("input string")
+        {
+            string input =
+R"V0G0N($ (0 x 2)
+{
+    2
+    2
+    2
+}
+kuk)V0G0N";
+            REQUIRE (Cython{}.process_text(input) == "2\n2\n2\n2\n2\n2\nkuk");
+        }
     }
 }
 
@@ -754,36 +790,17 @@ TEST_CASE ("")
 "}";
     
     get_result
-    string facit = R"V0G0N(    2
-    2
-    2
-    2
-    2)V0G0N";
+    string facit = R"V0G0N(2
+2
+2
+2
+2)V0G0N";
     
     REQUIRE (result == facit);
 }
 
 
-TEST_CASE ("")
-{
-    Cython app {};
-    string input = "";
-    
-    string result = "";
-    int nr_of_variables = 0;
-    
-    input = "$ (0 i 2)\n"
-    "{\n"
-        "hej\n"
-        "kuk\n"
-    "}\n"
-    "kuk";
-    
-    get_result
-    string facit = "hej\nkuk\nhej\nkuk\nkuk";
-    
-    REQUIRE (result == facit);
-}
+
 
 //TEST_CASE ("")
 //{

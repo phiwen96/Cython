@@ -762,9 +762,40 @@ struct STATE ("$(x var y){\n") : STATE ("$(x var y){")
         if (*i == '\n')
         {
             ctx.value += *i;
+            ctx.indention.first = false;
+            
+        } else if (*i == ' ' and ctx.indention.first == false)
+        {
+//            cout << "hi" << endl;
+            ++ctx.indention.second;
+            TRANSITION ("$(x var y){\nx")
+            
         } else
         {
             STATE ("$(x var y){")::_process (i, ctx);
+        }
+    }
+};
+
+template <>
+struct STATE ("$(x var y){\nx") : STATE ("$(x var y){\n")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == ' ')
+        {
+            ctx.potential += ' ';
+            if (++ctx.indention.second == INDENTION)
+            {
+                ctx.indention.second = 0;
+                ctx.indention.first = true;
+                TRANSITION ("$(x var y){\n");
+            }
+        } else
+        {
+            ctx.indention.second = 0;
+            TRANSITION ("$(x var y){\n")
+            STATE ("$(x var y){\n")::_process (i, ctx);
         }
     }
 };
