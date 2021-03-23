@@ -829,6 +829,37 @@ SNOPP
     REQUIRE (result == facit);
 }
 
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+    
+@(ph)
+{
+    wenkel
+}
+${ph}
+    
+)V0G0N";
+    
+    get_result
+    string facit =
+R"V0G0N(
+    
+    
+wenkel
+    
+    
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
 
 
 

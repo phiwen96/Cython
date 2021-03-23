@@ -21,6 +21,24 @@ $(kuk){
     ${snopp}
 }
 
+
+@(ph)
+{
+    wenkel
+}
+${ph}
+
+
+$(k)
+{
+    
+}
+
+
+
+
+
+
 ${snopp}
 
 ${kuk}
