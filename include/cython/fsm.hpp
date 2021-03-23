@@ -313,6 +313,59 @@ struct STATE ("begin") : BASE_STATE
         return "\"\"";
     }
 };
+template <class Parent>
+struct State <STR ("{\n"), Parent>;
+
+
+
+template <class Parent>
+struct State <STR ("{\n"), Parent> : Parent
+{
+    using self = State <STR ("{\n"), Parent>;
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == '\n')
+        {
+            ctx.value += *i;
+            ctx.indention.first = false;
+            
+        } else if (*i == ' ' and ctx.indention.first == false)
+        {
+//            cout << "hi" << endl;
+            ++ctx.indention.second;
+            Parent::template transition<State <STR ("{\nx"), self>>(ctx);
+//            TRANSITION ("$(x var y){\nx")
+            
+        } else
+        {
+            Parent::_process (i, ctx);
+        }
+    }
+};
+
+template <class Parent>
+struct State <STR ("{\nx"), Parent> : Parent
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == ' ')
+        {
+            ctx.potential += ' ';
+            if (++ctx.indention.second == ctx.max_indention)
+            {
+                ctx.indention.second = 0;
+                ctx.indention.first = true;
+                Parent::template transition <Parent> (ctx);
+            }
+        } else
+        {
+            ctx.indention.second = 0;
+            Parent::template transition <Parent> (ctx);
+            Parent:: _process (i, ctx);
+        }
+    }
+};
+
 
 template <>
 struct STATE ("$(x") : BASE_STATE
@@ -721,7 +774,8 @@ struct STATE ("$(x var y){") : BASE_STATE
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
-            TRANSITION ("$(x var y){\n")
+            transition <State <STR ("{\n"), STATE ("$(x var y){")>> (ctx);
+//            TRANSITION ("$(x var y){\n")
         }
 //        else if (*i == ' ')
 //        {
@@ -758,51 +812,9 @@ struct STATE ("$(x var y){") : BASE_STATE
     }
 };
 
-template <>
-struct STATE ("$(x var y){\n") : STATE ("$(x var y){")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == '\n')
-        {
-            ctx.value += *i;
-            ctx.indention.first = false;
-            
-        } else if (*i == ' ' and ctx.indention.first == false)
-        {
-//            cout << "hi" << endl;
-            ++ctx.indention.second;
-            TRANSITION ("$(x var y){\nx")
-            
-        } else
-        {
-            STATE ("$(x var y){")::_process (i, ctx);
-        }
-    }
-};
 
-template <>
-struct STATE ("$(x var y){\nx") : STATE ("$(x var y){\n")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            if (++ctx.indention.second == ctx.max_indention)
-            {
-                ctx.indention.second = 0;
-                ctx.indention.first = true;
-                TRANSITION ("$(x var y){\n");
-            }
-        } else
-        {
-            ctx.indention.second = 0;
-            TRANSITION ("$(x var y){\n")
-            STATE ("$(x var y){\n")::_process (i, ctx);
-        }
-    }
-};
+
+
 
 
 template <>
@@ -821,9 +833,9 @@ struct STATE ("${") : BASE_STATE
                             {
                 //                cout << d.first << endl;
                 //                cout << ctx.variable << endl;
-                                if (d.first == ctx.variable)
+                                if (d.first == ctx.value)
                                 {
-                                    if (ctx.variable.back () == '\n')
+                                    if (ctx.value.back () == '\n')
                                     {
                                         /**
                                          fix so that:
@@ -847,7 +859,7 @@ struct STATE ("${") : BASE_STATE
                                          
                                          
                                          */
-                                        ctx.variable.pop_back ();
+                                        ctx.value.pop_back ();
                                     }
                                     
                 //                    return d->second;
@@ -888,14 +900,14 @@ struct STATE ("${") : BASE_STATE
                                 }
                             }
                            
-                            string warning = "variable \"" + variable (ctx) + "\" pasted but it has not yet been declared!";
+                            string warning = "variable \"" + value (ctx) + "\" pasted but it has not yet been declared!";
                             //            cout << result (ctx) << endl;
                             throw runtime_error (warning);
             }
             else
             {
                 ctx.potential += '}';
-                ctx.variable += *i;
+                ctx.value += *i;
             }
             
         } else if (*i == DECLPASTE)
@@ -914,16 +926,17 @@ struct STATE ("${") : BASE_STATE
         {
             ctx.bracketStack.push ('{');
             ctx.potential += '{';
-            ctx.variable += *i;
+            ctx.value += *i;
             
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
-            TRANSITION ("${\n")
+            transition <State <STR ("{\n"), State<STR ("${")>>> (ctx);
+//            TRANSITION ("${\n")
             
         } else
         {
-            ctx.variable += *i;
+            ctx.value += *i;
             ctx.potential += *i;
 //            cout << *i << endl;
         }
@@ -931,7 +944,7 @@ struct STATE ("${") : BASE_STATE
     
     virtual void addResultFromChild (string const& res, Context& ctx){
 //        cout << "getting result \"" << res << "\" to ${" << endl;
-        variable (ctx) += res;
+        value (ctx) += res;
         potential (ctx) += res;
     }
     
@@ -953,51 +966,7 @@ struct STATE ("${") : BASE_STATE
  
 };
 
-template <>
-struct STATE ("${\n") : STATE ("${")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == '\n')
-        {
-            ctx.variable += *i;
-            ctx.indention.first = false;
-            
-        } else if (*i == ' ' and ctx.indention.first == false)
-        {
-//            cout << "hi" << endl;
-            ++ctx.indention.second;
-            TRANSITION ("${\nx")
-            
-        } else
-        {
-            STATE ("${")::_process (i, ctx);
-        }
-    }
-};
 
-template <>
-struct STATE ("${\nx") : STATE ("${\n")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            if (++ctx.indention.second == ctx.max_indention)
-            {
-                ctx.indention.second = 0;
-                ctx.indention.first = true;
-                TRANSITION ("${\n");
-            }
-        } else
-        {
-            ctx.indention.second = 0;
-            TRANSITION ("${\n")
-            STATE ("${\n")::_process (i, ctx);
-        }
-    }
-};
 
 template <>
 struct STATE ("$") : BASE_STATE
@@ -1287,8 +1256,8 @@ struct STATE ("$(){") : BASE_STATE
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
-      
-            transition <STATE ("$(){\n")> (ctx);
+            transition <State <STR ("{\n"), State <STR ("$(){")>>> (ctx);
+//            transition <STATE ("$(){\n")> (ctx);
             
         } else
         {
@@ -1322,62 +1291,7 @@ struct STATE ("$(){") : BASE_STATE
     }
 };
 
-template <>
-struct STATE ("$(){\n") : STATE ("$(){")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == '\n')
-        {
-            ctx.value += '\n';
-            ctx.indention.first = false;
-            
-        } else if (*i == ' ' and ctx.indention.first == false)
-        {
-//            cout << "hi" << endl;
-            ++ctx.indention.second;
-            TRANSITION ("$(){\nx")
-            
-        } else
-        {
-            STATE ("$(){")::_process (i, ctx);
-        }
-    }
-};
 
-
-template <>
-struct STATE ("$(){\nx") : STATE ("$(){\n")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            if (++ctx.indention.second == ctx.max_indention)
-            {
-                ctx.indention.second = 0;
-                ctx.indention.first = true;
-                TRANSITION ("$(){\n");
-            }
-        } else
-        {
-            ctx.indention.second = 0;
-            TRANSITION ("$(){\n")
-            STATE ("$(){\n")::_process (i, ctx);
-        }
-    }
-};
-
-
-template <>
-struct STATE ("$(){\n\t") : STATE ("$(){")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        STATE ("$(){")::_process (i, ctx);
-    }
-};
 
 
 
@@ -1710,7 +1624,8 @@ struct STATE ("@(){") : BASE_STATE
         else if (*i == '\n')
         {
             ctx.potential += '\n';
-            TRANSITION ("@(){\n")
+            transition <State <STR ("{\n"), State <STR ("@(){")>>> (ctx);
+//            TRANSITION ("@(){\n")
             
         }
         else
@@ -1746,51 +1661,7 @@ struct STATE ("@(){") : BASE_STATE
     }
 };
 
-template <>
-struct STATE ("@(){\n") : STATE ("@(){")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == '\n')
-        {
-            ctx.value += *i;
-            ctx.indention.first = false;
-            
-        } else if (*i == ' ' and ctx.indention.first == false)
-        {
-//            cout << "hi" << endl;
-            ++ctx.indention.second;
-            TRANSITION ("@(){\nx")
-            
-        } else
-        {
-            STATE ("@(){")::_process (i, ctx);
-        }
-    }
-};
 
-template <>
-struct STATE ("@(){\nx") : STATE ("@(){\n")
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            if (++ctx.indention.second == ctx.max_indention)
-            {
-                ctx.indention.second = 0;
-                ctx.indention.first = true;
-                TRANSITION ("@(){\n");
-            }
-        } else
-        {
-            ctx.indention.second = 0;
-            TRANSITION ("@(){\n")
-            STATE ("@(){\n")::_process (i, ctx);
-        }
-    }
-};
 
 template <>
 struct STATE ("@(){} done") : STATE ("done")
