@@ -3,19 +3,49 @@ using namespace std;
 #include "common.hpp"
 #include <ph_type_list/type_list.hpp>
 #include <ph_system_file_path_checker/system_file_path_checker.hpp>
-#include <ph_system_file_path_checker/handles.hpp>
+//#include <ph_system_file_path_checker/handles.hpp>
 #include <cython/cython.hpp>
 
 
 
 
-//template <bool file>
-//struct error <file_info::file_must_not_exist, file_info::is_file>
-//{
-//
-//};
+template <class>
+struct handle_path_error;
+
+template <>
+struct handle_path_error <tag::constraints::path::must_exist>
+{
+    handle_path_error (filesystem::path const& path)
+    {
+        throw runtime_error ("given path does not exist on system");
+    }
+};
+
+template <>
+struct handle_path_error <tag::constraints::path::can_exist>
+{
+    handle_path_error (filesystem::path const& path)
+    {
+        throw runtime_error ("given path does not exist on system");
+    }
+};
 
 
+template <class Tag>
+struct handle_file_type_error
+{
+    handle_file_type_error (filesystem::path const& path)
+    {
+        if constexpr (is_same_v <Tag, tag::constraints::file_type::must_be_folder>)
+        {
+            throw runtime_error ("given path refers to a folder");
+            
+        } else if constexpr (is_same_v <Tag, tag::constraints::file_type::must_be_file>)
+        {
+            throw runtime_error ("given path refers to a file");
+        }
+    }
+};
 
 
 
@@ -66,23 +96,6 @@ struct InputPathHandler <tag::file_type::folder, Mixins...> : Mixins...
 
 
 
-//template <>
-//struct InputPathErrorHandler <path_error::must_not_exist, filetype_error::must_be_file>
-//{
-//    InputPathErrorHandler (filesystem::path const& path)
-//    {
-//
-//    }
-//};
-//
-//template <>
-//struct InputPathErrorHandler <path_error::must_not_exist, filetype_error::must_be_folder>
-//{
-//    InputPathErrorHandler (filesystem::path const& path)
-//    {
-//
-//    }
-//};
 
 
 
@@ -96,7 +109,7 @@ struct does_not_exist
 auto main (int,  char**) -> int
 {
     int argc = 5;
-    char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}};
+    char** argv = new char * [argc] {new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}};
 #elif defined (Release)
 auto main (int argc,  char** argv) -> int
 {
@@ -114,6 +127,9 @@ auto main (int argc,  char** argv) -> int
     f << output_text;
     f.close ();
     
+#if defined (Debug)
+    cout << output_text << endl;
+#endif
     
     return 0;
 }
