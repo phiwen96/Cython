@@ -440,10 +440,93 @@ struct STATE ("#{") : BASE_STATE
  
 };
 
-template <>
-struct STATE ("${") : BASE_STATE
+template <class T>
+struct State <STR ("{"), T> : T
 {
-    virtual void _process (iter i, Context& ctx){
+    using self = State <STR ("{"), T>;
+    void _process (iter i, Context& ctx)
+    {
+        if (*i == '}')
+        {
+            ctx.bracketStack.pop ();
+            
+            if (ctx.bracketStack.empty ())
+            {
+                T::template finish (ctx);
+                
+            } else
+            {
+                ctx.potential += '}';
+                ctx.value += *i;
+            }
+            
+        } else if (*i == DECLPASTE)
+        {
+            T::template addChildContext<STATE ("$")>(ctx).potential = *i;
+            
+        } else if (*i == '@')
+        {
+            T::template addChildContext<STATE ("@")>(ctx).potential = *i;
+            
+        } else if (*i == '#')
+        {
+            T::template addChildContext<STATE ("#")>(ctx).potential = *i;
+            
+        } else if (*i == '{')
+        {
+            ctx.bracketStack.push ('{');
+            ctx.potential += '{';
+            ctx.value += *i;
+            
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            transition <State <STR ("{\n"), self>> (ctx);
+        } else
+        {
+            ctx.value += *i;
+            ctx.potential += *i;
+        }
+    }
+};
+
+template <>
+struct STATE ("${") : BASE_STATE {
+    
+    void finish (Context& ctx)
+    {
+            auto declared = ctx.findVariable (ctx.value);
+            if (declared)
+            {
+                if (hasParent (ctx))
+                {
+                    BASE_STATE::addResultFromChild (declared.value()->second, ctx);
+                    clear (ctx);
+                    
+                    if (ctx.looping)
+                    {
+                        TRANSITION ("begin")
+                        
+                    } else
+                    {
+                        removeFromParent (ctx);
+                    }
+                } else
+                {
+                    
+                    result(ctx) += declared.value ()->second;
+                    clear (ctx);
+                    TRANSITION ("done")
+                }
+                
+            } else
+           {
+               string warning = "variable \"" + value (ctx) + "\" pasted but it has not yet been declared!";
+               throw runtime_error (warning);
+           }
+        
+    }
+    virtual void _process (iter i, Context& ctx) {
 //        cout << *i << endl;
         if (*i == '}')
         {
@@ -515,23 +598,19 @@ struct STATE ("${") : BASE_STATE
             ctx.potential += *i;
         }
     }
-    
-    virtual void addResultFromChild (string const& res, Context& ctx){
+    virtual void addResultFromChild (string const& res, Context& ctx) {
         value (ctx) += res;
         potential (ctx) += res;
     }
-    
     virtual string trans (){
         return "${";
     }
- 
+
 };
 
 template <>
-struct STATE ("$(){") : BASE_STATE
-{
-   
-    virtual void _process (iter i, Context& ctx){
+struct STATE ("$(){") : BASE_STATE {
+    virtual void _process (iter i, Context& ctx) {
         
         if (*i == '}')
         {
@@ -617,9 +696,8 @@ struct STATE ("$(){") : BASE_STATE
 };
 
 template <>
-struct STATE ("@(){") : BASE_STATE
-{
-    virtual void _process (iter i, Context& ctx){
+struct STATE ("@(){") : BASE_STATE {
+    virtual void _process (iter i, Context& ctx) {
         
         
         if (*i == '}')
@@ -646,6 +724,7 @@ struct STATE ("@(){") : BASE_STATE
         {
             ctx.bracketStack.push ('{');
             ctx.value += '{';
+            ctx.potential += '{';
             
         } else if (*i == DECLPASTE)
         {
@@ -681,12 +760,9 @@ struct STATE ("@(){") : BASE_STATE
 };
 
 template <>
-struct STATE ("$(x var y){") : BASE_STATE
-{
-    virtual void _process (iter i, Context& ctx)
-    {
-        ctx.potential += *i;
-        
+struct STATE ("$(x var y){") : BASE_STATE {
+    virtual void _process (iter i, Context& ctx) {
+                
         if (*i == '}')
         {
             ctx.bracketStack.pop ();
@@ -808,6 +884,7 @@ struct STATE ("$(x var y){") : BASE_STATE
         {
             ctx.value += *i;
             ctx.bracketStack.push ('{');
+            ctx.potential += '{';
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
@@ -815,6 +892,7 @@ struct STATE ("$(x var y){") : BASE_STATE
 //            TRANSITION ("$(x var y){\n")
         } else
         {
+            ctx.potential += *i;
             ctx.value += *i;
         }
             
