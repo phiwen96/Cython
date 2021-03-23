@@ -247,14 +247,7 @@ Context& BASE_STATE::addChildContext (Context& ctx) {
     return *childContext;
 #undef INDENTION
 }
-//optional <string> BASE_STATE::declared () {
-//    for (auto d = ctx.declaredVariables.begin (); d != ctx.declaredVariables.end(); ++d) {
-//        if (d -> first == ctx.variable) {
-//            return optional{d->second};
-//        }
-//    }
-//    return {};
-//}
+
 string& BASE_STATE::variable (Context& ctx) {
     return ctx.variable;
 }
@@ -354,10 +347,8 @@ struct State <STR ("{\n"), Parent> : Parent
             
         } else if (*i == ' ' and ctx.indention.first == false)
         {
-//            cout << "hi" << endl;
             ++ctx.indention.second;
             Parent::template transition<State <STR ("{\nx"), self>>(ctx);
-//            TRANSITION ("$(0 i 5){\nx")
             
         } else
         {
@@ -388,16 +379,6 @@ struct State <STR ("{\nx"), Parent> : Parent
         }
     }
 };
-
-
-
-
-
-
-
-
-
-
 
 template <>
 struct STATE ("#{") : BASE_STATE
@@ -537,7 +518,6 @@ struct STATE ("${") : BASE_STATE {
                     }
                 } else
                 {
-                    
                     result(ctx) += declared.value ()->second;
                     clear (ctx);
                     TRANSITION ("done")
@@ -712,12 +692,6 @@ struct STATE ("$(0 i 5){") : BASE_STATE {
     }
 };
 
-
-
-
-
-
-
 template <class T>
 struct State <STR ("T()"), T> : T
 {
@@ -757,9 +731,6 @@ struct State <STR ("T()"), T> : T
     }
 };
 
-
-
-
 template <>
 struct STATE ("$()") : BASE_STATE
 {
@@ -786,8 +757,6 @@ struct STATE ("$(0 i 5)") : BASE_STATE
         transition <State <STR ("T(...){"), STATE ("$(0 i 5){")>> (ctx);
     }
 };
-
-
 
 template <class T>
 struct State <STR ("T("), T> : T
@@ -834,8 +803,6 @@ struct State <STR ("T("), T> : T
             {
 //                T::template transition <State <STR ("T()"), STATE ("@(x")>> (ctx);
             }
-            
-            
         } else
         {
             ctx.variable += *i;
@@ -848,18 +815,11 @@ struct State <STR ("T("), T> : T
     }
 };
 
-
-
-
 template <>
 struct STATE ("$(") : BASE_STATE {};
 
 template <>
 struct STATE ("@(") : BASE_STATE {};
-
-
-
-
 
 template <>
 struct STATE ("$(0") : BASE_STATE
@@ -869,7 +829,6 @@ struct STATE ("$(0") : BASE_STATE
         if (isnumber (*i))
         {
             ctx.firstint += *i;
-//            TRANSITION ("")
         } else if (*i == ' ')
         {
             TRANSITION ("$(0 ");
@@ -915,15 +874,10 @@ struct STATE ("$(0 ") : BASE_STATE
             
         } else if (*i == DECLPASTE)
         {
-//            cout << "kuk" << endl;
             addChildContext<State <STR ("T"), STATE ("$")>>(ctx).potential = DECLPASTE;
             
         }
-//        else if (isnumber (*i))
-//        {
-//            throw runtime_error ("is not a number");
-//            
-//        }
+
         else
         {
             ctx.potential += *i;
@@ -934,7 +888,6 @@ struct STATE ("$(0 ") : BASE_STATE
     void addResultFromChild (string const& res, Context& ctx){
         ctx.intvariable += res;
         TRANSITION ("$(0 i");
-//        throw runtime_error ("oops");
     }
     
     virtual void reset_hasNoParent (Context& ctx){
@@ -961,19 +914,6 @@ struct STATE ("$(0 i") : BASE_STATE
         {
             ctx.intvariable += *i;
         }
-    }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("f1");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("f1");
-    }
-    virtual string trans (){
-        return "$(0 i";
     }
 };
 
@@ -1004,19 +944,6 @@ struct STATE ("$(0 i ") : BASE_STATE
             }
         }
     }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("f2");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("f2");
-    }
-    virtual string trans (){
-        return "$(0 i 5";
-    }
 };
 
 template <>
@@ -1046,24 +973,7 @@ struct STATE ("$(0 i 5") : BASE_STATE
             }
         }
     }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("f3");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("f3");
-    }
-    virtual string trans (){
-        return "$(0 i 5";
-    }
 };
-
-
-
-
 
 template <class T>
 struct State <STR ("T"), T> : T
@@ -1076,10 +986,10 @@ struct State <STR ("T"), T> : T
     {
         if constexpr (alpha)
             T::template transition <State <STR ("T("), STATE ("@(")>> (ctx);
+        
         else if constexpr (dollar)
             T::template transition <State <STR ("T("), STATE ("$(")>> (ctx);
 
-//            T::template transition <STATE ("$(")> (ctx);
         else if constexpr (hashtag)
             T::template transition <STATE ("#{")> (ctx);
     }
@@ -1093,12 +1003,10 @@ struct State <STR ("T"), T> : T
             if constexpr (alpha)
             {
                 change_state (ctx);
-//                T::template transition <STATE ("@(")> (ctx);
                 
             } else if constexpr (dollar)
             {
                 change_state (ctx);
-//                T::template transition <STATE ("$(")> (ctx);
                 
             } else if constexpr (hashtag)
             {
@@ -1163,7 +1071,6 @@ struct State <STR ("T"), T> : T
     }
 };
 
-
 template <>
 struct STATE ("$") : BASE_STATE {};
 
@@ -1172,15 +1079,6 @@ struct STATE ("@") : BASE_STATE {};
 
 template <>
 struct STATE ("#") : BASE_STATE {};
-
-
-
-
-
-
-
-
-
 
 template <>
 struct STATE ("done") : STATE ("begin")
@@ -1200,8 +1098,6 @@ struct STATE ("done") : STATE ("begin")
     }
 };
 
-
-
 template <>
 struct State <STR ("T done")> : STATE ("done")
 {
@@ -1218,25 +1114,6 @@ struct State <STR ("T done")> : STATE ("done")
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <class T>
 void BASE_STATE::transition (Context& ctx) {
     
@@ -1251,16 +1128,10 @@ void BASE_STATE::transition (Context& ctx) {
 }
 
 
-
-
 /**
  
  ${fornamn${fornamn}}
  
- 
-
-
-
 
 try
    {
@@ -1277,18 +1148,10 @@ try
    }
 
 
-
-
 ${hej}
 $(fornamn){Philip}
 ${fornamn}
 $(kiss){bajs}
 $(snopp){${fornamn}}
 $(namn){${fornamn}$(efternamn){Wenkel}}
-
-
-
 */
-
-
-
