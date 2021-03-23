@@ -295,20 +295,20 @@ struct STATE ("begin") : BASE_STATE
         if (*i == DECLPASTE)
         {
             potential (ctx) += *i;
-            transition <State <STR ("x"), STATE ("$")>> (ctx);
+            transition <State <STR ("T"), STATE ("$")>> (ctx);
 //            TRANSITION ("$")
             
         } else if (*i == '#')
         {
             potential (ctx) += '#';
-            transition <State <STR ("x"), STATE ("#")>> (ctx);
+            transition <State <STR ("T"), STATE ("#")>> (ctx);
             
         } else if (*i == '@')
         {
             potential (ctx) += '@';
-//            transition <State <STR ("x"), STATE ("@")>> (ctx);
+//            transition <State <STR ("T"), STATE ("@")>> (ctx);
 //            TRANSITION ("@")
-            transition <State <STR ("x"), STATE ("@")>> (ctx);
+            transition <State <STR ("T"), STATE ("@")>> (ctx);
             
         } else
         {
@@ -357,7 +357,7 @@ struct State <STR ("{\n"), Parent> : Parent
 //            cout << "hi" << endl;
             ++ctx.indention.second;
             Parent::template transition<State <STR ("{\nx"), self>>(ctx);
-//            TRANSITION ("$(x var y){\nx")
+//            TRANSITION ("$(0 i 5){\nx")
             
         } else
         {
@@ -426,7 +426,7 @@ struct STATE ("#{") : BASE_STATE
     }
     virtual void reset_hasNoParent (Context& ctx){
         potential(ctx).clear();
-        transition<STATE ("#{} done")>(ctx);
+        transition<STATE ("T done")>(ctx);
     }
     virtual void reset_hasParent (Context& ctx){
         if (ctx.looping)
@@ -444,27 +444,27 @@ struct STATE ("#{") : BASE_STATE
 };
 
 template <class T>
-struct State <STR ("{"), T> : T
+struct State <STR ("T(...){"), T> : T
 {
-    inline static constexpr bool parent_is_loop_type = is_same_v <T, STATE ("$(x var y){")>;
-    using self = State <STR ("{"), T>;
+    inline static constexpr bool parent_is_loop_type = is_same_v <T, STATE ("$(0 i 5){")>;
+    using self = State <STR ("T(...){"), T>;
     virtual void _process (iter i, Context& ctx)
     {
         if constexpr (not parent_is_loop_type)
         {
             if (*i == DECLPASTE)
             {
-                T::template addChildContext<State <STR ("x"), STATE ("$")>>(ctx).potential = *i;
+                T::template addChildContext<State <STR ("T"), STATE ("$")>>(ctx).potential = *i;
                 return;
                 
             } else if (*i == '@')
             {
-                T::template addChildContext<State <STR ("x"), STATE ("@")>>(ctx).potential = *i;
+                T::template addChildContext<State <STR ("T"), STATE ("@")>>(ctx).potential = *i;
                 return;
                 
             } else if (*i == '#')
             {
-                T::template addChildContext<State <STR ("x"), STATE ("#")>>(ctx).potential = *i;
+                T::template addChildContext<State <STR ("T"), STATE ("#")>>(ctx).potential = *i;
                 return;
                 
             }
@@ -601,12 +601,12 @@ struct STATE ("@(){") : BASE_STATE {
         
         declare (variable (ctx), value (ctx), ctx);
         clear (ctx);
-        TRANSITION ("@(){} done")
+        TRANSITION ("T done")
     }
 };
 
 template <>
-struct STATE ("$(x var y){") : BASE_STATE {
+struct STATE ("$(0 i 5){") : BASE_STATE {
     void finish (Context& ctx) {
         int i = stoi (ctx.firstint);
         int end = stoi (ctx.secondint);
@@ -719,7 +719,7 @@ struct STATE ("$(x var y){") : BASE_STATE {
 
 
 template <class T>
-struct State <STR ("()"), T> : T
+struct State <STR ("T()"), T> : T
 {
     void _process (iter i, Context& ctx)
     {
@@ -729,8 +729,8 @@ struct State <STR ("()"), T> : T
         {
             ctx.bracketStack.push ('{');
             T::finish (ctx);
-//            T::template transition <State <STR ("{"), STATE ("$(x var y){")>> (ctx);
-//            TRANSITION ("$(x var y){");
+//            T::template transition <State <STR ("T(...){"), STATE ("$(0 i 5){")>> (ctx);
+//            TRANSITION ("$(0 i 5){");
         } else if (*i == ' ')
         {
 
@@ -765,7 +765,7 @@ struct STATE ("$()") : BASE_STATE
 {
     void finish (Context& ctx)
     {
-        transition <State <STR ("{"), STATE ("$(){")>> (ctx);
+        transition <State <STR ("T(...){"), STATE ("$(){")>> (ctx);
     }
 };
 
@@ -774,23 +774,23 @@ struct STATE ("@()") : BASE_STATE
 {
     void finish (Context& ctx)
     {
-        transition <State <STR ("{"), STATE ("@(){")>> (ctx);
+        transition <State <STR ("T(...){"), STATE ("@(){")>> (ctx);
     }
 };
 
 template <>
-struct STATE ("$(x var y)") : BASE_STATE
+struct STATE ("$(0 i 5)") : BASE_STATE
 {
     void finish (Context& ctx)
     {
-        transition <State <STR ("{"), STATE ("$(x var y){")>> (ctx);
+        transition <State <STR ("T(...){"), STATE ("$(0 i 5){")>> (ctx);
     }
 };
 
 
 
 template <class T>
-struct State <STR ("x("), T> : T
+struct State <STR ("T("), T> : T
 {
     inline static constexpr bool dollar = is_same_v <T, STATE ("$(")>;
     inline static constexpr bool alpha = is_same_v <T, STATE ("@(")>;
@@ -803,10 +803,10 @@ struct State <STR ("x("), T> : T
             ctx.potential += *i;
             
             if constexpr (dollar)
-                T::template transition <State <STR ("()"), STATE ("$()")>> (ctx);
+                T::template transition <State <STR ("T()"), STATE ("$()")>> (ctx);
             
             else if constexpr (alpha)
-                T::template transition <State <STR ("()"), STATE ("@()")>> (ctx);
+                T::template transition <State <STR ("T()"), STATE ("@()")>> (ctx);
             
         } else if (*i == '\n')
         {
@@ -814,11 +814,11 @@ struct State <STR ("x("), T> : T
             
         } else if (*i == DECLPASTE)
         {
-            T::template addChildContext <State <STR ("x"), STATE ("$")>> (ctx).potential = *i;
+            T::template addChildContext <State <STR ("T"), STATE ("$")>> (ctx).potential = *i;
 
         } else if (*i == '@')
         {
-            T::template addChildContext <State <STR ("x"), STATE ("@")>> (ctx).potential = *i;
+            T::template addChildContext <State <STR ("T"), STATE ("@")>> (ctx).potential = *i;
             
         } else if (isnumber (*i))
         {
@@ -827,12 +827,12 @@ struct State <STR ("x("), T> : T
             
             if constexpr (dollar)
             {
-//                T::template transition <State <STR ("()"), STATE ("$(x")>> (ctx);
-                T::template transition <STATE ("$(x")> (ctx);
+//                T::template transition <State <STR ("T()"), STATE ("$(0")>> (ctx);
+                T::template transition <STATE ("$(0")> (ctx);
                 
             } else if constexpr (alpha)
             {
-//                T::template transition <State <STR ("()"), STATE ("@(x")>> (ctx);
+//                T::template transition <State <STR ("T()"), STATE ("@(x")>> (ctx);
             }
             
             
@@ -857,8 +857,12 @@ struct STATE ("$(") : BASE_STATE {};
 template <>
 struct STATE ("@(") : BASE_STATE {};
 
+
+
+
+
 template <>
-struct STATE ("$(x") : BASE_STATE
+struct STATE ("$(0") : BASE_STATE
 {
     void _process (iter i, Context& ctx){
         potential (ctx) += *i;
@@ -868,7 +872,7 @@ struct STATE ("$(x") : BASE_STATE
 //            TRANSITION ("")
         } else if (*i == ' ')
         {
-            TRANSITION ("$(x ");
+            TRANSITION ("$(0 ");
         } else
         {
             if (hasParent (ctx))
@@ -900,7 +904,7 @@ struct STATE ("$(x") : BASE_STATE
 };
 
 template <>
-struct STATE ("$(x ") : BASE_STATE
+struct STATE ("$(0 ") : BASE_STATE
 {
     void _process (iter i, Context& ctx){
         
@@ -912,7 +916,7 @@ struct STATE ("$(x ") : BASE_STATE
         } else if (*i == DECLPASTE)
         {
 //            cout << "kuk" << endl;
-            addChildContext<State <STR ("x"), STATE ("$")>>(ctx).potential = DECLPASTE;
+            addChildContext<State <STR ("T"), STATE ("$")>>(ctx).potential = DECLPASTE;
             
         }
 //        else if (isnumber (*i))
@@ -924,12 +928,12 @@ struct STATE ("$(x ") : BASE_STATE
         {
             ctx.potential += *i;
             ctx.intvariable += *i;
-            TRANSITION ("$(x var");
+            TRANSITION ("$(0 i");
         }
     }
     void addResultFromChild (string const& res, Context& ctx){
         ctx.intvariable += res;
-        TRANSITION ("$(x var");
+        TRANSITION ("$(0 i");
 //        throw runtime_error ("oops");
     }
     
@@ -940,18 +944,18 @@ struct STATE ("$(x ") : BASE_STATE
         throw runtime_error ("f");
     }
     virtual string trans (){
-        return "$(x ";
+        return "$(0 ";
     }
 };
 
 template <>
-struct STATE ("$(x var") : BASE_STATE
+struct STATE ("$(0 i") : BASE_STATE
 {
     void _process (iter i, Context& ctx){
         ctx.potential += *i;
         if (*i == ' ')
         {
-            TRANSITION ("$(x var ");
+            TRANSITION ("$(0 i ");
             
         } else
         {
@@ -969,19 +973,19 @@ struct STATE ("$(x var") : BASE_STATE
         throw runtime_error ("f1");
     }
     virtual string trans (){
-        return "$(x var";
+        return "$(0 i";
     }
 };
 
 template <>
-struct STATE ("$(x var ") : BASE_STATE
+struct STATE ("$(0 i ") : BASE_STATE
 {
     void _process (iter i, Context& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
         {
             ctx.secondint += *i;
-            TRANSITION ("$(x var y")
+            TRANSITION ("$(0 i 5")
         } else if (*i == ' ')
         {
             
@@ -1011,12 +1015,12 @@ struct STATE ("$(x var ") : BASE_STATE
         throw runtime_error ("f2");
     }
     virtual string trans (){
-        return "$(x var y";
+        return "$(0 i 5";
     }
 };
 
 template <>
-struct STATE ("$(x var y") : BASE_STATE
+struct STATE ("$(0 i 5") : BASE_STATE
 {
     void _process (iter i, Context& ctx){
         ctx.potential += *i;
@@ -1025,8 +1029,8 @@ struct STATE ("$(x var y") : BASE_STATE
             ctx.secondint += *i;
         } else if (*i == ')')
         {
-//            TRANSITION ("$(x var y)")
-            transition <State <STR ("()"), STATE ("$(x var y)")>> (ctx);
+//            TRANSITION ("$(0 i 5)")
+            transition <State <STR ("T()"), STATE ("$(0 i 5)")>> (ctx);
         } else
         {
             if (hasParent (ctx))
@@ -1053,7 +1057,7 @@ struct STATE ("$(x var y") : BASE_STATE
         throw runtime_error ("f3");
     }
     virtual string trans (){
-        return "$(x var y";
+        return "$(0 i 5";
     }
 };
 
@@ -1062,7 +1066,7 @@ struct STATE ("$(x var y") : BASE_STATE
 
 
 template <class T>
-struct State <STR ("x"), T> : T
+struct State <STR ("T"), T> : T
 {
     inline static constexpr bool dollar = is_same_v <T, STATE ("$")>;
     inline static constexpr bool alpha = is_same_v <T, STATE ("@")>;
@@ -1071,9 +1075,9 @@ struct State <STR ("x"), T> : T
     void change_state (Context& ctx)
     {
         if constexpr (alpha)
-            T::template transition <State <STR ("x("), STATE ("@(")>> (ctx);
+            T::template transition <State <STR ("T("), STATE ("@(")>> (ctx);
         else if constexpr (dollar)
-            T::template transition <State <STR ("x("), STATE ("$(")>> (ctx);
+            T::template transition <State <STR ("T("), STATE ("$(")>> (ctx);
 
 //            T::template transition <STATE ("$(")> (ctx);
         else if constexpr (hashtag)
@@ -1107,7 +1111,7 @@ struct State <STR ("x"), T> : T
             
             if constexpr (dollar)
             {
-                T::template transition <State <STR ("{"), STATE ("${")>> (ctx);
+                T::template transition <State <STR ("T(...){"), STATE ("${")>> (ctx);
                 
             } else if constexpr (alpha)
             {
@@ -1198,67 +1202,19 @@ struct STATE ("done") : STATE ("begin")
 
 
 
-
 template <>
-struct STATE ("${} done"): STATE ("done")
+struct State <STR ("T done")> : STATE ("done")
 {
     virtual void _process (iter i, Context& ctx){
         if (*i == '\n')
         {
-            TRANSITION ("done")
-        } else
-        {
-            TRANSITION ("done")
-            STATE ("done")::_process (i, ctx);
-        }
-    }
-    virtual void addResultFromChild (string const& res, Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual string trans (){
-        return "${} done";
-    }
- 
-};
-
-
-
-
-
-template <>
-struct STATE ("#{} done") : STATE ("done")
-{
-    virtual void _process (iter i, Context& ctx) {
-        if (*i == '\n')
-        {
             ctx.potential += '\n';
             TRANSITION ("done")
-            
         } else
         {
             TRANSITION ("done")
             STATE ("done")::_process (i, ctx);
         }
-        
-        
-    }
-    virtual void addResultFromChild (string const& res, Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual string trans (){
-        return "#{} done";
     }
 };
 
@@ -1272,33 +1228,8 @@ struct STATE ("#{} done") : STATE ("done")
 
 
 
-template <>
-struct STATE ("@(){} done") : STATE ("done")
-{
-    virtual void _process (iter i, Context& ctx) {
-        if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            
-//            STATE ("begin")::_process (i, ctx);
-//            STATE ("done")::_process (i, ctx);
-            TRANSITION ("done")
-        } else
-        {
-            TRANSITION ("done")
-            STATE ("done")::_process (i, ctx);
-        }
-//        else
-//        {
-//            TRANSITION ("done")
-//        }
-            
-        
-    }
-    virtual string trans (){
-        return "@(){} done";
-    }
-};
+
+
 
 
 
