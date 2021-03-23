@@ -578,14 +578,12 @@ struct STATE ("$(){") : BASE_STATE
             }
 
             
-        }
-        else if (*i == '{')
+        } else if (*i == '{')
         {
             ctx.bracketStack.push ('{');
             value(ctx) += *i;
             ctx.potential += '{';
-        }
-        else if (*i == DECLPASTE)
+        } else if (*i == DECLPASTE)
         {
             addChildContext <STATE ("$")> (ctx).potential = *i;
 
@@ -652,13 +650,19 @@ struct STATE ("@(){") : BASE_STATE
         } else if (*i == DECLPASTE)
         {
             addChildContext <STATE ("$")>(ctx).potential = *i;
-        }
-        else if (*i == '\n')
+        } else if (*i == '@')
+        {
+            addChildContext <STATE ("@")> (ctx).potential = *i;
+
+        } else if (*i == '#')
+        {
+            addChildContext <STATE ("#")> (ctx).potential = *i;
+
+        } else if (*i == '\n')
         {
             ctx.potential += '\n';
             transition <State <STR ("{\n"), State <STR ("@(){")>>> (ctx);
-        }
-        else
+        } else
         {
             ctx.potential += *i;
             ctx.value += *i;
@@ -668,23 +672,8 @@ struct STATE ("@(){") : BASE_STATE
     virtual void addResultFromChild (string const& res, Context& ctx){
         value (ctx) += res;
     }
-    
     void finish () {
         
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        potential(ctx).clear();
-        variable(ctx).clear();
-        value(ctx).clear();
-        TRANSITION ("done")
-    }
-    virtual void reset_hasParent (Context& ctx){
-        potential (ctx).clear ();
-        variable(ctx).clear();
-        value(ctx).clear();
-        TRANSITION ("done")
-//        removeFromParent (ctx);
     }
     virtual string trans (){
         return "@(){";
@@ -815,8 +804,7 @@ struct STATE ("$(x var y){") : BASE_STATE
             
             
 //            cout << "DONE" << endl;
-        }
-        else if (*i == '{')
+        } else if (*i == '{')
         {
             ctx.value += *i;
             ctx.bracketStack.push ('{');
@@ -825,18 +813,7 @@ struct STATE ("$(x var y){") : BASE_STATE
             ctx.potential += '\n';
             transition <State <STR ("{\n"), STATE ("$(x var y){")>> (ctx);
 //            TRANSITION ("$(x var y){\n")
-        }
-//        else if (*i == ' ')
-//        {
-////            ctx.spaces += ' ';
-//            cout << "tab" << endl;
-//        }
-//        else if (*i == '$')
-//        {
-//
-//
-//        }
-        else
+        } else
         {
             ctx.value += *i;
         }
@@ -848,13 +825,6 @@ struct STATE ("$(x var y){") : BASE_STATE
 //        cout << res << endl;
 //        ctx.value += res;
 //        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("f5");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("f5");
     }
     virtual string trans (){
         return "$(x var y){";
