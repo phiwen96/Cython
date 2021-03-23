@@ -18,6 +18,7 @@ $(kuk){
     {
         SNOPP
     }
+    ${snopp}
 }
 
 ${snopp}

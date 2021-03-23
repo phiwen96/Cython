@@ -108,27 +108,30 @@ struct does_not_exist
 #if defined (Debug)
 auto main (int,  char**) -> int
 {
-    int argc = 5;
-    char** argv = new char * [argc] {new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}};
+    int argc = 8;
+    char** argv = new char * [argc] {new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}, new char[]{"--code"}, new char[]{"@(name){phillo}"}, new char[]{"$(hej){då}"}};
 #elif defined (Release)
 auto main (int argc,  char** argv) -> int
 {
 #endif
     
-
-    auto [input_path, output_paths] = inputfsm (argc, argv);
+    
+    auto [input_path, output_paths, code] = inputfsm (argc, argv);
     using input_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::must_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
     using output_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::can_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
 
     filesystem::path input = input_reader::process(input_path, type_list <int, char> {}, type_list <string, int> {});
     filesystem::path output = output_reader::process(output_paths.front (), type_list <int, char> {}, type_list <string, int> {});
-    string output_text = Cython{}.process_text (readFileIntoString(input));
+    Cython cython;
+//    cython.process_text (code);
+    string output_text = cython.process_text (readFileIntoString(input));
     ofstream f (output);
     f << output_text;
     f.close ();
     
 #if defined (Debug)
     cout << output_text << endl;
+//    cout << code << endl;
 #endif
     
     return 0;

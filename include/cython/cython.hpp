@@ -5,6 +5,7 @@ using namespace std;
 struct Cython
 {
     vector <pair <string, string>> variables;
+    
     STATE ("begin") begin_state;
     
     Context ctx
@@ -16,9 +17,12 @@ struct Cython
     
     string process_text (string const& str)
     {
+        
+        ctx.result.clear ();
+        
         for (auto i = str.begin(); i < str.end(); ++i)
             ctx.process (i);
-        
+//        ctx.result.clear ();
         return ctx.result;
     }
     

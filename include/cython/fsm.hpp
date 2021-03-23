@@ -102,16 +102,18 @@ struct Context
     stack <char> bracketStack;
     
     inline static string result = "";
-    string spaces {""};
+    string spaces;
     string variable;
     string value;
     string potential;
     string paste;
-    string firstint{""};
-    string secondint{""};
-    string intvariable{""};
-    string loop{""};
+    string firstint;
+    string secondint;
+    string intvariable;
+    string loop;
     bool looping {false};
+    int max_indention = INDENTION;
+#undef INDENTION
     pair <bool, int> indention {false, 0}; //if already indented and if not, how much
     
     void process (iter);
@@ -785,7 +787,7 @@ struct STATE ("$(x var y){\nx") : STATE ("$(x var y){\n")
         if (*i == ' ')
         {
             ctx.potential += ' ';
-            if (++ctx.indention.second == INDENTION)
+            if (++ctx.indention.second == ctx.max_indention)
             {
                 ctx.indention.second = 0;
                 ctx.indention.first = true;
@@ -1273,7 +1275,7 @@ struct STATE ("$(){\nx") : STATE ("$(){\n")
         if (*i == ' ')
         {
             ctx.potential += ' ';
-            if (++ctx.indention.second == INDENTION)
+            if (++ctx.indention.second == ctx.max_indention)
             {
                 ctx.indention.second = 0;
                 ctx.indention.first = true;
