@@ -74,7 +74,6 @@ struct BASE_STATE
     string& value (Context& ctx);
     string& result (Context& ctx);
     string& potential (Context& ctx);
-    string& paste (Context& ctx);
     void removeFromParent (Context& ctx);
     template <class T> void transition (Context& ctx);
     template <class T> Context& addChildContext (Context& ctx);
@@ -91,6 +90,7 @@ struct BASE_STATE
     }
     string transi (Context& ctx);
     void chainChildren (iter i, Context& ctx);
+    void clear (Context& ctx);
 };
 
 struct Context
@@ -102,11 +102,9 @@ struct Context
     stack <char> bracketStack;
     
     inline static string result = "";
-    string spaces;
     string variable;
     string value;
     string potential;
-    string paste;
     string firstint;
     string secondint;
     string intvariable;
@@ -118,6 +116,13 @@ struct Context
     
     void process (iter);
 };
+
+void BASE_STATE::clear (Context& ctx)
+{
+    ctx.variable.clear();
+    ctx.value.clear();
+    ctx.potential.clear();
+}
 
 
 void BASE_STATE::declare (string const& variable_name, string const& variable_value, Context& ctx) {
@@ -243,9 +248,7 @@ string& BASE_STATE::result (Context& ctx) {
 string& BASE_STATE::potential (Context& ctx) {
     return ctx.potential;
 }
-string& BASE_STATE::paste (Context& ctx) {
-    return ctx.paste;
-}
+
 string BASE_STATE::transi (Context& ctx) {
     if (hasParent (ctx)){
         return ctx.parent->state->transi(*ctx.parent) + "::" + trans();
@@ -837,28 +840,6 @@ struct STATE ("${") : BASE_STATE
                                 {
                                     if (ctx.value.back () == '\n')
                                     {
-                                        /**
-                                         fix so that:
-                                         
-                                             $ (0 i 2)
-                                             {
-                                                 hej
-                                             }
-                                             kuk
-                                         
-                                         becomes:
-                                         
-                                            hej
-                                            kuk
-                                         
-                                         and not:
-                                            hej
-                                            
-                                            kuk
-                                         
-                                         
-                                         
-                                         */
                                         ctx.value.pop_back ();
                                     }
                                     
@@ -872,7 +853,7 @@ struct STATE ("${") : BASE_STATE
                                         potential(ctx).clear();
                                         value(ctx).clear();
                                         variable(ctx).clear();
-                                        paste(ctx).clear();
+//                                        paste(ctx).clear();
                                         
                                         if (ctx.looping)
                                         {
@@ -892,7 +873,7 @@ struct STATE ("${") : BASE_STATE
                                         potential(ctx).clear();
                                         value(ctx).clear();
                                         variable(ctx).clear();
-                                        paste(ctx).clear();
+//                                        paste(ctx).clear();
 //                                        cout << ctx.variable << endl;
                                         TRANSITION ("done")
                                     }
@@ -953,7 +934,7 @@ struct STATE ("${") : BASE_STATE
         potential(ctx).clear();
         value(ctx).clear();
         variable(ctx).clear();
-        paste(ctx).clear();
+//        paste(ctx).clear();
         TRANSITION ("${} done")
     }
     virtual void reset_hasParent (Context& ctx){
