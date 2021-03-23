@@ -789,13 +789,73 @@ struct STATE ("$(x var y)") : BASE_STATE
 
 
 
+template <class T>
+struct State <STR ("x("), T> : T
+{
+    inline static constexpr bool dollar = is_same_v <T, STATE ("$(")>;
+    inline static constexpr bool alpha = is_same_v <T, STATE ("@(")>;
+//    inline static constexpr bool hashtag = is_same_v <T, STATE ("#")>;
+    
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == ')')
+        {
+            ctx.potential += *i;
+            
+            if constexpr (dollar)
+                T::template transition <State <STR ("()"), STATE ("$()")>> (ctx);
+            
+            else if constexpr (alpha)
+                T::template transition <State <STR ("()"), STATE ("@()")>> (ctx);
+            
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            
+        } else if (*i == DECLPASTE)
+        {
+            T::template addChildContext <State <STR ("x"), STATE ("$")>> (ctx).potential = *i;
+
+        } else if (*i == '@')
+        {
+            T::template addChildContext <State <STR ("x"), STATE ("@")>> (ctx).potential = *i;
+            
+        } else if (isnumber (*i))
+        {
+            ctx.potential += *i;
+            ctx.firstint = *i;
+            
+            if constexpr (dollar)
+            {
+//                T::template transition <State <STR ("()"), STATE ("$(x")>> (ctx);
+                T::template transition <STATE ("$(x")> (ctx);
+                
+            } else if constexpr (alpha)
+            {
+//                T::template transition <State <STR ("()"), STATE ("@(x")>> (ctx);
+            }
+            
+            
+        } else
+        {
+            ctx.variable += *i;
+            ctx.potential += *i;
+        }
+    }
+    
+    virtual void addResultFromChild (string const& res, Context& ctx){
+        ctx.variable += res;
+    }
+};
 
 
 
 
+template <>
+struct STATE ("$(") : BASE_STATE {};
 
-
-
+template <>
+struct STATE ("@(") : BASE_STATE {};
 
 template <>
 struct STATE ("$(x") : BASE_STATE
@@ -1011,9 +1071,11 @@ struct State <STR ("x"), T> : T
     void change_state (Context& ctx)
     {
         if constexpr (alpha)
-            T::template transition <STATE ("@(")> (ctx);
+            T::template transition <State <STR ("x("), STATE ("@(")>> (ctx);
         else if constexpr (dollar)
-            T::template transition <STATE ("$(")> (ctx);
+            T::template transition <State <STR ("x("), STATE ("$(")>> (ctx);
+
+//            T::template transition <STATE ("$(")> (ctx);
         else if constexpr (hashtag)
             T::template transition <STATE ("#{")> (ctx);
     }
@@ -1112,47 +1174,7 @@ struct STATE ("#") : BASE_STATE {};
 
 
 
-template <>
-struct STATE ("$(") : BASE_STATE
-{
 
-    virtual void _process (iter i, Context& ctx){
-        
-        if (*i == ')')
-        {
-            potential (ctx) += *i;
-            transition <State <STR ("()"), STATE ("$()")>> (ctx);
-//            TRANSITION ("$()")
-            
-        } else if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            
-        } else if (*i == DECLPASTE)
-        {
-            addChildContext <State <STR ("x"), STATE ("$")>> (ctx).potential = *i;
-
-        } else if (isnumber (*i))
-        {
-            ctx.potential += *i;
-            ctx.firstint = *i;
-            TRANSITION ("$(x")
-            
-        } else
-        {
-            variable (ctx) += *i;
-            potential (ctx) += *i;
-        }
-       
-    }
-    virtual void addResultFromChild (string const& res, Context& ctx){
-        variable (ctx) += res;
-    }
-
-    virtual string trans (){
-        return "$(";
-    }
-};
 
 
 
@@ -1242,34 +1264,7 @@ struct STATE ("#{} done") : STATE ("done")
 
 
 
-template <>
-struct STATE ("@(") : BASE_STATE
-{
-    virtual void _process (iter i, Context& ctx){
-        
-        if (*i == ')')
-        {
-//            TRANSITION ("@()")
-            transition <State <STR ("()"), STATE ("@()")>> (ctx);
-            
-        } else if (*i == DECLPASTE)
-        {
-            addChildContext<State <STR ("x"), STATE ("$")>>(ctx).potential = DECLPASTE;
 
-        } else
-        {
-            ctx.potential += *i;
-            ctx.variable += *i;
-        }
-        
-    }
-    virtual void addResultFromChild (string const& res, Context& ctx){
-        variable (ctx) += res;
-    }
-    virtual string trans (){
-        return "@(";
-    }
-};
 
 
 
