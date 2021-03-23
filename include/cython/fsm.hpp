@@ -295,7 +295,8 @@ struct STATE ("begin") : BASE_STATE
         if (*i == DECLPASTE)
         {
             potential (ctx) += *i;
-            TRANSITION ("$")
+            transition <State <STR ("x"), STATE ("$")>> (ctx);
+//            TRANSITION ("$")
             
         } else if (*i == '#')
         {
@@ -998,13 +999,79 @@ struct STATE ("$(x var y") : BASE_STATE
 
 
 
+template <class T>
+struct State <STR ("x"), T> : T
+{
+    virtual void _process (iter i, Context& ctx){
+        ctx.potential += *i;
+        
+        if (*i == '(')
+        {
+            T::finish (ctx);
+            
+        } else if (*i == '{')
+        {
+            ctx.bracketStack.push ('{');
+            if constexpr (is_same_v <T, STATE ("$")>)
+            {
+                T::template transition <State <STR ("{"), STATE ("${")>> (ctx);
 
+            } else if constexpr (is_same_v <T, STATE ("@")>)
+            {
+                T::template transition <State <STR ("{"), STATE ("@{")>> (ctx);
+                
+            } else if constexpr (is_same_v <T, STATE ("#")>)
+            {
+                T::template transition <State <STR ("{"), STATE ("#{")>> (ctx);
+            } else
+            {
+                ctx.bracketStack.pop ();
+            }
+            
+
+        } else if (*i == ' ')
+        {
+            ctx.potential += ' ';
+            
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            
+        } else
+        {
+            if (T::hasParent (ctx))
+            {
+                T::addResultFromChild (ctx.potential, ctx);
+                T::clear (ctx);
+                
+                if (ctx.looping)
+                {
+                    T::template transition <STATE ("begin")> (ctx);
+                    
+                } else
+                {
+                    T::removeFromParent (ctx);
+                }
+
+            } else
+            {
+                ctx.result += ctx.potential;
+                T::clear (ctx);
+                T::template transition <STATE ("done")> (ctx);
+            }
+        }
+    }
+};
 
 
 template <>
 struct STATE ("$") : BASE_STATE
 {
 
+    void finish (Context& ctx)
+    {
+        TRANSITION ("$(")
+    }
     virtual void _process (iter i, Context& ctx){
         
         potential (ctx) += *i;
@@ -1042,6 +1109,56 @@ struct STATE ("$") : BASE_STATE
         return "$";
     }
 };
+
+template <>
+struct STATE ("@") : BASE_STATE
+{
+    void finish (Context& ctx)
+    {
+        TRANSITION ("@(")
+    }
+    virtual void _process (iter i, Context& ctx){
+        potential(ctx) += *i;
+        
+        switch (*i)
+        {
+            case '(':
+                TRANSITION ("@(")
+                break;
+                
+            case ' ':
+                break;
+                
+            case '\n':
+                break;
+                
+            default:
+                reset (ctx);
+                break;
+        }
+    }
+    virtual void reset_hasNoParent(Context& ctx){
+        result (ctx) += potential (ctx);
+        potential (ctx).clear ();
+        TRANSITION ("begin")
+    }
+    virtual void reset_hasParent(Context& ctx){
+        BASE_STATE::addResultFromChild (potential (ctx), ctx);
+        potential (ctx).clear ();
+        TRANSITION ("begin")
+//        removeFromParent (ctx);
+    }
+    virtual string trans (){
+        return "@";
+    }
+ 
+};
+
+
+
+
+
+
 
 template <>
 struct STATE ("$(") : BASE_STATE
@@ -1140,6 +1257,10 @@ struct STATE ("${} done"): STATE ("done")
 template <>
 struct STATE ("#") : BASE_STATE
 {
+    void finish (Context& ctx)
+    {
+//        TRANSITION ("$(")
+    }
     virtual void _process (iter i, Context& ctx){
         
         potential (ctx) += *i;
@@ -1213,45 +1334,7 @@ struct STATE ("#{} done") : STATE ("done")
     }
 };
 
-template <>
-struct STATE ("@") : BASE_STATE
-{
-    virtual void _process (iter i, Context& ctx){
-        potential(ctx) += *i;
-        
-        switch (*i)
-        {
-            case '(':
-                TRANSITION ("@(")
-                break;
-                
-            case ' ':
-                break;
-                
-            case '\n':
-                break;
-                
-            default:
-                reset (ctx);
-                break;
-        }
-    }
-    virtual void reset_hasNoParent(Context& ctx){
-        result (ctx) += potential (ctx);
-        potential (ctx).clear ();
-        TRANSITION ("begin")
-    }
-    virtual void reset_hasParent(Context& ctx){
-        BASE_STATE::addResultFromChild (potential (ctx), ctx);
-        potential (ctx).clear ();
-        TRANSITION ("begin")
-//        removeFromParent (ctx);
-    }
-    virtual string trans (){
-        return "@";
-    }
- 
-};
+
 
 template <>
 struct STATE ("@(") : BASE_STATE
