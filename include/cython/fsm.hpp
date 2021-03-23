@@ -47,6 +47,8 @@ return N; \
 
 #define DECL '@'
 
+#define INDENTION 4
+
 
 
 using iter = string::const_iterator;
@@ -110,6 +112,7 @@ struct Context
     string intvariable{""};
     string loop{""};
     bool looping {false};
+    int indention {0};
     
     void process (iter);
 };
@@ -1216,13 +1219,38 @@ struct STATE ("$(){\n") : STATE ("$(){")
         {
             ctx.value += '\n';
             
-        } else if (*i == '\t')
+        } else if (*i == ' ')
         {
-            ctx.potential += '\t';
+//            cout << "hi" << endl;
+            ++ctx.indention;
+            TRANSITION ("$(){\nx")
             
         } else
         {
             STATE ("$(){")::_process (i, ctx);
+        }
+    }
+};
+
+
+template <>
+struct STATE ("$(){\nx") : STATE ("$(){\n")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == ' ')
+        {
+            ctx.potential += ' ';
+            if (++ctx.indention == INDENTION)
+            {
+                ctx.indention = 0;
+                TRANSITION ("$(){\n");
+            }
+        } else
+        {
+            ctx.indention = 0;
+            TRANSITION ("$(){\n")
+            STATE ("$(){\n")::_process (i, ctx);
         }
     }
 };

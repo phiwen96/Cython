@@ -30,7 +30,7 @@ TEST_CASE ("declpaste $(x){foo}")
         }
     }
     
-    SECTION ("with new line after first bracket then indendtion")
+    SECTION ("with new line after first bracket then indention")
     {
         /**
          fix so that:
@@ -53,9 +53,10 @@ TEST_CASE ("declpaste $(x){foo}")
          */
         GIVEN ("input string")
         {
-            string input = R"V0G0N($ (x)
+            string input =
+R"V0G0N($ (x)
 {
-2
+    2
 }
 kuk)V0G0N";
             REQUIRE (Cython{}.process_text(input) == "2\nkuk");
@@ -818,15 +819,22 @@ TEST_CASE ("")
  */
 
 int main( int argc, char* argv[] ) {
- 
+    
     
 //    Cython app {};
 //    string input = "";
 //    string res = "";
 //    int nr_of_variables = 0;
-//    input = "$(0 $(variable){x} 3){hej}";
+//    input =
+//R"V0G0N($ (x)
+//{
+//    2
+//}
+//kuk)V0G0N";
+//    
 //    res = app.process_text (input);
 //    cout << res << endl;
+//    return 0;
 ////    get_result
 ////    get_nr_of_variables
 ////    auto [name_0, value_0] = app.get_variables()[0];
