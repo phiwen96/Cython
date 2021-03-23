@@ -6,7 +6,7 @@ $ (0 i 2)
 kuk
 $ (i)
 {
-    k
+        k
     hej
 }
 fitta

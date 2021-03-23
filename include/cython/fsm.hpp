@@ -112,7 +112,7 @@ struct Context
     string intvariable{""};
     string loop{""};
     bool looping {false};
-    int indention {0};
+    pair <bool, int> indention {false, 0}; //if already indented and if not, how much
     
     void process (iter);
 };
@@ -1218,11 +1218,12 @@ struct STATE ("$(){\n") : STATE ("$(){")
         if (*i == '\n')
         {
             ctx.value += '\n';
+            ctx.indention.first = false;
             
-        } else if (*i == ' ')
+        } else if (*i == ' ' and ctx.indention.first == false)
         {
 //            cout << "hi" << endl;
-            ++ctx.indention;
+            ++ctx.indention.second;
             TRANSITION ("$(){\nx")
             
         } else
@@ -1241,14 +1242,15 @@ struct STATE ("$(){\nx") : STATE ("$(){\n")
         if (*i == ' ')
         {
             ctx.potential += ' ';
-            if (++ctx.indention == INDENTION)
+            if (++ctx.indention.second == INDENTION)
             {
-                ctx.indention = 0;
+                ctx.indention.second = 0;
+                ctx.indention.first = true;
                 TRANSITION ("$(){\n");
             }
         } else
         {
-            ctx.indention = 0;
+            ctx.indention.second = 0;
             TRANSITION ("$(){\n")
             STATE ("$(){\n")::_process (i, ctx);
         }

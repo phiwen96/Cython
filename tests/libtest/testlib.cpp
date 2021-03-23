@@ -30,7 +30,7 @@ TEST_CASE ("declpaste $(x){foo}")
         }
     }
     
-    SECTION ("with new line after first bracket then indention")
+    SECTION ("indention, with new line after first bracket then indention")
     {
         /**
          fix so that:
@@ -56,10 +56,12 @@ TEST_CASE ("declpaste $(x){foo}")
             string input =
 R"V0G0N($ (x)
 {
+        2
+    2
     2
 }
 kuk)V0G0N";
-            REQUIRE (Cython{}.process_text(input) == "2\nkuk");
+            REQUIRE (Cython{}.process_text(input) == "    2\n2\n2\nkuk");
         }
     }
     
@@ -829,9 +831,11 @@ int main( int argc, char* argv[] ) {
 //R"V0G0N($ (x)
 //{
 //    2
+//        2
+//    2
 //}
 //kuk)V0G0N";
-//    
+//
 //    res = app.process_text (input);
 //    cout << res << endl;
 //    return 0;
