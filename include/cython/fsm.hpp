@@ -443,10 +443,11 @@ struct STATE ("#{") : BASE_STATE
 template <class T>
 struct State <STR ("{"), T> : T
 {
+    inline static constexpr bool parent_is_loop_type = is_same_v <T, STATE ("$(x var y){")>;
     using self = State <STR ("{"), T>;
     virtual void _process (iter i, Context& ctx)
     {
-        if constexpr (not is_same_v <T, STATE ("$(x var y){")>)
+        if constexpr (not parent_is_loop_type)
         {
             if (*i == DECLPASTE)
             {
@@ -465,6 +466,7 @@ struct State <STR ("{"), T> : T
                 
             }
         }
+        
         if (*i == '}')
         {
             ctx.bracketStack.pop ();
@@ -493,6 +495,19 @@ struct State <STR ("{"), T> : T
         {
             ctx.value += *i;
             ctx.potential += *i;
+        }
+    }
+    virtual void addResultFromChild (string const& res, Context& ctx)
+    {
+        if constexpr (parent_is_loop_type)
+        {
+            ctx.loop += res;
+            return;
+            
+        } else
+        {
+            ctx.value += res;
+            ctx.potential += res;
         }
     }
 };
@@ -532,11 +547,6 @@ struct STATE ("${") : BASE_STATE {
                throw runtime_error (warning);
            }
         
-    }
-
-    virtual void addResultFromChild (string const& res, Context& ctx) {
-        value (ctx) += res;
-        potential (ctx) += res;
     }
 };
 
@@ -578,9 +588,6 @@ struct STATE ("$(){") : BASE_STATE {
             TRANSITION ("done")
         }
     }
-    virtual void addResultFromChild (string const& res, Context& ctx){
-        value (ctx) += res;
-    }
 };
 
 template <>
@@ -595,9 +602,6 @@ struct STATE ("@(){") : BASE_STATE {
         declare (variable (ctx), value (ctx), ctx);
         clear (ctx);
         TRANSITION ("@(){} done")
-    }
-    virtual void addResultFromChild (string const& res, Context& ctx){
-        value (ctx) += res;
     }
 };
 
@@ -706,12 +710,6 @@ struct STATE ("$(x var y){") : BASE_STATE {
             ctx.bracketStack = stack <char> {};
             TRANSITION ("begin");
         }
-    }
-    void addResultFromChild (string const& res, Context& ctx) {
-        ctx.loop += res;
-//        cout << res << endl;
-//        ctx.value += res;
-//        throw runtime_error ("oops");
     }
 };
 
