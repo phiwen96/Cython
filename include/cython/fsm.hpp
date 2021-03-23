@@ -301,7 +301,7 @@ struct STATE ("begin") : BASE_STATE
         } else if (*i == '#')
         {
             potential (ctx) += '#';
-            TRANSITION ("#")
+            transition <State <STR ("x"), STATE ("#")>> (ctx);
             
         } else if (*i == '@')
         {
@@ -464,7 +464,7 @@ struct State <STR ("{"), T> : T
                 
             } else if (*i == '#')
             {
-                T::template addChildContext<STATE ("#")>(ctx).potential = *i;
+                T::template addChildContext<State <STR ("x"), STATE ("#")>>(ctx).potential = *i;
                 return;
                 
             }
@@ -1004,44 +1004,66 @@ struct STATE ("$(x var y") : BASE_STATE
 template <class T>
 struct State <STR ("x"), T> : T
 {
+    inline static constexpr bool dollar = is_same_v <T, STATE ("$")>;
+    inline static constexpr bool alpha = is_same_v <T, STATE ("@")>;
+    inline static constexpr bool hashtag = is_same_v <T, STATE ("#")>;
+    
+    void change_state (Context& ctx)
+    {
+        if constexpr (alpha)
+            T::template transition <STATE ("@(")> (ctx);
+        else if constexpr (dollar)
+            T::template transition <STATE ("$(")> (ctx);
+        else if constexpr (hashtag)
+            T::template transition <STATE ("#{")> (ctx);
+    }
+   
     void _process (iter i, Context& ctx){
         
         ctx.potential += *i;
         
         if (*i == '(')
         {
-            if constexpr (is_same_v <T, STATE ("@")>)
+            if constexpr (alpha)
             {
-
-                T::template transition <STATE ("@(")> (ctx);
+                change_state (ctx);
+//                T::template transition <STATE ("@(")> (ctx);
                 
-            } else if constexpr (is_same_v <T, STATE ("$")>)
+            } else if constexpr (dollar)
             {
-                T::template transition <STATE ("$(")> (ctx);
+                change_state (ctx);
+//                T::template transition <STATE ("$(")> (ctx);
+                
+            } else if constexpr (hashtag)
+            {
+                reset (ctx);
             }
            
         } else if (*i == '{')
         {
             ctx.bracketStack.push ('{');
             
-            if constexpr (is_same_v <T, STATE ("$")>)
+            if constexpr (dollar)
             {
                 T::template transition <State <STR ("{"), STATE ("${")>> (ctx);
                 
-            } else if constexpr (is_same_v <T, STATE ("@")>)
+            } else if constexpr (alpha)
             {
-//                T::template transition <State <STR ("{"), STATE ("${")>> (ctx);
                 reset (ctx);
+                
+            } else if constexpr (hashtag)
+            {
+                T::template transition <STATE ("#{")> (ctx);
             }
             
-//            T::finish_bracket (ctx);
-
         } else if (*i == ' ')
         {
+            if constexpr (not is_same_v <T, STATE ("#")>)
             ctx.potential += ' ';
             
         } else if (*i == '\n')
         {
+            if constexpr (not is_same_v <T, STATE ("#")>)
             ctx.potential += '\n';
             
         } else
@@ -1077,18 +1099,13 @@ struct State <STR ("x"), T> : T
 
 
 template <>
-struct STATE ("$") : BASE_STATE
-{
-  
-};
+struct STATE ("$") : BASE_STATE {};
 
 template <>
-struct STATE ("@") : BASE_STATE
-{
-  
- 
-};
+struct STATE ("@") : BASE_STATE {};
 
+template <>
+struct STATE ("#") : BASE_STATE {};
 
 
 
@@ -1189,53 +1206,7 @@ struct STATE ("${} done"): STATE ("done")
 };
 
 
-template <>
-struct STATE ("#") : BASE_STATE
-{
-    void finish (Context& ctx)
-    {
-//        TRANSITION ("$(")
-    }
-    virtual void _process (iter i, Context& ctx){
-        
-        potential (ctx) += *i;
-        
-        if (*i == '{')
-        {
-            ctx.bracketStack.push ('{');
-            TRANSITION ("#{")
 
-        } else if (*i == ' ')
-        {
-            
-        } else if (*i == '\n')
-        {
-
-            
-        } else
-        {
-            reset (ctx);
-
-        }
-        
-    }
-    virtual void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        result (ctx) += potential (ctx);
-        potential (ctx).clear ();
-        TRANSITION ("begin")
-    }
-    virtual void reset_hasParent (Context& ctx){
-        BASE_STATE::addResultFromChild (potential (ctx), ctx);
-        removeFromParent (ctx);
-    }
-    virtual string trans (){
-        return "#";
-    }
-};
 
 
 template <>
