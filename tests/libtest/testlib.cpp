@@ -820,11 +820,11 @@ $(kuk)
 })V0G0N";
     
     get_result
-    string facit = R"V0G0N(2
-2
-2
-2
-2)V0G0N";
+    string facit = R"V0G0N(
+hej
+SNOPP
+SNOPP
+)V0G0N";
     
     REQUIRE (result == facit);
 }

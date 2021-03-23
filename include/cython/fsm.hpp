@@ -113,7 +113,7 @@ struct Context
     string loop;
     bool looping {false};
     int max_indention = INDENTION;
-#undef INDENTION
+
     pair <bool, int> indention {false, 0}; //if already indented and if not, how much
     
     void process (iter);
@@ -217,9 +217,11 @@ Context& BASE_STATE::addChildContext (Context& ctx) {
 //    cout << endl;
     State<>* childState = new Q;
     Context* childContext = new Context {&ctx, ctx.declaredVariables, childState};
+    childContext -> max_indention = ctx.max_indention + INDENTION;
 //    childState -> context = childContext;
     ctx.children.push_back (childContext);
     return *childContext;
+#undef INDENTION
 }
 //optional <string> BASE_STATE::declared () {
 //    for (auto d = ctx.declaredVariables.begin (); d != ctx.declaredVariables.end(); ++d) {
