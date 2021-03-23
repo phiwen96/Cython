@@ -29,7 +29,42 @@ TEST_CASE ("declpaste $(x){foo}")
             REQUIRE (Cython{}.process_text(input) == "Philip");
         }
     }
+    
+    SECTION ("with new line after first bracket then indendtion")
+    {
+        /**
+         fix so that:
+         
+             $ (0 i 2)
+             {
+                 hej
+             }
+             kuk
+         
+         becomes:
+         
+            hej
+            kuk
+         
+         and not:
+            hej
+            
+            kuk
+         */
+        GIVEN ("input string")
+        {
+            string input = R"V0G0N($ (x)
+{
+2
 }
+kuk)V0G0N";
+            REQUIRE (Cython{}.process_text(input) == "2\nkuk");
+        }
+    }
+    
+   
+}
+
 TEST_CASE ("decl @(x){foo}")
 {
     SECTION ("no spaces")
@@ -144,7 +179,7 @@ hej})V0G0N";
 {
 hej
 })V0G0N";
-                REQUIRE (Cython{}.process_text(input) == "hej\nhej\nhej\n");
+                REQUIRE (Cython{}.process_text(input) == "hej\nhej\nhej");
             }
         }
     }
@@ -720,11 +755,12 @@ TEST_CASE ("")
     2
     2
     2
-    2
-)V0G0N";
+    2)V0G0N";
     
     REQUIRE (result == facit);
 }
+
+
 TEST_CASE ("")
 {
     Cython app {};
@@ -733,34 +769,17 @@ TEST_CASE ("")
     string result = "";
     int nr_of_variables = 0;
     
-    input = R"V0G0N($ (x)
-{
-    2
-})V0G0N";
+    input = "$ (0 i 2)\n"
+    "{\n"
+        "hej\n"
+        "kuk\n"
+    "}\n"
+    "kuk";
     
     get_result
-    string facit = R"V0G0N(    2)V0G0N";
+    string facit = "hej\nkuk\nhej\nkuk\nkuk";
     
     REQUIRE (result == facit);
-}
-TEST_CASE ("")
-{
-    Cython app {};
-    string input = "";
-    
-    string result = "";
-    int nr_of_variables = 0;
-    
-    input = R"V0G0N($ (0 i 2)
-{
-hej
-})V0G0N";
-    
-    get_result
-    string facit = "hej\nhej\n";
-    
-    REQUIRE (result == facit);
-    
 }
 
 //TEST_CASE ("")

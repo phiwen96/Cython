@@ -1,4 +1,12 @@
 $ (0 i 2)
 {
-hej
+    hej
+    kuk
 }
+kuk
+$ (i)
+{
+    k
+    hej
+}
+fitta

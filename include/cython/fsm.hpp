@@ -592,6 +592,8 @@ struct STATE ("$(x var y){") : BASE_STATE
             
             if (ctx.bracketStack.empty ())
             {
+                
+                
                 int i = stoi (ctx.firstint);
                 int end = stoi (ctx.secondint);
                 
@@ -630,6 +632,35 @@ struct STATE ("$(x var y){") : BASE_STATE
                         break;
                     }
                 }
+                
+                if (ctx.loop.back () == '\n')
+                {
+                    cout << "hi" << endl;
+                    /**
+                     fix so that:
+                     
+                         $ (0 i 2)
+                         {
+                             hej
+                         }
+                         kuk
+                     
+                     becomes:
+                     
+                        hej
+                        kuk
+                     
+                     and not:
+                        hej
+                        
+                        kuk
+                     
+                     
+                     
+                     */
+                    ctx.loop.pop_back ();
+                }
+                
                 
                 
                 if (hasParent (ctx))
@@ -853,13 +884,6 @@ struct STATE ("${") : BASE_STATE
  
 };
 
-
-
-
-
-
-
-
 template <>
 struct STATE ("$") : BASE_STATE
 {
@@ -914,9 +938,6 @@ struct STATE ("$") : BASE_STATE
     }
 };
 
-
-
-
 template <>
 struct STATE ("$(") : BASE_STATE
 {
@@ -967,9 +988,6 @@ struct STATE ("$(") : BASE_STATE
         return "$(";
     }
 };
-
-
-
 
 template <>
 struct STATE ("$()") : BASE_STATE
@@ -1030,8 +1048,6 @@ struct STATE ("$()") : BASE_STATE
     }
 };
 
-
-
 template <>
 struct STATE ("$(){") : BASE_STATE
 {
@@ -1064,6 +1080,32 @@ struct STATE ("$(){") : BASE_STATE
                 //                cout << "found:" << variable(ctx) << " = " << value(ctx) << endl;
                                 ctx.declaredVariables.emplace_back(variable(ctx), value(ctx));
                 //                cout << "v::" << value(ctx) << endl;
+                            }
+                            if (ctx.value.back () == '\n')
+                            {
+                                /**
+                                 fix so that:
+                                 
+                                     $ (0 i 2)
+                                     {
+                                         hej
+                                     }
+                                     kuk
+                                 
+                                 becomes:
+                                 
+                                    hej
+                                    kuk
+                                 
+                                 and not:
+                                    hej
+                                    
+                                    kuk
+                                 
+                                 
+                                 
+                                 */
+                                ctx.value.pop_back ();
                             }
                             if (hasParent(ctx))
                             {
@@ -1130,6 +1172,8 @@ struct STATE ("$(){") : BASE_STATE
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
+      
+            transition <STATE ("$(){\n")> (ctx);
             
         } else
         {
@@ -1163,7 +1207,36 @@ struct STATE ("$(){") : BASE_STATE
     }
 };
 
-//STATE ("$(){")* STATE ("$(){")::a = new STATE ("$(){");
+template <>
+struct STATE ("$(){\n") : STATE ("$(){")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == '\n')
+        {
+            ctx.value += '\n';
+            
+        } else if (*i == '\t')
+        {
+            ctx.potential += '\t';
+            
+        } else
+        {
+            STATE ("$(){")::_process (i, ctx);
+        }
+    }
+};
+
+
+template <>
+struct STATE ("$(){\n\t") : STATE ("$(){")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        STATE ("$(){")::_process (i, ctx);
+    }
+};
+
 
 
 
