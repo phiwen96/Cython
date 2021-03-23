@@ -1,8 +1,10 @@
-    hej
-    kuk
-    hej
-    kuk
+hej
+    snopp
 kuk
-k
+hej
+    snopp
+kuk
+kuk
+    k
 hej
 fitta

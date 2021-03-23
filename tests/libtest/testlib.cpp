@@ -237,11 +237,11 @@ kuk)V0G0N";
 R"V0G0N($ (0 x 2)
 {
     2
-    2
+        2
     2
 }
 kuk)V0G0N";
-            REQUIRE (Cython{}.process_text(input) == "2\n2\n2\n2\n2\n2\nkuk");
+            REQUIRE (Cython{}.process_text(input) == "2\n    2\n2\n2\n    2\n2\nkuk");
         }
     }
 }
