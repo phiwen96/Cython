@@ -881,6 +881,94 @@ ${ph})V0G0N";
     REQUIRE (result == facit);
 }
 
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+@(i)
+{
+    {
+        a
+    }
+}
+${i}
+)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+{
+    a
+}
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+$(i)
+{
+    {
+        a
+    }
+}
+)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+{
+    a
+}
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+$(0 i 2)
+{
+    {
+        a
+    }
+}
+)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+{
+    a
+}
+{
+    a
+}
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
 
 //TEST_CASE ("")
 //{

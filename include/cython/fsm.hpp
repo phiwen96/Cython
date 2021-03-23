@@ -400,9 +400,13 @@ template <>
 struct STATE ("#{") : BASE_STATE
 {
     virtual void _process (iter i, Context& ctx){
+        
         potential(ctx) += *i;
-        if (*i == '}') {
+        
+        if (*i == '}')
+        {
             ctx.bracketStack.pop ();
+            
             if (ctx.bracketStack.empty ())
             {
                 reset (ctx);
@@ -636,14 +640,14 @@ struct STATE ("@(){") : BASE_STATE
                 
             } else
             {
-                ctx.potential += '}';
+                ctx.value += '}';
             }
             
             
         } else if (*i == '{')
         {
             ctx.bracketStack.push ('{');
-            ctx.potential += '{';
+            ctx.value += '{';
             
         } else if (*i == DECLPASTE)
         {
