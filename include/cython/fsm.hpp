@@ -122,6 +122,10 @@ void BASE_STATE::clear (Context& ctx)
     ctx.variable.clear();
     ctx.value.clear();
     ctx.potential.clear();
+    ctx.firstint.clear ();
+    ctx.secondint.clear ();
+    ctx.intvariable.clear ();
+    ctx.loop.clear ();
 }
 
 
@@ -387,18 +391,12 @@ struct STATE ("$(x") : BASE_STATE
             if (hasParent (ctx))
             {
                 BASE_STATE::addResultFromChild (potential (ctx), ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             } else
             {
                 result (ctx) += potential (ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             }
         }
@@ -509,18 +507,12 @@ struct STATE ("$(x var ") : BASE_STATE
             if (hasParent (ctx))
             {
                 BASE_STATE::addResultFromChild (potential (ctx), ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             } else
             {
                 result (ctx) += potential (ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             }
         }
@@ -556,18 +548,12 @@ struct STATE ("$(x var y") : BASE_STATE
             if (hasParent (ctx))
             {
                 BASE_STATE::addResultFromChild (potential (ctx), ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             } else
             {
                 result (ctx) += potential (ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             }
         }
@@ -598,29 +584,23 @@ struct STATE ("$(x var y)") : BASE_STATE
             TRANSITION ("$(x var y){");
         } else if (*i == ' ')
         {
-            
+            ctx.potential += ' ';
         } else if (*i == '\n')
         {
-
+            ctx.potential += '\n';
             
         }else
         {
             if (hasParent (ctx))
             {
                 BASE_STATE::addResultFromChild (potential (ctx), ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
 //                removeFromParent (ctx);
             } else
             {
                 result (ctx) += potential (ctx);
-                potential (ctx).clear ();
-                ctx.firstint.clear ();
-                ctx.secondint.clear ();
-                ctx.intvariable.clear ();
+                clear (ctx);
                 TRANSITION ("begin");
             }
         }
@@ -831,29 +811,19 @@ struct STATE ("${") : BASE_STATE
             
             if (ctx.bracketStack.empty ())
             {
-                //            optional <string> decl = declared (variable (ctx), ctx);
                             for (auto& d : ctx.declaredVariables)
                             {
-                //                cout << d.first << endl;
-                //                cout << ctx.variable << endl;
                                 if (d.first == ctx.value)
                                 {
                                     if (ctx.value.back () == '\n')
                                     {
                                         ctx.value.pop_back ();
                                     }
-                                    
-                //                    return d->second;
-                //                    cout << "::" << d->second << endl;
+
                                     if (hasParent (ctx))
                                     {
-                //                        cout << "kuk::${" << endl;
                                         BASE_STATE::addResultFromChild (d.second, ctx);
-                //                        cout << "adding result \"" << d.second << "\" from ${ to parent" << endl;
-                                        potential(ctx).clear();
-                                        value(ctx).clear();
-                                        variable(ctx).clear();
-//                                        paste(ctx).clear();
+                                        clear (ctx);
                                         
                                         if (ctx.looping)
                                         {
@@ -863,18 +833,10 @@ struct STATE ("${") : BASE_STATE
                                         {
                                             removeFromParent(ctx);
                                         }
-                //                        TRANSITION ("done")
                                     } else {
                                         
                                         result(ctx) += d.second;
-                //                        cout << "adding result \"" << d.second << "\" from ${ to parent" << endl;
-
-                //                        cout << result(ctx) << endl;
-                                        potential(ctx).clear();
-                                        value(ctx).clear();
-                                        variable(ctx).clear();
-//                                        paste(ctx).clear();
-//                                        cout << ctx.variable << endl;
+                                        clear (ctx);
                                         TRANSITION ("done")
                                     }
                                     return;
@@ -882,7 +844,6 @@ struct STATE ("${") : BASE_STATE
                             }
                            
                             string warning = "variable \"" + value (ctx) + "\" pasted but it has not yet been declared!";
-                            //            cout << result (ctx) << endl;
                             throw runtime_error (warning);
             }
             else
@@ -913,34 +874,18 @@ struct STATE ("${") : BASE_STATE
         {
             ctx.potential += '\n';
             transition <State <STR ("{\n"), State<STR ("${")>>> (ctx);
-//            TRANSITION ("${\n")
-            
         } else
         {
             ctx.value += *i;
             ctx.potential += *i;
-//            cout << *i << endl;
         }
     }
     
     virtual void addResultFromChild (string const& res, Context& ctx){
-//        cout << "getting result \"" << res << "\" to ${" << endl;
         value (ctx) += res;
         potential (ctx) += res;
     }
     
-    virtual void reset_hasNoParent (Context& ctx){
-        result(ctx) += value (ctx);
-        potential(ctx).clear();
-        value(ctx).clear();
-        variable(ctx).clear();
-//        paste(ctx).clear();
-        TRANSITION ("${} done")
-    }
-    virtual void reset_hasParent (Context& ctx){
-        BASE_STATE::addResultFromChild (value (ctx), ctx);
-        removeFromParent (ctx);
-    }
     virtual string trans (){
         return "${";
     }
@@ -968,10 +913,10 @@ struct STATE ("$") : BASE_STATE
 
         } else if (*i == ' ')
         {
-            
+            ctx.potential += ' ';
         } else if (*i == '\n')
         {
-
+            ctx.potential += '\n';
             
         } else
         {
@@ -984,19 +929,6 @@ struct STATE ("$") : BASE_STATE
     virtual void addResultFromChild (string const& res, Context& ctx){
         potential(ctx) += res;
         throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        result (ctx) += potential(ctx);
-        potential(ctx).clear ();
-        variable (ctx).clear ();
-        value (ctx).clear ();
-        TRANSITION ("begin")
-    }
-    virtual void reset_hasParent (Context& ctx){
-        BASE_STATE::addResultFromChild (potential (ctx), ctx);
-        TRANSITION ("begin")
-//        removeFromParent (ctx);
     }
     virtual string trans (){
         return "$";
@@ -1012,8 +944,6 @@ struct STATE ("$(") : BASE_STATE
         if (*i == ')')
         {
             potential (ctx) += *i;
-//            variable (ctx) = string (potential(ctx).begin() + 2, potential(ctx).end());
-//            potential (ctx) += ')';
             TRANSITION ("$()")
             
         } else if (*i == '\n')
@@ -1034,21 +964,13 @@ struct STATE ("$(") : BASE_STATE
         {
             variable (ctx) += *i;
             potential (ctx) += *i;
-//            potential (ctx) += *i;
-
         }
        
     }
     virtual void addResultFromChild (string const& res, Context& ctx){
         variable (ctx) += res;
     }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("");
-    }
+
     virtual string trans (){
         return "$(";
     }
@@ -1089,25 +1011,6 @@ struct STATE ("$()") : BASE_STATE
         throw runtime_error ("oops");
     }
     
-    virtual void reset_hasNoParent (Context& ctx){
-        result (ctx) += potential (ctx);
-        potential (ctx).clear ();
-        variable (ctx).clear ();
-        value (ctx).clear ();
-        ctx.bracketStack = stack <char> {};
-        TRANSITION ("begin")
-        
-        
-    }
-    virtual void reset_hasParent (Context& ctx){
-        BASE_STATE::addResultFromChild (potential (ctx), ctx);
-        potential (ctx).clear ();
-        variable (ctx).clear ();
-        value (ctx).clear ();
-        ctx.bracketStack = stack <char> {};
-        TRANSITION ("begin")
-//        removeFromParent (ctx);
-    }
     virtual string trans (){
         return "$()";
     }
@@ -1126,59 +1029,28 @@ struct STATE ("$(){") : BASE_STATE
             ctx.bracketStack.pop ();
             if (ctx.bracketStack.empty ())
             {
-                //
-                //            if (ctx.bracketStack.empty ())
-                //            {
                             bool found = false;
-                //            cout << "var: " << variable(ctx) << endl << "val: " << value(ctx) << endl;
-                            for (auto& j : ctx.declaredVariables){
-                                if (j.first == variable(ctx)){
-                //                    value(ctx) = j->second;
+                            for (auto& j : ctx.declaredVariables)
+                            {
+                                if (j.first == variable(ctx))
+                                {
                                     j.second = value (ctx);
-                //                    cout << "found:" << j->first << " = " << j->second << endl;
                                     found = true;
                                     break;
                                 }
                             }
-                //            optional <string> found = declared (ctx.variable, ctx);
-                            if (not found){
-                //                cout << "found:" << variable(ctx) << " = " << value(ctx) << endl;
+                            if (not found)
+                            {
                                 ctx.declaredVariables.emplace_back(variable(ctx), value(ctx));
-                //                cout << "v::" << value(ctx) << endl;
                             }
                             if (ctx.value.back () == '\n')
                             {
-                                /**
-                                 fix so that:
-                                 
-                                     $ (0 i 2)
-                                     {
-                                         hej
-                                     }
-                                     kuk
-                                 
-                                 becomes:
-                                 
-                                    hej
-                                    kuk
-                                 
-                                 and not:
-                                    hej
-                                    
-                                    kuk
-                                 
-                                 
-                                 
-                                 */
                                 ctx.value.pop_back ();
                             }
                             if (hasParent(ctx))
                             {
-                //                BASE_STATE::addResultFromChild(value(ctx), ctx);
                                 BASE_STATE::addResultFromChild (value(ctx), ctx);
-                                variable (ctx).clear();
-                                value (ctx).clear();
-                                potential (ctx).clear();
+                                clear (ctx);
                                 
                                 if (ctx.looping)
                                 {
@@ -1188,26 +1060,13 @@ struct STATE ("$(){") : BASE_STATE
                                 {
                                     removeFromParent(ctx);
                                 }
-                //                ctx.bracketStack = stack <char> {};
-                                
-//                                TRANSITION ("done")
-//                                TRANSITION ("begin")
-                            } else {
+
+                            } else
+                            {
                                 result (ctx) += value (ctx);
-                                variable (ctx).clear();
-                                value (ctx).clear();
-                                potential (ctx).clear();
+                                clear (ctx);
                                 TRANSITION ("done")
-                //                ctx.bracketStack = stack <char> {};
-                //                TRANSITION ("done")
                             }
-                            
-                //                declare (variable (ctx), value (ctx), ctx);
-                //                reset(ctx);
-                //            } else
-                //            {
-                //                value (ctx) += '}';
-                //            }
             } else
             {
                 ctx.potential += '}';
@@ -1238,7 +1097,6 @@ struct STATE ("$(){") : BASE_STATE
         {
             ctx.potential += '\n';
             transition <State <STR ("{\n"), State <STR ("$(){")>>> (ctx);
-//            transition <STATE ("$(){\n")> (ctx);
             
         } else
         {
@@ -1249,24 +1107,8 @@ struct STATE ("$(){") : BASE_STATE
     }
     virtual void addResultFromChild (string const& res, Context& ctx){
         value (ctx) += res;
-//        cout << "kuk::$(){" << endl;
-//        cout << res << endl;
-//        throw runtime_error ("oops");
     }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        result (ctx) += value (ctx);
-        potential(ctx).clear();
-        value(ctx).clear();
-        variable(ctx).clear();
-        TRANSITION ("begin")
-        throw runtime_error ("oops");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        BASE_STATE::addResultFromChild (value (ctx), ctx);
-        removeFromParent (ctx);
-        throw runtime_error ("oops");
-    }
+
     virtual string trans (){
         return "$(){";
     }
@@ -1495,11 +1337,8 @@ struct STATE ("@(") : BASE_STATE
 {
     virtual void _process (iter i, Context& ctx){
         
-        
-        
         if (*i == ')')
         {
-//            cout << ctx.variable << endl;
             TRANSITION ("@()")
             
         } else if (*i == DECLPASTE)
@@ -1516,8 +1355,6 @@ struct STATE ("@(") : BASE_STATE
     virtual void addResultFromChild (string const& res, Context& ctx){
         variable (ctx) += res;
     }
-    virtual void reset_hasNoParent (Context& ctx){}
-    virtual void reset_hasParent (Context& ctx){}
     virtual string trans (){
         return "@(";
     }
@@ -1581,9 +1418,7 @@ struct STATE ("@(){") : BASE_STATE
                 }
                 
                 declare (variable (ctx), value (ctx), ctx);
-                ctx.potential.clear();
-                ctx.variable.clear();
-                ctx.value.clear();
+                clear (ctx);
                 TRANSITION ("@(){} done")
                 
             } else
@@ -1591,7 +1426,6 @@ struct STATE ("@(){") : BASE_STATE
                 ctx.potential += '}';
             }
             
-            //            reset (ctx);
             
         } else if (*i == '{')
         {
@@ -1606,8 +1440,6 @@ struct STATE ("@(){") : BASE_STATE
         {
             ctx.potential += '\n';
             transition <State <STR ("{\n"), State <STR ("@(){")>>> (ctx);
-//            TRANSITION ("@(){\n")
-            
         }
         else
         {
