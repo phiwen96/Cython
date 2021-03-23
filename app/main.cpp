@@ -93,38 +93,16 @@ struct does_not_exist
 };
 
 #if defined (Debug)
-#define AS_FILE
-
-
 auto main (int,  char**) -> int
 {
     int argc = 5;
-//#if defined (AS_FILE)
     char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}};
-//#else
-//    char** argv = new char*[argc]{new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFolders_pre/&(root){philips bibliotek}"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFolders_pre/&(root){philips bibliotek}"}};
-//#endif
-    
-    
-    
 #elif defined (Release)
 auto main (int argc,  char** argv) -> int
 {
 #endif
     
-    
-    
-//    InputPathErrorHandler<path_error::must_exist> aa ;
-//    path_error::must_exist::error<InputPathErrorHandler>("hej");
-    
-//    path_error::must_exist <InputPathErrorHandler> a;
-    
-    
 
-    
-    
-
-    
     auto [input_path, output_paths] = inputfsm (argc, argv);
     using input_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::must_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
     using output_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::can_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
@@ -135,19 +113,6 @@ auto main (int argc,  char** argv) -> int
     ofstream f (output);
     f << output_text;
     f.close ();
-    
-    
-    
-    
-//    reader.yeah(input_file, type_list <int, char> {}, type_list <string, int> {});
-    
-    
-    /**
-     takes existance::yes<type> where type constructor const(filesystem::path const&) is called if file does not exist
-     takes existance::no<type> where type constructor const(filesystem::path const&) is called if file exists
-     */
-    
-    
     
     
     return 0;
