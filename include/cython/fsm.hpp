@@ -446,6 +446,25 @@ struct State <STR ("{"), T> : T
     using self = State <STR ("{"), T>;
     virtual void _process (iter i, Context& ctx)
     {
+        if constexpr (not is_same_v <T, STATE ("$(x var y){")>)
+        {
+            if (*i == DECLPASTE)
+            {
+                T::template addChildContext<STATE ("$")>(ctx).potential = *i;
+                return;
+                
+            } else if (*i == '@')
+            {
+                T::template addChildContext<STATE ("@")>(ctx).potential = *i;
+                return;
+                
+            } else if (*i == '#')
+            {
+                T::template addChildContext<STATE ("#")>(ctx).potential = *i;
+                return;
+                
+            }
+        }
         if (*i == '}')
         {
             ctx.bracketStack.pop ();
@@ -459,18 +478,6 @@ struct State <STR ("{"), T> : T
                 ctx.potential += '}';
                 ctx.value += *i;
             }
-            
-        } else if (*i == DECLPASTE)
-        {
-            T::template addChildContext<STATE ("$")>(ctx).potential = *i;
-            
-        } else if (*i == '@')
-        {
-            T::template addChildContext<STATE ("@")>(ctx).potential = *i;
-            
-        } else if (*i == '#')
-        {
-            T::template addChildContext<STATE ("#")>(ctx).potential = *i;
             
         } else if (*i == '{')
         {
@@ -597,57 +604,6 @@ struct STATE ("@(){") : BASE_STATE {
         clear (ctx);
         TRANSITION ("@(){} done")
     }
-    virtual void _process (iter i, Context& ctx) {
-        
-        
-        if (*i == '}')
-        {
-            ctx.bracketStack.pop ();
-            if (ctx.bracketStack.empty ())
-            {
-                if (ctx.value.back () == '\n')
-                {
-                    ctx.value.pop_back ();
-                }
-                
-                declare (variable (ctx), value (ctx), ctx);
-                clear (ctx);
-                TRANSITION ("@(){} done")
-                
-            } else
-            {
-                ctx.value += '}';
-            }
-            
-            
-        } else if (*i == '{')
-        {
-            ctx.bracketStack.push ('{');
-            ctx.value += '{';
-            ctx.potential += '{';
-            
-        } else if (*i == DECLPASTE)
-        {
-            addChildContext <STATE ("$")>(ctx).potential = *i;
-        } else if (*i == '@')
-        {
-            addChildContext <STATE ("@")> (ctx).potential = *i;
-
-        } else if (*i == '#')
-        {
-            addChildContext <STATE ("#")> (ctx).potential = *i;
-
-        } else if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            transition <State <STR ("{\n"), State <STR ("@(){")>>> (ctx);
-        } else
-        {
-            ctx.potential += *i;
-            ctx.value += *i;
-        }
-    }
-    
     virtual void addResultFromChild (string const& res, Context& ctx){
         value (ctx) += res;
     }
@@ -661,143 +617,110 @@ struct STATE ("@(){") : BASE_STATE {
 
 template <>
 struct STATE ("$(x var y){") : BASE_STATE {
-    virtual void _process (iter i, Context& ctx) {
-                
-        if (*i == '}')
+    void finish (Context& ctx)
+    {
+        int i = stoi (ctx.firstint);
+        int end = stoi (ctx.secondint);
+        
+        for (; i < end; ++i)
         {
-            ctx.bracketStack.pop ();
-            
-            if (ctx.bracketStack.empty ())
-            {
-                
-                
-                int i = stoi (ctx.firstint);
-                int end = stoi (ctx.secondint);
-                
-                for (; i < end; ++i)
-                {
-                    declare (ctx.intvariable, to_string (i), ctx);
+            declare (ctx.intvariable, to_string (i), ctx);
 //                    cout << ctx.intvariable << to_string (i) << endl;
 //                    cout << "bajs::" << ctx.value << endl;
 //                    addChildContext <STATE ("begin")> (ctx);
 //                    string temp = ctx.value;
 //                    ctx.value.clear ();
-                    auto* childstate = new BASE_STATE;
-                    Context* childctx = new Context {&ctx, ctx.declaredVariables, childstate};
-                    childstate -> transition <STATE ("begin")> (*childctx);
+            auto* childstate = new BASE_STATE;
+            Context* childctx = new Context {&ctx, ctx.declaredVariables, childstate};
+            childstate -> transition <STATE ("begin")> (*childctx);
 //                    ctx.children.push_back (childctx);
-    //                addChildContext <STATE ("begin")> (ctx);
-                    childctx -> looping = true;
-                    for (iter j = ctx.value.begin (); j < ctx.value.end (); ++j)
-                    {
-                        
-                        childctx -> process (j);
-                    
-//                        chainChildren (j, ctx);
-                    }
-                    childctx -> looping = false;
-                    
-//                    cout << "kuk" << endl;
-                    delete childstate;
-                    delete childctx;
-                }
-                auto declared = ctx.findVariable (ctx.intvariable);
-                if (declared)
-                {
-                    ctx.declaredVariables.erase (declared.value ());
-                }
-                
-                if (ctx.loop.back () == '\n')
-                {
-                    cout << "hi" << endl;
-                    /**
-                     fix so that:
-                     
-                         $ (0 i 2)
-                         {
-                             hej
-                         }
-                         kuk
-                     
-                     becomes:
-                     
-                        hej
-                        kuk
-                     
-                     and not:
-                        hej
-                        
-                        kuk
-                     
-                     
-                     
-                     */
-                    ctx.loop.pop_back ();
-                }
-                
-                
-                
-                if (hasParent (ctx))
-                {
-                    BASE_STATE::addResultFromChild (ctx.loop, ctx);
-                    potential (ctx).clear ();
-                    ctx.variable.clear ();
-                    ctx.value.clear ();
-                    ctx.firstint.clear ();
-                    ctx.secondint.clear ();
-                    ctx.intvariable.clear ();
-                    ctx.loop.clear ();
-                    ctx.bracketStack = stack <char> {};
-                    
-                    if (ctx.looping)
-                    {
-                        TRANSITION ("begin")
-                        
-                    } else
-                    {
-                        removeFromParent (ctx);
-                    }
-                    
-//                    removeFromParent (ctx);
-                } else
-                {
-                    result (ctx) += ctx.loop;
-                    potential (ctx).clear ();
-                    ctx.variable.clear ();
-                    ctx.value.clear ();
-                    ctx.firstint.clear ();
-                    ctx.secondint.clear ();
-                    ctx.intvariable.clear ();
-                    ctx.loop.clear ();
-                    ctx.bracketStack = stack <char> {};
-                    TRANSITION ("begin");
-                }
-            }
-            else
+//                addChildContext <STATE ("begin")> (ctx);
+            childctx -> looping = true;
+            for (iter j = ctx.value.begin (); j < ctx.value.end (); ++j)
             {
-                ctx.value += *i;
+                
+                childctx -> process (j);
+            
+//                        chainChildren (j, ctx);
+            }
+            childctx -> looping = false;
+            
+//                    cout << "kuk" << endl;
+            delete childstate;
+            delete childctx;
+        }
+        auto declared = ctx.findVariable (ctx.intvariable);
+        if (declared)
+        {
+            ctx.declaredVariables.erase (declared.value ());
+        }
+        
+        if (ctx.loop.back () == '\n')
+        {
+            cout << "hi" << endl;
+            /**
+             fix so that:
+             
+                 $ (0 i 2)
+                 {
+                     hej
+                 }
+                 kuk
+             
+             becomes:
+             
+                hej
+                kuk
+             
+             and not:
+                hej
+                
+                kuk
+             
+             
+             
+             */
+            ctx.loop.pop_back ();
+        }
+        
+        
+        
+        if (hasParent (ctx))
+        {
+            BASE_STATE::addResultFromChild (ctx.loop, ctx);
+            potential (ctx).clear ();
+            ctx.variable.clear ();
+            ctx.value.clear ();
+            ctx.firstint.clear ();
+            ctx.secondint.clear ();
+            ctx.intvariable.clear ();
+            ctx.loop.clear ();
+            ctx.bracketStack = stack <char> {};
+            
+            if (ctx.looping)
+            {
+                TRANSITION ("begin")
+                
+            } else
+            {
+                removeFromParent (ctx);
             }
             
-            
-//            cout << "DONE" << endl;
-        } else if (*i == '{')
-        {
-            ctx.value += *i;
-            ctx.bracketStack.push ('{');
-            ctx.potential += '{';
-        } else if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            transition <State <STR ("{\n"), STATE ("$(x var y){")>> (ctx);
-//            TRANSITION ("$(x var y){\n")
+//                    removeFromParent (ctx);
         } else
         {
-            ctx.potential += *i;
-            ctx.value += *i;
+            result (ctx) += ctx.loop;
+            potential (ctx).clear ();
+            ctx.variable.clear ();
+            ctx.value.clear ();
+            ctx.firstint.clear ();
+            ctx.secondint.clear ();
+            ctx.intvariable.clear ();
+            ctx.loop.clear ();
+            ctx.bracketStack = stack <char> {};
+            TRANSITION ("begin");
         }
-            
     }
-    
     void addResultFromChild (string const& res, Context& ctx) {
         ctx.loop += res;
 //        cout << res << endl;
@@ -911,7 +834,8 @@ struct STATE ("$(x var y)") : BASE_STATE
         if (*i == '{')
         {
             ctx.bracketStack.push ('{');
-            TRANSITION ("$(x var y){");
+            transition <State <STR ("{"), STATE ("$(x var y){")>> (ctx);
+//            TRANSITION ("$(x var y){");
         } else if (*i == ' ')
         {
             ctx.potential += ' ';
