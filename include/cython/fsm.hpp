@@ -307,7 +307,8 @@ struct STATE ("begin") : BASE_STATE
         {
             potential (ctx) += '@';
 //            transition <State <STR ("x"), STATE ("@")>> (ctx);
-            TRANSITION ("@")
+//            TRANSITION ("@")
+            transition <State <STR ("x"), STATE ("@")>> (ctx);
             
         } else
         {
@@ -458,7 +459,7 @@ struct State <STR ("{"), T> : T
                 
             } else if (*i == '@')
             {
-                T::template addChildContext<STATE ("@")>(ctx).potential = *i;
+                T::template addChildContext<State <STR ("x"), STATE ("@")>>(ctx).potential = *i;
                 return;
                 
             } else if (*i == '#')
@@ -1073,7 +1074,7 @@ struct STATE ("$") : BASE_STATE
 template <>
 struct STATE ("@") : BASE_STATE
 {
-    void finish_param (Context& ctx)
+    void finish_paran (Context& ctx)
     {
         TRANSITION ("@(")
     }
@@ -1081,26 +1082,6 @@ struct STATE ("@") : BASE_STATE
     {
         reset (ctx);
 //        transition <State <STR ("{"), STATE ("{")>> (ctx);
-    }
-    virtual void _process (iter i, Context& ctx){
-        potential(ctx) += *i;
-        
-        switch (*i)
-        {
-            case '(':
-                TRANSITION ("@(")
-                break;
-                
-            case ' ':
-                break;
-                
-            case '\n':
-                break;
-                
-            default:
-                reset (ctx);
-                break;
-        }
     }
     virtual void reset_hasNoParent(Context& ctx){
         result (ctx) += potential (ctx);
