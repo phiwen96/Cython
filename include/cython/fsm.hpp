@@ -823,6 +823,32 @@ struct STATE ("${") : BASE_STATE
                 //                cout << ctx.variable << endl;
                                 if (d.first == ctx.variable)
                                 {
+                                    if (ctx.variable.back () == '\n')
+                                    {
+                                        /**
+                                         fix so that:
+                                         
+                                             $ (0 i 2)
+                                             {
+                                                 hej
+                                             }
+                                             kuk
+                                         
+                                         becomes:
+                                         
+                                            hej
+                                            kuk
+                                         
+                                         and not:
+                                            hej
+                                            
+                                            kuk
+                                         
+                                         
+                                         
+                                         */
+                                        ctx.variable.pop_back ();
+                                    }
                                     
                 //                    return d->second;
                 //                    cout << "::" << d->second << endl;
@@ -890,6 +916,11 @@ struct STATE ("${") : BASE_STATE
             ctx.potential += '{';
             ctx.variable += *i;
             
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            TRANSITION ("${\n")
+            
         } else
         {
             ctx.variable += *i;
@@ -920,6 +951,52 @@ struct STATE ("${") : BASE_STATE
         return "${";
     }
  
+};
+
+template <>
+struct STATE ("${\n") : STATE ("${")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == '\n')
+        {
+            ctx.variable += *i;
+            ctx.indention.first = false;
+            
+        } else if (*i == ' ' and ctx.indention.first == false)
+        {
+//            cout << "hi" << endl;
+            ++ctx.indention.second;
+            TRANSITION ("${\nx")
+            
+        } else
+        {
+            STATE ("${")::_process (i, ctx);
+        }
+    }
+};
+
+template <>
+struct STATE ("${\nx") : STATE ("${\n")
+{
+    virtual void _process (iter i, Context& ctx)
+    {
+        if (*i == ' ')
+        {
+            ctx.potential += ' ';
+            if (++ctx.indention.second == ctx.max_indention)
+            {
+                ctx.indention.second = 0;
+                ctx.indention.first = true;
+                TRANSITION ("${\n");
+            }
+        } else
+        {
+            ctx.indention.second = 0;
+            TRANSITION ("${\n")
+            STATE ("${\n")::_process (i, ctx);
+        }
+    }
 };
 
 template <>
@@ -1336,10 +1413,14 @@ template <>
 struct STATE ("${} done"): STATE ("done")
 {
     virtual void _process (iter i, Context& ctx){
-//        if (*i != '\n')
-//        {
+        if (*i == '\n')
+        {
+            TRANSITION ("done")
+        } else
+        {
+            TRANSITION ("done")
             STATE ("done")::_process (i, ctx);
-//        }
+        }
     }
     virtual void addResultFromChild (string const& res, Context& ctx){
         throw runtime_error ("");
@@ -1601,28 +1682,6 @@ struct STATE ("@(){") : BASE_STATE
             {
                 if (ctx.value.back () == '\n')
                 {
-                    /**
-                     fix so that:
-                     
-                         $ (0 i 2)
-                         {
-                             hej
-                         }
-                         kuk
-                     
-                     becomes:
-                     
-                        hej
-                        kuk
-                     
-                     and not:
-                        hej
-                        
-                        kuk
-                     
-                     
-                     
-                     */
                     ctx.value.pop_back ();
                 }
                 
