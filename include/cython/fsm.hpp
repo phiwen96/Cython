@@ -538,10 +538,6 @@ struct STATE ("${") : BASE_STATE {
         value (ctx) += res;
         potential (ctx) += res;
     }
-    virtual string trans (){
-        return "${";
-    }
-
 };
 
 template <>
@@ -585,10 +581,6 @@ struct STATE ("$(){") : BASE_STATE {
     virtual void addResultFromChild (string const& res, Context& ctx){
         value (ctx) += res;
     }
-
-    virtual string trans (){
-        return "$(){";
-    }
 };
 
 template <>
@@ -606,12 +598,6 @@ struct STATE ("@(){") : BASE_STATE {
     }
     virtual void addResultFromChild (string const& res, Context& ctx){
         value (ctx) += res;
-    }
-    void finish () {
-        
-    }
-    virtual string trans (){
-        return "@(){";
     }
 };
 
@@ -726,9 +712,6 @@ struct STATE ("$(x var y){") : BASE_STATE {
 //        cout << res << endl;
 //        ctx.value += res;
 //        throw runtime_error ("oops");
-    }
-    virtual string trans (){
-        return "$(x var y){";
     }
 };
 
