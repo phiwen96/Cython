@@ -773,38 +773,6 @@ struct STATE ("@()") : BASE_STATE
     {
         transition <State <STR ("{"), STATE ("@(){")>> (ctx);
     }
-    virtual void _process (iter i, Context& ctx){
-        
-        potential(ctx) += *i;
-        
-        if (*i == '{')
-        {
-            ctx.bracketStack.push ('{');
-//            TRANSITION ("@(){")
-            transition <State <STR ("{"), STATE ("@(){")>> (ctx);
-        } else if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            
-        } else if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            
-        } else
-        {
-            if (hasParent (ctx))
-            {
-                BASE_STATE::addResultFromChild (potential (ctx), ctx);
-                potential (ctx).clear ();
-                TRANSITION ("begin")
-            } else
-            {
-                result(ctx) += potential(ctx);
-                potential(ctx).clear();
-                TRANSITION ("begin")
-            }
-        }
-    }
 };
 
 template <>
@@ -1292,7 +1260,8 @@ struct STATE ("@(") : BASE_STATE
         
         if (*i == ')')
         {
-            TRANSITION ("@()")
+//            TRANSITION ("@()")
+            transition <State <STR ("()"), STATE ("@()")>> (ctx);
             
         } else if (*i == DECLPASTE)
         {
