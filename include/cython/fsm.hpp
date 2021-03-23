@@ -126,9 +126,9 @@ struct Context
         for (; i < declaredVariables.end (); ++i)
         {
             if (i -> first == name)
-                break;
+                return {i};
         }
-        return i;
+        return {};
     }
 };
 
@@ -1029,51 +1029,45 @@ struct STATE ("$(){") : BASE_STATE
    
     virtual void _process (iter i, Context& ctx){
         
-       
-        
         if (*i == '}')
         {
             ctx.bracketStack.pop ();
             if (ctx.bracketStack.empty ())
             {
-                            bool found = false;
-                            for (auto& j : ctx.declaredVariables)
-                            {
-                                if (j.first == variable(ctx))
-                                {
-                                    j.second = value (ctx);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (not found)
-                            {
-                                ctx.declaredVariables.emplace_back(variable(ctx), value(ctx));
-                            }
-                            if (ctx.value.back () == '\n')
-                            {
-                                ctx.value.pop_back ();
-                            }
-                            if (hasParent(ctx))
-                            {
-                                BASE_STATE::addResultFromChild (value(ctx), ctx);
-                                clear (ctx);
-                                
-                                if (ctx.looping)
-                                {
-                                    TRANSITION ("begin")
-                                    
-                                } else
-                                {
-                                    removeFromParent(ctx);
-                                }
+                if (auto found = ctx.findVariable (ctx.variable); found)
+                {
+                    found.value()->second = ctx.value;
+                    
+                } else
+                {
+                    ctx.declaredVariables.emplace_back(variable(ctx), value(ctx));
+                }
+                
+                if (ctx.value.back () == '\n')
+                {
+                    ctx.value.pop_back ();
+                }
+                
+                if (hasParent(ctx))
+                {
+                    BASE_STATE::addResultFromChild (value(ctx), ctx);
+                    clear (ctx);
+                    
+                    if (ctx.looping)
+                    {
+                        TRANSITION ("begin")
+                        
+                    } else
+                    {
+                        removeFromParent(ctx);
+                    }
 
-                            } else
-                            {
-                                result (ctx) += value (ctx);
-                                clear (ctx);
-                                TRANSITION ("done")
-                            }
+                } else
+                {
+                    result (ctx) += value (ctx);
+                    clear (ctx);
+                    TRANSITION ("done")
+                }
             } else
             {
                 ctx.potential += '}';
