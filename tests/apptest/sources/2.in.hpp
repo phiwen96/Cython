@@ -12,8 +12,7 @@ $ (i)
 }
 fitta
 
-$(kuk)
-{
+$(kuk){
     hej
     $(snopp)
     {
@@ -21,4 +20,8 @@ $(kuk)
     }
 }
 
+${snopp}
+
 ${kuk}
+
+
