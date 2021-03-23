@@ -117,8 +117,34 @@ TEST_CASE ("test loop $(0 x y){}")
         {
             GIVEN ("input string")
             {
-                string input = "$\n\n(0 x 3)\n\n{hej}";
+                string input = R"V0G0N($
+                
+(0 x 3)
+                
+{hej})V0G0N";
                 REQUIRE (Cython{}.process_text(input) == "hejhejhej");
+            }
+        }
+        
+        SECTION ("with new line after first curly brackets")
+        {
+            GIVEN ("input string")
+            {
+                string input = R"V0G0N($(0 x 3)
+{
+hej})V0G0N";
+                REQUIRE (Cython{}.process_text(input) == "hejhejhej");
+            }
+        }
+        SECTION ("with new line after first curly brackets and before last")
+        {
+            GIVEN ("input string")
+            {
+                string input = R"V0G0N($(0 x 3)
+{
+hej
+})V0G0N";
+                REQUIRE (Cython{}.process_text(input) == "hej\nhej\nhej\n");
             }
         }
     }
@@ -717,7 +743,46 @@ TEST_CASE ("")
     
     REQUIRE (result == facit);
 }
+TEST_CASE ("")
+{
+    Cython app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N($ (0 i 2)
+{
+hej
+})V0G0N";
+    
+    get_result
+    string facit = "hej\nhej\n";
+    
+    REQUIRE (result == facit);
+    
+}
 
+//TEST_CASE ("")
+//{
+//    Cython app {};
+//    string input = "";
+//
+//    string result = "";
+//    int nr_of_variables = 0;
+//
+//    input = R"V0G0N($ (0 i 2)
+//{
+//@(h){h}
+//${h}
+//})V0G0N";
+//
+//    get_result
+//    string facit = "h\nh";
+//
+//    REQUIRE (result == facit);
+//
+//}
 
 
 

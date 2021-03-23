@@ -209,7 +209,7 @@ void BASE_STATE::removeFromParent (Context& ctx) {
 
 template <class Q>
 Context& BASE_STATE::addChildContext (Context& ctx) {
-    cout << endl;
+//    cout << endl;
     State<>* childState = new Q;
     Context* childContext = new Context {&ctx, ctx.declaredVariables, childState};
 //    childState -> context = childContext;
@@ -367,7 +367,7 @@ struct STATE ("$(x ") : BASE_STATE
             
         } else if (*i == DECLPASTE)
         {
-            cout << "kuk" << endl;
+//            cout << "kuk" << endl;
             addChildContext<STATE ("$")>(ctx).potential = DECLPASTE;
             
         }
@@ -704,7 +704,7 @@ struct STATE ("$(x var y){") : BASE_STATE
     
     void addResultFromChild (string const& res, Context& ctx) {
         ctx.loop += res;
-        cout << res << endl;
+//        cout << res << endl;
 //        ctx.value += res;
 //        throw runtime_error ("oops");
     }
@@ -786,7 +786,7 @@ struct STATE ("${") : BASE_STATE
                                         value(ctx).clear();
                                         variable(ctx).clear();
                                         paste(ctx).clear();
-                                        cout << ctx.variable << endl;
+//                                        cout << ctx.variable << endl;
                                         TRANSITION ("done")
                                     }
                                     return;
