@@ -15,4 +15,10 @@ fitta
 $(kuk)
 {
     hej
+    $(snopp)
+    {
+        SNOPP
+    }
 }
+
+${kuk}
