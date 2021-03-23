@@ -515,8 +515,7 @@ struct State <STR ("{"), T> : T
 template <>
 struct STATE ("${") : BASE_STATE {
     
-    void finish (Context& ctx)
-    {
+    void finish (Context& ctx) {
             auto declared = ctx.findVariable (ctx.value);
             if (declared)
             {
@@ -552,8 +551,7 @@ struct STATE ("${") : BASE_STATE {
 
 template <>
 struct STATE ("$(){") : BASE_STATE {
-    void finish (Context& ctx)
-    {
+    void finish (Context& ctx) {
         if (auto found = ctx.findVariable (ctx.variable); found)
         {
             found.value()->second = ctx.value;
@@ -592,8 +590,7 @@ struct STATE ("$(){") : BASE_STATE {
 
 template <>
 struct STATE ("@(){") : BASE_STATE {
-    void finish (Context& ctx)
-    {
+    void finish (Context& ctx) {
         if (ctx.value.back () == '\n')
         {
             ctx.value.pop_back ();
@@ -607,8 +604,7 @@ struct STATE ("@(){") : BASE_STATE {
 
 template <>
 struct STATE ("$(x var y){") : BASE_STATE {
-    void finish (Context& ctx)
-    {
+    void finish (Context& ctx) {
         int i = stoi (ctx.firstint);
         int end = stoi (ctx.secondint);
         
@@ -719,7 +715,44 @@ struct STATE ("$(x var y){") : BASE_STATE {
 
 
 
+template <class T>
+struct State <STR ("()"), T> : T
+{
+    void _process (iter i, Context& ctx)
+    {
+        ctx.potential += *i;
+        
+        if (*i == '{')
+        {
+            ctx.bracketStack.push ('{');
+            T::finish (ctx);
+//            T::template transition <State <STR ("{"), STATE ("$(x var y){")>> (ctx);
+//            TRANSITION ("$(x var y){");
+        } else if (*i == ' ')
+        {
 
+        } else if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            
+        } else
+        {
+            if (T::hasParent (ctx))
+            {
+                T::addResultFromChild (ctx.potential, ctx);
+                T::clear (ctx);
+                T::template transition <STATE ("begin")> (ctx);
+//                TRANSITION ("begin");
+//                removeFromParent (ctx);
+            } else
+            {
+                ctx.result += ctx.potential;
+                T::clear (ctx);
+                T::template transition <STATE ("begin")> (ctx);
+            }
+        }
+    }
+};
 
 
 
@@ -727,47 +760,19 @@ struct STATE ("$(x var y){") : BASE_STATE {
 template <>
 struct STATE ("$()") : BASE_STATE
 {
-
-    virtual void _process (iter i, Context& ctx){
-        
-        if (*i == '{')
-        {
-            potential (ctx) += '{';
-            ctx.bracketStack.push ('{');
-//            TRANSITION ("$(){")
-            transition <State <STR ("{"), STATE ("$(){")>> (ctx);
-            
-        } else if (*i == DECLPASTE)
-        {
-            addChildContext <STATE ("$")> (ctx).potential = *i;
-            
-        } else if (*i == ' ')
-        {
-            ctx.potential += ' ';
-            
-        } else if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            
-        } else
-        {
-            potential (ctx) += *i;
-            reset (ctx);
-
-        }
-    }
-    virtual void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual string trans (){
-        return "$()";
+    void finish (Context& ctx)
+    {
+        transition <State <STR ("{"), STATE ("$(){")>> (ctx);
     }
 };
 
 template <>
 struct STATE ("@()") : BASE_STATE
 {
+    void finish (Context& ctx)
+    {
+        transition <State <STR ("{"), STATE ("@(){")>> (ctx);
+    }
     virtual void _process (iter i, Context& ctx){
         
         potential(ctx) += *i;
@@ -787,71 +792,27 @@ struct STATE ("@()") : BASE_STATE
             
         } else
         {
-            reset (ctx);
+            if (hasParent (ctx))
+            {
+                BASE_STATE::addResultFromChild (potential (ctx), ctx);
+                potential (ctx).clear ();
+                TRANSITION ("begin")
+            } else
+            {
+                result(ctx) += potential(ctx);
+                potential(ctx).clear();
+                TRANSITION ("begin")
+            }
         }
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        result(ctx) += potential(ctx);
-        potential(ctx).clear();
-        TRANSITION ("begin")
-    }
-    virtual void reset_hasParent (Context& ctx){
-        BASE_STATE::addResultFromChild (potential (ctx), ctx);
-        potential (ctx).clear ();
-        TRANSITION ("begin")
-//        removeFromParent (ctx);
-    }
-    virtual string trans (){
-        return "@()";
     }
 };
 
 template <>
 struct STATE ("$(x var y)") : BASE_STATE
 {
-    void _process (iter i, Context& ctx){
-        ctx.potential += *i;
-        if (*i == '{')
-        {
-            ctx.bracketStack.push ('{');
-            transition <State <STR ("{"), STATE ("$(x var y){")>> (ctx);
-//            TRANSITION ("$(x var y){");
-        } else if (*i == ' ')
-        {
-            ctx.potential += ' ';
-        } else if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            
-        }else
-        {
-            if (hasParent (ctx))
-            {
-                BASE_STATE::addResultFromChild (potential (ctx), ctx);
-                clear (ctx);
-                TRANSITION ("begin");
-//                removeFromParent (ctx);
-            } else
-            {
-                result (ctx) += potential (ctx);
-                clear (ctx);
-                TRANSITION ("begin");
-            }
-        }
-    }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
-    
-    virtual void reset_hasNoParent (Context& ctx){
-        throw runtime_error ("f4");
-    }
-    virtual void reset_hasParent (Context& ctx){
-        throw runtime_error ("f4");
-    }
-    virtual string trans (){
-        return "$(x var y)";
+    void finish (Context& ctx)
+    {
+        transition <State <STR ("{"), STATE ("$(x var y){")>> (ctx);
     }
 };
 
@@ -1033,7 +994,8 @@ struct STATE ("$(x var y") : BASE_STATE
             ctx.secondint += *i;
         } else if (*i == ')')
         {
-            TRANSITION ("$(x var y)")
+//            TRANSITION ("$(x var y)")
+            transition <State <STR ("()"), STATE ("$(x var y)")>> (ctx);
         } else
         {
             if (hasParent (ctx))
@@ -1122,7 +1084,8 @@ struct STATE ("$(") : BASE_STATE
         if (*i == ')')
         {
             potential (ctx) += *i;
-            TRANSITION ("$()")
+            transition <State <STR ("()"), STATE ("$()")>> (ctx);
+//            TRANSITION ("$()")
             
         } else if (*i == '\n')
         {
