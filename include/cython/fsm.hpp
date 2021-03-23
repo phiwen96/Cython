@@ -66,7 +66,7 @@ template <>
 struct BASE_STATE
 {
 //    Context* context;
-    
+    using variable_iter = vector <pair <string, string>>::iterator;
     void process (iter i, Context& ctx);
     virtual void _process (iter i, Context& ctx){}
     bool hasParent (Context& ctx) const;
@@ -95,6 +95,9 @@ struct BASE_STATE
 
 struct Context
 {
+    using variable_iter = vector <pair <string, string>>::iterator;
+    
+    
     Context* parent {nullptr};
     vector <pair <string, string>>& declaredVariables;
     State<>* state {nullptr};
@@ -115,6 +118,18 @@ struct Context
     pair <bool, int> indention {false, 0}; //if already indented and if not, how much
     
     void process (iter);
+    
+    
+    auto findVariable (string const& name) -> optional <variable_iter>
+    {
+        auto i = declaredVariables.begin ();
+        for (; i < declaredVariables.end (); ++i)
+        {
+            if (i -> first == name)
+                break;
+        }
+        return i;
+    }
 };
 
 void BASE_STATE::clear (Context& ctx)
@@ -667,13 +682,10 @@ struct STATE ("$(x var y){") : BASE_STATE
                     delete childstate;
                     delete childctx;
                 }
-                for (auto i = ctx.declaredVariables.begin(); i < ctx.declaredVariables.end(); ++i)
+                auto declared = ctx.findVariable (ctx.intvariable);
+                if (declared)
                 {
-                    if (ctx.intvariable == i -> first)
-                    {
-                        ctx.declaredVariables.erase (i);
-                        break;
-                    }
+                    ctx.declaredVariables.erase (declared.value ());
                 }
                 
                 if (ctx.loop.back () == '\n')
@@ -811,40 +823,35 @@ struct STATE ("${") : BASE_STATE
             
             if (ctx.bracketStack.empty ())
             {
-                            for (auto& d : ctx.declaredVariables)
-                            {
-                                if (d.first == ctx.value)
-                                {
-                                    if (ctx.value.back () == '\n')
-                                    {
-                                        ctx.value.pop_back ();
-                                    }
-
-                                    if (hasParent (ctx))
-                                    {
-                                        BASE_STATE::addResultFromChild (d.second, ctx);
-                                        clear (ctx);
-                                        
-                                        if (ctx.looping)
-                                        {
-                                            TRANSITION ("begin")
-                                            
-                                        } else
-                                        {
-                                            removeFromParent(ctx);
-                                        }
-                                    } else {
-                                        
-                                        result(ctx) += d.second;
-                                        clear (ctx);
-                                        TRANSITION ("done")
-                                    }
-                                    return;
-                                }
-                            }
-                           
-                            string warning = "variable \"" + value (ctx) + "\" pasted but it has not yet been declared!";
-                            throw runtime_error (warning);
+                auto declared = ctx.findVariable (ctx.value);
+                if (declared)
+                {
+                    if (hasParent (ctx))
+                    {
+                        BASE_STATE::addResultFromChild (declared.value()->second, ctx);
+                        clear (ctx);
+                        
+                        if (ctx.looping)
+                        {
+                            TRANSITION ("begin")
+                            
+                        } else
+                        {
+                            removeFromParent (ctx);
+                        }
+                    } else
+                    {
+                        
+                        result(ctx) += declared.value ()->second;
+                        clear (ctx);
+                        TRANSITION ("done")
+                    }
+                    
+                } else
+               {
+                   string warning = "variable \"" + value (ctx) + "\" pasted but it has not yet been declared!";
+                   throw runtime_error (warning);
+               }
             }
             else
             {
