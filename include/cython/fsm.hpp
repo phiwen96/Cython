@@ -1,4 +1,6 @@
-#pragma once
+#ifndef FSM_HPP
+#define FSM_HPP
+
 using namespace std;
 #include <const_str/const_str.hpp>
 
@@ -1210,3 +1212,7 @@ $(kiss){bajs}
 $(snopp){${fornamn}}
 $(namn){${fornamn}$(efternamn){Wenkel}}
 */
+
+
+
+#endif

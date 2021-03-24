@@ -10,6 +10,8 @@ using namespace std;
 
 #define DONE 'd', 'o', 'n', 'e'
 
+#define DECLPASTE '$'
+
 using iter = string::const_iterator;
 
 
@@ -77,10 +79,6 @@ struct State2 <> {
     }
     using variable_iter = vector <pair <string, string>>::iterator;
     bool hasParent (Context2& ctx) const;
-    string& variable (Context2& ctx);
-    string& value (Context2& ctx);
-    string& result (Context2& ctx);
-    string& potential (Context2& ctx);
     void removeFromParent (Context2& ctx);
     template <char... c> void transition (Context2& ctx);
     template <char... c> Context2& addChildContext (Context2& ctx);
@@ -91,12 +89,6 @@ struct State2 <> {
     void reset (Context2& ctx);
     virtual void reset_hasNoParent (Context2& ctx){}
     virtual void reset_hasParent (Context2& ctx){}
-    virtual string trans(){
-//        throw runtime_error ("");
-        return "";
-    }
-    string transi (Context2& ctx);
-    void chainChildren (iter i, Context2& ctx);
     void clear (Context2& ctx);
 };
 
@@ -208,37 +200,7 @@ Context2& State2<>::addChildContext (Context2& ctx) {
 #undef INDENTION
 }
 
-string& State2<>::variable (Context2& ctx) {
-    return ctx.variable;
-}
-string& State2<>::value (Context2& ctx) {
-    return ctx.value;
-}
-string& State2<>::result (Context2& ctx) {
-    return ctx.result;
-}
-string& State2<>::potential (Context2& ctx) {
-    return ctx.potential;
-}
 
-string State2<>::transi (Context2& ctx) {
-    if (hasParent (ctx)){
-        return ctx.parent->state->transi(*ctx.parent) + "::" + trans();
-    } else
-    {
-        return trans();
-    }
-}
-void State2<>::chainChildren (iter i, Context2& ctx) {
-#if defined (Debug)
-    if (ctx.children.empty ())
-        throw runtime_error ("");
-#endif
-    for (auto& c : ctx.children)
-    {
-        c->process(i);
-    }
-}
 
 template <char... c>
 void State2<>::transition (Context2& ctx) {
@@ -312,14 +274,14 @@ struct State2 <BEGIN> : State2 <> {
         
         if (*i == DECLPASTE)
         {
-            potential (ctx) += *i;
+            ctx.potential += *i;
 //            transition <State <STR ("T"), STATE ("$")>> (ctx);
             transition <'$'> (ctx);
 
         }
         else if (*i == '#')
         {
-            potential (ctx) += '#';
+            ctx.potential += '#';
             transition <'#'> (ctx);
 
 //            transition <State <STR ("T"), STATE ("#")>> (ctx);
@@ -327,7 +289,7 @@ struct State2 <BEGIN> : State2 <> {
         }
         else if (*i == '@')
         {
-            potential (ctx) += '@';
+            ctx.potential += '@';
             transition <'@'> (ctx);
 
 //            transition <State <STR ("T"), STATE ("@")>> (ctx);
@@ -470,7 +432,7 @@ void State2 <'$', '{'>::finish (Context2& ctx) {
             }
         } else
         {
-            result(ctx) += declared.value ()->second;
+            ctx.result += declared.value ()->second;
             clear (ctx);
             transition <DONE> (ctx);
 
@@ -479,7 +441,7 @@ void State2 <'$', '{'>::finish (Context2& ctx) {
         
     } else
    {
-       string warning = "variable \"" + value (ctx) + "\" pasted but it has not yet been declared!";
+       string warning = "variable \"" + ctx.value + "\" pasted but it has not yet been declared!";
        throw runtime_error (warning);
    }
 };
@@ -574,7 +536,7 @@ void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
         
     } else
     {
-        ctx.declaredVariables.emplace_back (variable (ctx), value (ctx));
+        ctx.declaredVariables.emplace_back (ctx.variable, ctx.value);
     }
     
     if (ctx.value.back () == '\n')
@@ -583,7 +545,7 @@ void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
     }
     if (hasParent(ctx))
     {
-        addResultFromChild (value(ctx), ctx);
+        addResultFromChild (ctx.value, ctx);
         clear (ctx);
         
         if (ctx.looping)
@@ -597,7 +559,7 @@ void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
 
     } else
     {
-        result (ctx) += value (ctx);
+        ctx.result += ctx.value;
         clear (ctx);
         transition <DONE> (ctx);
     }
@@ -612,7 +574,7 @@ void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
         ctx.value.pop_back ();
     }
     
-    declare (variable (ctx), value (ctx), ctx);
+    declare (ctx.variable, ctx.value, ctx);
     clear (ctx);
     transition <'@', '(', ')', '{', DONE> (ctx);
 
@@ -890,7 +852,7 @@ template <>
 struct State2 <'$', '(', '0'> : State2 <>
 {
     void _process (iter i, Context2& ctx){
-        potential (ctx) += *i;
+        ctx.potential += *i;
         if (isnumber (*i))
         {
             ctx.firstint += *i;
@@ -906,7 +868,7 @@ struct State2 <'$', '(', '0'> : State2 <>
                 transition <BEGIN> (ctx);
             } else
             {
-                result (ctx) += potential (ctx);
+                ctx.result += ctx.potential;
                 clear (ctx);
                 transition <BEGIN> (ctx);
             }
@@ -916,10 +878,10 @@ struct State2 <'$', '(', '0'> : State2 <>
         throw runtime_error ("oops");
     }
     
-    virtual void reset_hasNoParent (Context& ctx){
+    virtual void reset_hasNoParent (Context2& ctx){
         throw runtime_error ("");
     }
-    virtual void reset_hasParent (Context& ctx){
+    virtual void reset_hasParent (Context2& ctx){
         throw runtime_error ("");
     }
     virtual string trans (){
@@ -1000,13 +962,13 @@ struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <>
         {
             if (hasParent (ctx))
             {
-                addResultFromChild (potential (ctx), ctx);
+                addResultFromChild (ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
 
             } else
             {
-                result (ctx) += potential (ctx);
+                ctx.result += ctx.potential;
                 clear (ctx);
                 transition <BEGIN> (ctx);
             }
@@ -1030,12 +992,12 @@ struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <>
         {
             if (hasParent (ctx))
             {
-                addResultFromChild (potential (ctx), ctx);
+                addResultFromChild (ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
             } else
             {
-                result (ctx) += potential (ctx);
+                ctx.result += ctx.potential;
                 clear (ctx);
                 transition <BEGIN> (ctx);
             }
