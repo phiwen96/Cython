@@ -727,6 +727,9 @@ ${k}
     
     app.clear_variables();
 }
+    
+#if defined (READY)
+    
 TEST_CASE ("")
 {
     Cython2 app {};
@@ -742,6 +745,7 @@ ${k}
     get_result
     REQUIRE (result == "K\n");
 }
+
 TEST_CASE ("")
 {
     Cython2 app {};
@@ -783,6 +787,7 @@ k)V0G0N";
     
     REQUIRE (result == facit);
 }
+
 TEST_CASE ("")
 {
     Cython2 app {};
@@ -891,7 +896,7 @@ ${ph}
 //    REQUIRE (result == facit);
 }
 
-#if defined (READY)
+
 TEST_CASE ("")
 {
     Cython2 app {};

@@ -502,8 +502,28 @@ template <> struct State2 <'#', '{'> : State2 <> {
 
 
 
-
-
+/**
+ WHY
+ 
+ a                          a
+ @ (k) {K}
+ b                          a
+ 
+ a                         a
+ # {K}
+ a                         a
+ 
+ a                         a
+ $ (k) {K}             K
+ a                         a
+ 
+ */
+template <> struct State2 <DONE, NO_PASTE> : State2 <>
+{
+    void _process (iter i, Context2& ctx) {
+        
+    }
+};
 
 
 template <> struct State2 <'$', '(', '0'> : State2 <> {
@@ -802,3 +822,5 @@ template <> void State2<'$', '(', ')', '{', LOOP>::finish (Context2& ctx) {
         transition <BEGIN> (ctx);
     }
 }
+
+

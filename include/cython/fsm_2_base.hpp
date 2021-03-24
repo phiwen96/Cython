@@ -15,6 +15,8 @@ using namespace std;
 
 #define BAS
 
+#define NO_PASTE 'n', 'o', ' ', 'p', 'a', 's', 't', 'e'
+
 using iter = string::const_iterator;
 
 
