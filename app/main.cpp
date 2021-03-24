@@ -138,15 +138,19 @@ auto main (int argc,  char** argv) -> int
     
     
 #else
-    string sss = R"V0G0N(
-    $(förnamn){Philip}
-    ${förnamn}
-    $(namn){${förnamn} $(efternamn){Wenkel}}
-    ${namn}
-    horans
-
-    
-    )V0G0N";
+//    string sss = R"V0G0N(
+//    $(förnamn){Philip}
+//    ${förnamn}
+//    $(namn){${förnamn} $(efternamn){Wenkel}}
+//    ${namn}
+//    horans)V0G0N";
+    string sss = R"V0G0N($(förnamn){Philip}
+${förnamn}
+@(ll){LL}
+${ll}
+$(namn){${förnamn}}
+$(kiss){KISS}
+horans)V0G0N";
     cout << Cython2 {}.process_text ( sss )<< endl;
                                      return 0;
 #endif
