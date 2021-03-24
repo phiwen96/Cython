@@ -407,7 +407,7 @@ struct STATE ("#{") : BASE_STATE
     }
     virtual void reset_hasNoParent (Context& ctx){
         potential(ctx).clear();
-        transition<STATE ("T done")>(ctx);
+        transition<STATE ("T(...){ done")>(ctx);
     }
     virtual void reset_hasParent (Context& ctx){
         if (ctx.looping)
@@ -423,6 +423,22 @@ struct STATE ("#{") : BASE_STATE
     }
  
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <class T>
 struct State <STR ("T(...){"), T> : T
@@ -581,7 +597,7 @@ struct STATE ("@(){") : BASE_STATE {
         
         declare (variable (ctx), value (ctx), ctx);
         clear (ctx);
-        TRANSITION ("T done")
+        TRANSITION ("T(...){ done")
     }
 };
 
@@ -692,6 +708,18 @@ struct STATE ("$(0 i 5){") : BASE_STATE {
     }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
 template <class T>
 struct State <STR ("T()"), T> : T
 {
@@ -758,6 +786,20 @@ struct STATE ("$(0 i 5)") : BASE_STATE
     }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class T>
 struct State <STR ("T("), T> : T
 {
@@ -820,6 +862,19 @@ struct STATE ("$(") : BASE_STATE {};
 
 template <>
 struct STATE ("@(") : BASE_STATE {};
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <>
 struct STATE ("$(0") : BASE_STATE
@@ -1099,7 +1154,7 @@ struct STATE ("done") : STATE ("begin")
 };
 
 template <>
-struct State <STR ("T done")> : STATE ("done")
+struct State <STR ("T(...){ done")> : STATE ("done")
 {
     virtual void _process (iter i, Context& ctx){
         if (*i == '\n')

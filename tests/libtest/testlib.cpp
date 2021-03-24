@@ -1005,6 +1005,10 @@ $(0 i 2)
  let ${${variable}} bli till loop siffran
  */
 
+
+#define NEW
+#include <cython/cython_2.hpp>
+
 int main( int argc, char* argv[] ) {
     
     
@@ -1060,11 +1064,21 @@ int main( int argc, char* argv[] ) {
 //    cout << inp << endl;
     
     
-
+#ifndef NEW
     int result = Catch::Session().run( argc, argv );
-
-
     return result;
+#else
+
+    Cython2 c;
+    cout << c.process_text ("@(j){name}@(last name) {Wenkel}$(name){Philip ${last ${j}}}") << endl;
+    
+    
+    
+    cout << "hi" << endl;
+    return 0;
+#endif
+    
+
 }
 
 

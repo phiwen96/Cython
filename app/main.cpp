@@ -5,6 +5,7 @@ using namespace std;
 #include <ph_system_file_path_checker/system_file_path_checker.hpp>
 //#include <ph_system_file_path_checker/handles.hpp>
 #include <cython/cython.hpp>
+#include <cython/cython_2.hpp>
 
 
 
@@ -105,6 +106,8 @@ struct does_not_exist
     
 };
 
+#define NEW
+
 #if defined (Debug)
 auto main (int,  char**) -> int
 {
@@ -115,7 +118,7 @@ auto main (int argc,  char** argv) -> int
 {
 #endif
     
-    
+#ifndef NEW
     auto [input_path, output_paths, code] = inputfsm (argc, argv);
     using input_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::must_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
     using output_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::can_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
@@ -128,11 +131,27 @@ auto main (int argc,  char** argv) -> int
     ofstream f (output);
     f << output_text;
     f.close ();
-    
 #if defined (Debug)
     cout << output_text << endl;
 //    cout << code << endl;
 #endif
+    
+    
+#else
+    string sss = R"V0G0N(
+    $(förnamn){Philip}
+    ${förnamn}
+    $(namn){${förnamn} $(efternamn){Wenkel}}
+    ${namn}
+    horans
+
+    
+    )V0G0N";
+    cout << Cython2 {}.process_text ( sss )<< endl;
+                                     return 0;
+#endif
+    
+
     
     return 0;
 }

@@ -1,19 +1,17 @@
-#pragma once
-#include "fsm.hpp"
+#ifndef CYTHON_2_HPP
+#define CYTHON_2_HPP
+#include "fsm_2.hpp"
 using namespace std;
 
 
-
-
-
-
-struct Cython
+struct Cython2
 {
     vector <pair <string, string>> variables;
     
-    STATE ("begin") begin_state;
+//    STATE ("begin") begin_state;
+    State2 <BEGIN> begin_state;
     
-    Context ctx
+    Context2 ctx
     {
         .parent = nullptr,
         .declaredVariables = variables,
@@ -23,11 +21,20 @@ struct Cython
     string process_text (string const& str)
     {
         
+//        return "";
         ctx.result.clear ();
         
         for (auto i = str.begin(); i < str.end(); ++i)
             ctx.process (i);
 //        ctx.result.clear ();
+  
+        if (State2 <DONE>* d = dynamic_cast<State2 <DONE>*>(ctx.state))
+        {
+            
+        } else
+        {
+            ctx.result += ctx.potential;
+        }
         return ctx.result;
     }
     
@@ -54,11 +61,11 @@ struct Cython
         return variables;
     }
     
-    ~Cython ()
+    ~Cython2 ()
     {
         ctx.result.clear ();
 //        delete ctx.state;
     }
     
 };
-
+#endif

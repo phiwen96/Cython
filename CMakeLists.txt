@@ -20,6 +20,9 @@ endif ()
 if (NOT TARGET ph_system_file_path_checker)
 	add_subdirectory (dependencies/ph_system_file_path_checker)
 endif ()
+if (NOT TARGET ph_macros)
+	add_subdirectory (dependencies/ph_macros)
+endif ()
 
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

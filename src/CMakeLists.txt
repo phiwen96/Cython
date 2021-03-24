@@ -16,8 +16,8 @@ set_target_properties(${self} PROPERTIES PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/inc
 ph_precompile (TARGET ${self} PRIVATE PCH ${std_pch} ${boost_pch})
 
 # add_library (ph::type_list ALIAS ph_type_list)
-target_link_libraries (${self} PRIVATE ${Boost_LIBRARIES} ph_type_list const_str)
-target_include_directories (${self} PRIVATE ${PROJECT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ph_type_list const_str)
+target_link_libraries (${self} PRIVATE ${Boost_LIBRARIES} ph_type_list ph_macros const_str)
+target_include_directories (${self} PRIVATE ${PROJECT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ph_type_list ph_macros const_str)
 
 target_compile_features (${self} PUBLIC cxx_std_20)
 
