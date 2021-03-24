@@ -10,3 +10,6 @@
 [submodule "dependencies/ph_system_file_path_checker"]
 	path = dependencies/ph_system_file_path_checker
 	url = https://github.com/phiwen96/ph_system_file_path_checker
+[submodule "dependencies/ph_macros"]
+	path = dependencies/ph_macros
+	url = http://github.com/phiwen96/ph_macros
