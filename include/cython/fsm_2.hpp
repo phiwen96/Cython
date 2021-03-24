@@ -66,17 +66,17 @@ template <char c> struct State2 <c, '{'> : State2 <> {
         {
             if (*i == DECLPASTE)
             {
-                addChildContext <'$'> (ctx).potential = *i;
+                addChildContext <DECLPASTE> (ctx).potential = *i;
                 return;
                 
-            } else if (*i == '@')
+            } else if (*i == DECLARE)
             {
-                addChildContext <'@'> (ctx).potential = *i;
+                addChildContext <DECLARE> (ctx).potential = *i;
                 return;
                 
-            } else if (*i == '#')
+            } else if (*i == COMMENT)
             {
-                addChildContext <'#'> (ctx).potential = *i;
+                addChildContext <COMMENT> (ctx).potential = *i;
                 return;
                 
             }
@@ -130,7 +130,7 @@ template <char c> struct State2 <c, '{'> : State2 <> {
     
     void finish (Context2& ctx);
 };
-template <> void State2 <'$', '{'>::finish (Context2& ctx) {
+template <> void State2 <DECLPASTE, '{'>::finish (Context2& ctx) {
     auto declared = ctx.findVariable (ctx.value);
     if (declared)
     {
@@ -174,21 +174,21 @@ template <> struct State2 <BEGIN> : State2 <> {
         {
             ctx.potential += *i;
 //            transition <State <STR ("T"), STATE ("$")>> (ctx);
-            transition <'$'> (ctx);
+            transition <DECLPASTE> (ctx);
 
         }
-        else if (*i == '#')
+        else if (*i == COMMENT)
         {
-            ctx.potential += '#';
-            transition <'#'> (ctx);
+            ctx.potential += COMMENT;
+            transition <COMMENT> (ctx);
 
 //            transition <State <STR ("T"), STATE ("#")>> (ctx);
 
         }
-        else if (*i == '@')
+        else if (*i == DECLARE)
         {
-            ctx.potential += '@';
-            transition <'@'> (ctx);
+            ctx.potential += DECLARE;
+            transition <DECLARE> (ctx);
 
 //            transition <State <STR ("T"), STATE ("@")>> (ctx);
 
@@ -239,17 +239,17 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
             if (*i == DECLPASTE)
             {
 //                cout << "hi" << endl;
-                addChildContext <'$'> (ctx).potential = *i;
+                addChildContext <DECLPASTE> (ctx).potential = *i;
                 return;
                 
-            } else if (*i == '@')
+            } else if (*i == DECLARE)
             {
-                addChildContext <'@'> (ctx).potential = *i;
+                addChildContext <DECLARE> (ctx).potential = *i;
                 return;
                 
-            } else if (*i == '#')
+            } else if (*i == COMMENT)
             {
-                addChildContext <'#'> (ctx).potential = *i;
+                addChildContext <COMMENT> (ctx).potential = *i;
                 return;
                 
             }
@@ -361,14 +361,14 @@ template <char c> struct State2 <c, '('> : State2 <> {
         {
             ctx.potential += '\n';
             
-        } else if (*i == '$')
+        } else if (*i == DECLPASTE)
         {
-            addChildContext <'$'> (ctx).potential += *i;
+            addChildContext <DECLPASTE> (ctx).potential += *i;
 
         }
-        else if (*i == '@')
+        else if (*i == DECLARE)
         {
-            addChildContext <'@'> (ctx).potential += *i;
+            addChildContext <DECLARE> (ctx).potential += *i;
 
         } else if (isnumber (*i))
         {
@@ -376,7 +376,7 @@ template <char c> struct State2 <c, '('> : State2 <> {
             ctx.firstint = *i;
             
             /**TODO generalize to @*/
-            transition <'$', '(', '0'> (ctx);
+            transition <DECLPASTE, '(', '0'> (ctx);
         } else
         {
             ctx.variable += *i;
@@ -394,23 +394,23 @@ template <char c> struct State2 <c> : State2 <> {
         
         ctx.potential += *i;
         
-        if (c != '#' and *i == '(')
+        if (c != COMMENT and *i == '(')
         {
             transition <c, '('> (ctx);
             
-        } else if (c != '@' and *i == '{')
+        } else if (c != DECLARE and *i == '{')
         {
             ctx.bracketStack.push ('{');
             transition <c, '{'> (ctx);
             
         } else if (*i == ' ')
         {
-            if constexpr (c != '#')
+            if constexpr (c != COMMENT)
                 ctx.potential += ' ';
             
         } else if (*i == '\n')
         {
-            if constexpr (c != '#')
+            if constexpr (c != COMMENT)
                 ctx.potential += '\n';
             
         } else
@@ -449,7 +449,7 @@ template <char c> struct State2 <c> : State2 <> {
 
 
 
-template <> struct State2 <'#', '{'> : State2 <> {
+template <> struct State2 <COMMENT, '{'> : State2 <> {
     virtual void _process (iter i, Context2& ctx){
         
         ctx.potential+= *i;
@@ -475,7 +475,7 @@ template <> struct State2 <'#', '{'> : State2 <> {
     virtual void reset_hasNoParent (Context2& ctx){
         ctx.potential.clear();
 //            transition<STATE ("T(...){ done")>(ctx);
-        transition <'#', '(', ')', '{', DONE> (ctx);
+        transition <COMMENT, '(', ')', '{', DONE> (ctx);
 
     }
     virtual void reset_hasParent (Context2& ctx){
@@ -535,7 +535,7 @@ template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
 };
 
 
-template <> struct State2 <'$', '(', '0'> : State2 <> {
+template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
@@ -543,7 +543,7 @@ template <> struct State2 <'$', '(', '0'> : State2 <> {
             ctx.firstint += *i;
         } else if (*i == ' ')
         {
-            transition <'$', '(', '0', ' '> (ctx);
+            transition <DECLPASTE, '(', '0', ' '> (ctx);
         } else
         {
             if (hasParent (ctx))
@@ -573,7 +573,7 @@ template <> struct State2 <'$', '(', '0'> : State2 <> {
         return "$(x";
     }
 };
-template <> struct State2 <'$', '(', '0', ' '> : State2 <> {
+template <> struct State2 <DECLPASTE, '(', '0', ' '> : State2 <> {
     void _process (iter i, Context2& ctx){
         
         
@@ -583,7 +583,7 @@ template <> struct State2 <'$', '(', '0', ' '> : State2 <> {
             
         } else if (*i == DECLPASTE)
         {
-            addChildContext<'$'>(ctx).potential = DECLPASTE;
+            addChildContext<DECLPASTE>(ctx).potential = DECLPASTE;
             
         }
 
@@ -591,12 +591,12 @@ template <> struct State2 <'$', '(', '0', ' '> : State2 <> {
         {
             ctx.potential += *i;
             ctx.intvariable += *i;
-            transition <'$', '(', '0', ' ', 'i'> (ctx);
+            transition <DECLPASTE, '(', '0', ' ', 'i'> (ctx);
         }
     }
     void addResultFromChild (string const& res, Context2& ctx){
         ctx.intvariable += res;
-        transition <'$', '(', '0', ' ', 'i'> (ctx);
+        transition <DECLPASTE, '(', '0', ' ', 'i'> (ctx);
     }
     
     virtual void reset_hasNoParent (Context2& ctx){
@@ -609,12 +609,12 @@ template <> struct State2 <'$', '(', '0', ' '> : State2 <> {
         return "$(0 ";
     }
 };
-template <> struct State2 <'$', '(', '0', ' ', 'i'> : State2 <> {
+template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (*i == ' ')
         {
-            transition <'$', '(', '0', ' ', 'i', ' '> (ctx);
+            transition <DECLPASTE, '(', '0', ' ', 'i', ' '> (ctx);
 
             
         } else
@@ -623,13 +623,13 @@ template <> struct State2 <'$', '(', '0', ' ', 'i'> : State2 <> {
         }
     }
 };
-template <> struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <> {
+template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
         {
             ctx.secondint += *i;
-            transition <'$', '(', '0', ' ', 'i', ' ', '5'> (ctx);
+            transition <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> (ctx);
 
         } else if (*i == ' ')
         {
@@ -651,7 +651,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <> {
         }
     }
 };
-template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
+template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
@@ -659,7 +659,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
             ctx.secondint += *i;
         } else if (*i == ')')
         {
-            transition <'$', '(', ')', LOOP> (ctx);
+            transition <DECLPASTE, '(', ')', LOOP> (ctx);
         } else
         {
             if (hasParent (ctx))
@@ -677,7 +677,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
     }
 };
 
-template <> void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
+template <> void State2<DECLPASTE, '(', ')', '{'>::finish (Context2& ctx) {
     
     if (auto found = ctx.findVariable (ctx.variable); found)
     {
@@ -713,7 +713,7 @@ template <> void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
         transition <DONE> (ctx);
     }
 }
-template <> void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
+template <> void State2<DECLARE, '(', ')', '{'>::finish (Context2& ctx) {
     
     if (ctx.value.back () == '\n')
     {
@@ -724,11 +724,11 @@ template <> void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
     clear (ctx);
     transition <DONE> (ctx);
 
-//    transition <'@', '(', ')', '{', DONE> (ctx);
+//    transition <DECLARE, '(', ')', '{', DONE> (ctx);
 
 //    TRANSITION ("T(...){ done")
 }
-template <> void State2<'$', '(', ')', '{', LOOP>::finish (Context2& ctx) {
+template <> void State2<DECLPASTE, '(', ')', '{', LOOP>::finish (Context2& ctx) {
     int i = stoi (ctx.firstint);
     int end = stoi (ctx.secondint);
     

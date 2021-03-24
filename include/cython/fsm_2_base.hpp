@@ -12,7 +12,7 @@ using namespace std;
 #define LOOP 'l', 'o', 'o', 'p'
 
 #define DECLPASTE '$'
-#define DECL '@'
+#define DECLARE '@'
 #define COMMENT '#'
 
 #define BAS
@@ -231,7 +231,7 @@ struct _Done
 };
 
 template <>
-struct _Done <DECL>
+struct _Done <DECLARE>
 {
     using type = State2 <DONE, NO_PASTE>;
 };
