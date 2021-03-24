@@ -310,7 +310,6 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
 
 template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
     using self = State2 <c, '(', ')', r...>;
-//    inline static constexpr loop = is_same_v <self, State2 <c, '(', ')', LOOP>>;
     virtual void _process (iter i, Context2& ctx)
     {
         ctx.potential += *i;
@@ -318,17 +317,8 @@ template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
         if (*i == '{')
         {
             ctx.bracketStack.push ('{');
-//            finish (ctx);
-//            if constexpr (loop)
-//            {
-//
-//            } else
-//            {
-                transition <c, '(', ')', '{', r...> (ctx);
-//            }
-            
-//            template transition <State <STR ("T(...){"), STATE ("$(0 i 5){")>> (ctx);
-//            TRANSITION ("$(0 i 5){");
+            transition <c, '(', ')', '{', r...> (ctx);
+
         } else if (*i == ' ')
         {
             ctx.potential += ' ';
@@ -365,40 +355,23 @@ template <char c> struct State2 <c, '('> : State2 <> {
         if (*i == ')')
         {
             ctx.potential += *i;
-            
-            if constexpr (c == '$')
-                transition <c, '(', ')'> (ctx);
-            
-            else if constexpr (c == '@')
-                transition <c, '(', ')'> (ctx);
+            transition <c, '(', ')'> (ctx);
             
         } else if (*i == '\n')
         {
             ctx.potential += '\n';
             
-        } else if (*i == DECLPASTE)
+        } else if (*i == c)
         {
-            transition <'$'> (ctx);
-            addChildContext <'$'> (ctx);
-
-        } else if (*i == '@')
-        {
-            addChildContext <'@'> (ctx);
+            addChildContext <c> (ctx);
 
         } else if (isnumber (*i))
         {
             ctx.potential += *i;
             ctx.firstint = *i;
             
-            if constexpr (c == '$')
-            {
-//                template transition <State <STR ("T()"), STATE ("$(0")>> (ctx);
-                transition <'$', '(', '0'> (ctx);
-                
-            } else if constexpr (c == '@')
-            {
-//                template transition <State <STR ("T()"), STATE ("@(x")>> (ctx);
-            }
+            /**TODO generalize to @*/
+            transition <'$', '(', '0'> (ctx);
         } else
         {
             ctx.variable += *i;
@@ -411,65 +384,19 @@ template <char c> struct State2 <c, '('> : State2 <> {
     }
 };
 template <char c> struct State2 <c> : State2 <> {
-    
-    void change_state (Context2& ctx)
-    {
-        if constexpr (c == '@')
-        {
-            transition <c, '('> (ctx);
-        }
-
-        else if constexpr (c == '$')
-        {
-            transition <c, '('> (ctx);
-        }
-
-        else if constexpr (c == '#')
-        {
-            transition <c, '('> (ctx);
-        }
-    }
    
     void _process (iter i, Context2& ctx){
         
         ctx.potential += *i;
         
-        if (*i == '(')
+        if (c != '#' and *i == '(')
         {
-            if constexpr (c == '@')
-            {
-                change_state (ctx);
-                
-            } else if constexpr (c == '$')
-            {
-                change_state (ctx);
-                
-            } else if constexpr (c == '#')
-            {
-                reset (ctx);
-            }
-           
-        } else if (*i == '{')
+            transition <c, '('> (ctx);
+            
+        } else if (c != '@' and *i == '{')
         {
             ctx.bracketStack.push ('{');
-            
-            if constexpr (c == '$')
-            {
-//                template transition <State <STR ("T(...){"), STATE ("${")>> (ctx);
-                transition <c, '{'> (ctx);
-
-                
-            } else if constexpr (c == '@')
-            {
-                reset (ctx);
-                
-            } else if constexpr (c == '#')
-            {
-//                template transition <STATE ("#{")> (ctx);
-                transition <c, '{'> (ctx);
-
-
-            }
+            transition <c, '{'> (ctx);
             
         } else if (*i == ' ')
         {
@@ -698,9 +625,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
             ctx.secondint += *i;
         } else if (*i == ')')
         {
-//            TRANSITION ("$(0 i 5)")
             transition <'$', '(', ')', LOOP> (ctx);
-//            transition <State <STR ("T()"), STATE ("$(0 i 5)")>> (ctx);
         } else
         {
             if (hasParent (ctx))
