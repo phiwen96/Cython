@@ -361,9 +361,14 @@ template <char c> struct State2 <c, '('> : State2 <> {
         {
             ctx.potential += '\n';
             
-        } else if (*i == c)
+        } else if (*i == '$')
         {
-            addChildContext <c> (ctx);
+            addChildContext <'$'> (ctx).potential += *i;
+
+        }
+        else if (*i == '@')
+        {
+            addChildContext <'@'> (ctx).potential += *i;
 
         } else if (isnumber (*i))
         {

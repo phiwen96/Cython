@@ -200,7 +200,7 @@ Context2& State2<>::addChildContext (Context2& ctx) {
 //    childState -> context = childContext;
     ctx.children.push_back (childContext);
     return *childContext;
-#undef INDENTION
+
 }
 
 

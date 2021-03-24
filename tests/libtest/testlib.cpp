@@ -153,7 +153,7 @@ TEST_CASE ("test loop $(0 x y){}")
             }
             
         }
-#if defined (READY)
+
         SECTION ("with spaces")
         {
             GIVEN ("input string")
@@ -197,10 +197,10 @@ kuk)V0G0N";
                 REQUIRE (Cython2{}.process_text(input) == "hej\nhej\nhej\nkuk");
             }
         }
-#endif
+
     }
         
-#if defined (READY)
+
     SECTION ("pasting loop variable in plain text")
     {
         GIVEN ("input string")
@@ -214,6 +214,8 @@ kuk)V0G0N";
         }
     }
     
+    
+    
     SECTION ("2 nested looping")
     {
         string input = "$(0 a 3){$(0 b 2){${a}${b}}}";
@@ -223,6 +225,7 @@ kuk)V0G0N";
         REQUIRE (result == "000110112021");
         REQUIRE (nr_of_variables == 0);
     }
+    
     
     SECTION ("indention, with new line after first bracket then indention")
     {
@@ -258,11 +261,12 @@ kuk)V0G0N";
             REQUIRE (Cython2{}.process_text(input) == "2\n    2\n2\n2\n    2\n2\nkuk");
         }
     }
-#endif
+
+
 }
 
 
-#if defined (READY)
+
     
 TEST_CASE ("declaring variables")
 {
@@ -316,7 +320,8 @@ TEST_CASE ("declaring variables")
                         REQUIRE (value_1 == "true");
                     }
                 }
-                
+
+
                 SECTION ("in the curly brackets")
                 {
                     input += "@ (gillar){$ {last name} true}";
@@ -337,7 +342,9 @@ TEST_CASE ("declaring variables")
                         REQUIRE (value_1 == "bajs true");
                     }
                 }
+
             }
+
             
             input += "${last name}";
             REQUIRE (app.process_text(input) == "bajs");
@@ -399,6 +406,7 @@ TEST_CASE ("declaring variables")
             }
         }
     }
+
 }
 
 
@@ -635,6 +643,8 @@ TEST_CASE ("declpasting")
     
     }
 }
+    
+    
 
 TEST_CASE ("declpaste with paste")
 {
@@ -666,6 +676,8 @@ TEST_CASE ("declpaste with paste")
         string inpu = "@(namn)";
     }
 }
+    
+    
 
 TEST_CASE ("pasting")
 {
@@ -694,6 +706,8 @@ TEST_CASE ("pasting")
         
     }
 }
+    
+    
 
 TEST_CASE ("")
 {
@@ -877,7 +891,7 @@ ${ph}
 //    REQUIRE (result == facit);
 }
 
-
+#if defined (READY)
 TEST_CASE ("")
 {
     Cython2 app {};
