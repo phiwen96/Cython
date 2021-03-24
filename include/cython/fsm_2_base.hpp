@@ -12,6 +12,8 @@ using namespace std;
 #define LOOP 'l', 'o', 'o', 'p'
 
 #define DECLPASTE '$'
+#define DECL '@'
+#define COMMENT '#'
 
 #define BAS
 
@@ -219,3 +221,27 @@ void State2<>::transition (Context2& ctx) {
 //    cout << ctx.state->transi(ctx) << endl;
 //    cout << ctx.result << endl;
 }
+
+
+
+template <char...>
+struct _Done
+{
+    using type = State2 <DONE>;
+};
+
+template <>
+struct _Done <DECL>
+{
+    using type = State2 <DONE, NO_PASTE>;
+};
+
+template <>
+struct _Done <COMMENT>
+{
+    using type = State2 <DONE, NO_PASTE>;
+};
+
+
+template <char... c>
+using Done = typename _Done <c...>::type;

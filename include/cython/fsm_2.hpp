@@ -501,7 +501,7 @@ template <> struct State2 <'#', '{'> : State2 <> {
 
 
 
-
+// WHY
 /**
  WHY
  
@@ -518,10 +518,19 @@ template <> struct State2 <'#', '{'> : State2 <> {
  a                         a
  
  */
-template <> struct State2 <DONE, NO_PASTE> : State2 <>
+template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
 {
-    void _process (iter i, Context2& ctx) {
-        
+    virtual void _process (iter i, Context2& ctx){
+        if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            transition <DONE> (ctx);
+            
+        } else
+        {
+            transition <DONE> (ctx);
+            State2 <DONE>::_process (i, ctx);
+        }
     }
 };
 
