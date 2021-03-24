@@ -9,6 +9,7 @@ using namespace std;
 #define BEGIN 'b', 'e', 'g', 'i', 'n'
 
 #define DONE 'd', 'o', 'n', 'e'
+#define LOOP 'l', 'o', 'o', 'p'
 
 #define DECLPASTE '$'
 

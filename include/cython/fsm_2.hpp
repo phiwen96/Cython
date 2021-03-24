@@ -227,13 +227,14 @@ template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
 };
 
 
-template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
-    inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
-    using self = State2 <c, '(', ')', '{'>;
+template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> {
+    using self = State2 <c, '(', ')', '{', r...>;
+    inline static constexpr bool loop = is_same_v <State2 <c, '(', ')', '{', r...>, State2 <c, '(', ')', '{', LOOP>>;
+    
     
     virtual void _process (iter i, Context2& ctx)
     {
-        if constexpr (not parent_is_loop_type)
+        if constexpr (not loop)
         {
             if (*i == DECLPASTE)
             {
@@ -280,7 +281,7 @@ template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
 //            cout << "hi" << endl;
             ctx.potential += '\n';
 //            transition <State <STR ("{\n"), self>> (ctx);
-            transition <'{', '\n', c, '(', ')', '{'> (ctx);
+            transition <'{', '\n', c, '(', ')', '{', r...> (ctx);
 
         }
         else
@@ -291,7 +292,7 @@ template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
     }
     virtual void addResultFromChild (string const& res, Context2& ctx)
     {
-        if constexpr (parent_is_loop_type)
+        if constexpr (loop)
         {
             ctx.loop += res;
             return;
@@ -306,8 +307,10 @@ template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
     
     void finish (Context2& ctx);
 };
-template <char c> struct State2 <c, '(', ')'> : State2 <> {
-    
+
+template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
+    using self = State2 <c, '(', ')', r...>;
+//    inline static constexpr loop = is_same_v <self, State2 <c, '(', ')', LOOP>>;
     virtual void _process (iter i, Context2& ctx)
     {
         ctx.potential += *i;
@@ -316,7 +319,14 @@ template <char c> struct State2 <c, '(', ')'> : State2 <> {
         {
             ctx.bracketStack.push ('{');
 //            finish (ctx);
-            transition <c, '(', ')', '{'> (ctx);
+//            if constexpr (loop)
+//            {
+//
+//            } else
+//            {
+                transition <c, '(', ')', '{', r...> (ctx);
+//            }
+            
 //            template transition <State <STR ("T(...){"), STATE ("$(0 i 5){")>> (ctx);
 //            TRANSITION ("$(0 i 5){");
         } else if (*i == ' ')
@@ -689,6 +699,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
         } else if (*i == ')')
         {
 //            TRANSITION ("$(0 i 5)")
+            transition <'$', '(', ')', LOOP> (ctx);
 //            transition <State <STR ("T()"), STATE ("$(0 i 5)")>> (ctx);
         } else
         {
@@ -706,11 +717,6 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
         }
     }
 };
-
-
-
-
-
 
 template <> void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
     
@@ -762,4 +768,107 @@ template <> void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
 //    transition <'@', '(', ')', '{', DONE> (ctx);
 
 //    TRANSITION ("T(...){ done")
+}
+template <> void State2<'$', '(', ')', '{', LOOP>::finish (Context2& ctx) {
+    int i = stoi (ctx.firstint);
+    int end = stoi (ctx.secondint);
+    
+    for (; i < end; ++i)
+    {
+        declare (ctx.intvariable, to_string (i), ctx);
+//                    cout << ctx.intvariable << to_string (i) << endl;
+//                    cout << "bajs::" << ctx.value << endl;
+//                    addChildContext <STATE ("begin")> (ctx);
+//                    string temp = ctx.value;
+//                    ctx.value.clear ();
+        auto* childstate = new State2 <>;
+        Context2* childctx = new Context2 {&ctx, ctx.declaredVariables, childstate};
+        childstate -> transition <BEGIN> (*childctx);
+//                    ctx.children.push_back (childctx);
+//                addChildContext <STATE ("begin")> (ctx);
+        childctx -> looping = true;
+        for (iter j = ctx.value.begin (); j < ctx.value.end (); ++j)
+        {
+            
+            childctx -> process (j);
+        
+//                        chainChildren (j, ctx);
+        }
+        childctx -> looping = false;
+        
+//                    cout << "kuk" << endl;
+        delete childstate;
+        delete childctx;
+    }
+    auto declared = ctx.findVariable (ctx.intvariable);
+    if (declared)
+    {
+        ctx.declaredVariables.erase (declared.value ());
+    }
+    
+    if (ctx.loop.back () == '\n')
+    {
+        cout << "hi" << endl;
+        /**
+         fix so that:
+         
+             $ (0 i 2)
+             {
+                 hej
+             }
+             kuk
+         
+         becomes:
+         
+            hej
+            kuk
+         
+         and not:
+            hej
+            
+            kuk
+         
+         
+         
+         */
+        ctx.loop.pop_back ();
+    }
+    
+    
+    
+    if (hasParent (ctx))
+    {
+        State2 <>::addResultFromChild (ctx.loop, ctx);
+        ctx.potential.clear ();
+        ctx.variable.clear ();
+        ctx.value.clear ();
+        ctx.firstint.clear ();
+        ctx.secondint.clear ();
+        ctx.intvariable.clear ();
+        ctx.loop.clear ();
+        ctx.bracketStack = stack <char> {};
+        
+        if (ctx.looping)
+        {
+            transition <BEGIN> (ctx);
+
+        } else
+        {
+            removeFromParent (ctx);
+        }
+        
+//                    removeFromParent (ctx);
+    } else
+    {
+        ctx.result += ctx.loop;
+        ctx.potential.clear ();
+        ctx.variable.clear ();
+        ctx.value.clear ();
+        ctx.firstint.clear ();
+        ctx.secondint.clear ();
+        ctx.intvariable.clear ();
+        ctx.loop.clear ();
+        ctx.bracketStack = stack <char> {};
+        transition <BEGIN> (ctx);
+    }
 }

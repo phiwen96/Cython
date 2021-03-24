@@ -11,7 +11,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$(förnamn){Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "Philip");
+            REQUIRE (Cython2{}.process_text(input) == "Philip");
         }
     }
     SECTION ("with spaces")
@@ -19,7 +19,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$  (förnamn)  {Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "Philip");
+            REQUIRE (Cython2{}.process_text(input) == "Philip");
         }
     }
     SECTION ("with new lines")
@@ -27,7 +27,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$\n\n(förnamn)\n\n{Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "Philip");
+            REQUIRE (Cython2{}.process_text(input) == "Philip");
         }
     }
     
@@ -71,7 +71,7 @@ kuk)V0G0N";
 
 
 
-#if defined (READY)
+
 
 TEST_CASE ("decl @(x){foo}")
 {
@@ -105,6 +105,8 @@ TEST_CASE ("decl @(x){foo}")
         }
     }
 }
+
+
 TEST_CASE ("comment #{foo}")
 {
     SECTION ("no spaces or new lines")
@@ -132,12 +134,14 @@ TEST_CASE ("comment #{foo}")
         }
     }
 }
+
+
 TEST_CASE ("test loop $(0 x y){}")
 {
     Cython2 app {};
     string result = "";
     int nr_of_variables = 0;
-    
+
     SECTION ("with plain text")
     {
         SECTION ("basic")
@@ -147,7 +151,9 @@ TEST_CASE ("test loop $(0 x y){}")
                 string input = "$(0 x 3){hej}";
                 REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
             }
+            
         }
+#if defined (READY)
         SECTION ("with spaces")
         {
             GIVEN ("input string")
@@ -191,7 +197,10 @@ kuk)V0G0N";
                 REQUIRE (Cython2{}.process_text(input) == "hej\nhej\nhej\nkuk");
             }
         }
+#endif
     }
+        
+#if defined (READY)
     SECTION ("pasting loop variable in plain text")
     {
         GIVEN ("input string")
@@ -249,8 +258,12 @@ kuk)V0G0N";
             REQUIRE (Cython2{}.process_text(input) == "2\n    2\n2\n2\n    2\n2\nkuk");
         }
     }
+#endif
 }
 
+
+#if defined (READY)
+    
 TEST_CASE ("declaring variables")
 {
     Cython2 app {};
