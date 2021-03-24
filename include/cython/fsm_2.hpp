@@ -2,9 +2,7 @@
 #include "fsm_2_base.hpp"
 
 
-template <char... parent>
-struct State2 <'{', '\n', parent...> : State2 <parent...>
-{
+template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent...> {
     using self = State2 <parent..., '\n'>;
     using Parent = State2 <parent...>;
     virtual void _process (iter i, Context2& ctx)
@@ -26,10 +24,7 @@ struct State2 <'{', '\n', parent...> : State2 <parent...>
         }
     }
 };
-
-template <char... parent>
-struct State2 <'{', '\n', 'x', parent...> : State2 <parent...>
-{
+template <char... parent> struct State2 <'{', '\n', 'x', parent...> : State2 <parent...> {
     using Parent = State2 <parent...>;
     virtual void _process (iter i, Context2& ctx)
     {
@@ -54,8 +49,7 @@ struct State2 <'{', '\n', 'x', parent...> : State2 <parent...>
 
 
 
-template <>
-struct State2 <BEGIN> : State2 <> {
+template <> struct State2 <BEGIN> : State2 <> {
     virtual void _process (iter i, Context2& ctx){
         
         if (*i == DECLPASTE)
@@ -97,13 +91,8 @@ struct State2 <BEGIN> : State2 <> {
     }
 
 };
-
-template <>
-struct State2 <DONE> : State2 <BEGIN> {};
-
-template <char c>
-struct State2 <c, '(', ')', '{', DONE> : State2 <DONE>
-{
+template <> struct State2 <DONE> : State2 <BEGIN> {};
+template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
     virtual void _process (iter i, Context2& ctx){
         if (*i == '\n')
         {
@@ -117,9 +106,11 @@ struct State2 <c, '(', ')', '{', DONE> : State2 <DONE>
     }
 };
 
-template <char c>
-struct State2 <c, '{'> : State2 <>
-{
+
+
+
+
+template <char c> struct State2 <c, '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
 //    using self = State2 <c, '(', ')', '{'>;
     
@@ -194,9 +185,7 @@ struct State2 <c, '{'> : State2 <>
     
     void finish (Context2& ctx);
 };
-
-template <>
-void State2 <'$', '{'>::finish (Context2& ctx) {
+template <> void State2 <'$', '{'>::finish (Context2& ctx) {
     auto declared = ctx.findVariable (ctx.value);
     if (declared)
     {
@@ -233,9 +222,15 @@ void State2 <'$', '{'>::finish (Context2& ctx) {
 };
 
 
-template <char c>
-struct State2 <c, '(', ')', '{'> : State2 <>
-{
+
+
+
+
+
+
+
+
+template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
     using self = State2 <c, '(', ')', '{'>;
     
@@ -311,65 +306,7 @@ struct State2 <c, '(', ')', '{'> : State2 <>
     
     void finish (Context2& ctx);
 };
-    
-
-template <>
-void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
-    
-    if (auto found = ctx.findVariable (ctx.variable); found)
-    {
-        found.value()->second = ctx.value;
-        
-    } else
-    {
-        ctx.declaredVariables.emplace_back (ctx.variable, ctx.value);
-    }
-    
-    if (ctx.value.back () == '\n')
-    {
-        ctx.value.pop_back ();
-    }
-    if (hasParent(ctx))
-    {
-        addResultFromChild (ctx.value, ctx);
-        clear (ctx);
-        
-        if (ctx.looping)
-        {
-            transition <BEGIN> (ctx);
-            
-        } else
-        {
-            removeFromParent (ctx);
-        }
-
-    } else
-    {
-        ctx.result += ctx.value;
-        clear (ctx);
-        transition <DONE> (ctx);
-    }
-}
-    
-
-template <>
-void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
-    
-    if (ctx.value.back () == '\n')
-    {
-        ctx.value.pop_back ();
-    }
-    
-    declare (ctx.variable, ctx.value, ctx);
-    clear (ctx);
-    transition <'@', '(', ')', '{', DONE> (ctx);
-
-//    TRANSITION ("T(...){ done")
-}
-
-template <char c>
-struct State2 <c, '(', ')'> : State2 <>
-{
+template <char c> struct State2 <c, '(', ')'> : State2 <> {
     
     virtual void _process (iter i, Context2& ctx)
     {
@@ -411,13 +348,7 @@ struct State2 <c, '(', ')'> : State2 <>
     void finish (Context2& ctx);
     
 };
-
-
-
-
-template <char c>
-struct State2 <c, '('> : State2 <>
-{
+template <char c> struct State2 <c, '('> : State2 <> {
     
     virtual void _process (iter i, Context2& ctx)
     {
@@ -469,10 +400,7 @@ struct State2 <c, '('> : State2 <>
         ctx.variable += res;
     }
 };
-
-template <char c>
-struct State2 <c> : State2 <>
-{
+template <char c> struct State2 <c> : State2 <> {
     
     void change_state (Context2& ctx)
     {
@@ -575,9 +503,9 @@ struct State2 <c> : State2 <>
 };
     
 
-template <>
-struct State2 <'#', '{'> : State2 <>
-{
+
+
+template <> struct State2 <'#', '{'> : State2 <> {
     virtual void _process (iter i, Context2& ctx){
         
         ctx.potential+= *i;
@@ -634,9 +562,7 @@ struct State2 <'#', '{'> : State2 <>
 
 
 
-template <>
-struct State2 <'$', '(', '0'> : State2 <>
-{
+template <> struct State2 <'$', '(', '0'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
@@ -674,10 +600,7 @@ struct State2 <'$', '(', '0'> : State2 <>
         return "$(x";
     }
 };
-
-template <>
-struct State2 <'$', '(', '0', ' '> : State2 <>
-{
+template <> struct State2 <'$', '(', '0', ' '> : State2 <> {
     void _process (iter i, Context2& ctx){
         
         
@@ -713,10 +636,7 @@ struct State2 <'$', '(', '0', ' '> : State2 <>
         return "$(0 ";
     }
 };
-
-template <>
-struct State2 <'$', '(', '0', ' ', 'i'> : State2 <>
-{
+template <> struct State2 <'$', '(', '0', ' ', 'i'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (*i == ' ')
@@ -730,10 +650,7 @@ struct State2 <'$', '(', '0', ' ', 'i'> : State2 <>
         }
     }
 };
-
-template <>
-struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <>
-{
+template <> struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
@@ -761,10 +678,7 @@ struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <>
         }
     }
 };
-
-template <>
-struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <>
-{
+template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
         if (isnumber (*i))
@@ -790,3 +704,58 @@ struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <>
         }
     }
 };
+
+
+
+
+
+
+template <> void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
+    
+    if (auto found = ctx.findVariable (ctx.variable); found)
+    {
+        found.value()->second = ctx.value;
+        
+    } else
+    {
+        ctx.declaredVariables.emplace_back (ctx.variable, ctx.value);
+    }
+    
+    if (ctx.value.back () == '\n')
+    {
+        ctx.value.pop_back ();
+    }
+    if (hasParent(ctx))
+    {
+        addResultFromChild (ctx.value, ctx);
+        clear (ctx);
+        
+        if (ctx.looping)
+        {
+            transition <BEGIN> (ctx);
+            
+        } else
+        {
+            removeFromParent (ctx);
+        }
+
+    } else
+    {
+        ctx.result += ctx.value;
+        clear (ctx);
+        transition <DONE> (ctx);
+    }
+}
+template <> void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
+    
+    if (ctx.value.back () == '\n')
+    {
+        ctx.value.pop_back ();
+    }
+    
+    declare (ctx.variable, ctx.value, ctx);
+    clear (ctx);
+    transition <'@', '(', ')', '{', DONE> (ctx);
+
+//    TRANSITION ("T(...){ done")
+}

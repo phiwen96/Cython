@@ -12,6 +12,8 @@ using namespace std;
 
 #define DECLPASTE '$'
 
+#define BAS
+
 using iter = string::const_iterator;
 
 

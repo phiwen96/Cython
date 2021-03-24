@@ -68,320 +68,324 @@ kuk)V0G0N";
    
 }
 
-//TEST_CASE ("decl @(x){foo}")
-//{
-//    SECTION ("no spaces")
-//    {
-//        GIVEN ("input string")
-//        {
-//            Cython2 app {};
-//            string input = {"@(förnamn){Philip}"};
-//            REQUIRE (app.process_text(input) == "");
-//
-//            auto [variable_name, variable_value] = app.get_variables ().front ();
-//            REQUIRE (variable_name == "förnamn");
-//            REQUIRE (variable_value == "Philip");
-//        }
-//    }
-//    SECTION ("with spaces")
-//    {
-//        GIVEN ("input string")
-//        {
-//            string input = {"@  (förnamn)  {Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "");
-//        }
-//    }
-//    SECTION ("with new lines")
-//    {
-//        GIVEN ("input string")
-//        {
-//            string input = {"@\n\n(förnamn)\n\n{Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "");
-//        }
-//    }
-//}
-//TEST_CASE ("comment #{foo}")
-//{
-//    SECTION ("no spaces or new lines")
-//    {
-//        GIVEN ("input string")
-//        {
-//            string input = {"#{Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "");
-//        }
-//    }
-//    SECTION ("white lines")
-//    {
-//        GIVEN ("input string")
-//        {
-//            string input = {"#  {Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "");
-//        }
-//    }
-//    SECTION ("with new lines")
-//    {
-//        GIVEN ("input string")
-//        {
-//            string input = {"#\n\n{Philip}"};
-//            REQUIRE (Cython2{}.process_text(input) == "");
-//        }
-//    }
-//}
-//TEST_CASE ("test loop $(0 x y){}")
-//{
-//    Cython2 app {};
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    SECTION ("with plain text")
-//    {
-//        SECTION ("basic")
-//        {
-//            GIVEN ("input string")
-//            {
-//                string input = "$(0 x 3){hej}";
-//                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
-//            }
-//        }
-//        SECTION ("with spaces")
-//        {
-//            GIVEN ("input string")
-//            {
-//                string input = "$  (0 x 3)  {hej}";
-//                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
-//            }
-//        }
-//        SECTION ("with new lines")
-//        {
-//            GIVEN ("input string")
-//            {
-//                string input = R"V0G0N($
-//
-//(0 x 3)
-//
-//{hej})V0G0N";
-//                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
-//            }
-//        }
-//
-//        SECTION ("with new line after first curly brackets")
-//        {
-//            GIVEN ("input string")
-//            {
-//                string input = R"V0G0N($(0 x 3)
-//{
-//hej})V0G0N";
-//                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
-//            }
-//        }
-//        SECTION ("with new line after first curly brackets and before last")
-//        {
-//            GIVEN ("input string")
-//            {
-//                string input = R"V0G0N($(0 x 3)
-//{
-//hej
-//}
-//kuk)V0G0N";
-//                REQUIRE (Cython2{}.process_text(input) == "hej\nhej\nhej\nkuk");
-//            }
-//        }
-//    }
-//    SECTION ("pasting loop variable in plain text")
-//    {
-//        GIVEN ("input string")
-//        {
-//            string input = "$(0 x 3){hej${x}}";
-//            get_result
-//            get_nr_of_variables
-//
-//            REQUIRE (result == "hej0hej1hej2");
-//            REQUIRE (nr_of_variables == 0);
-//        }
-//    }
-//
-//    SECTION ("2 nested looping")
-//    {
-//        string input = "$(0 a 3){$(0 b 2){${a}${b}}}";
-//        get_result
-//        get_nr_of_variables
-//
-//        REQUIRE (result == "000110112021");
-//        REQUIRE (nr_of_variables == 0);
-//    }
-//
-//    SECTION ("indention, with new line after first bracket then indention")
-//    {
-//        /**
-//         fix so that:
-//
-//             $ (0 i 2)
-//             {
-//                 hej
-//             }
-//             kuk
-//
-//         becomes:
-//
-//            hej
-//            kuk
-//
-//         and not:
-//                hej
-//
-//            kuk
-//         */
-//        GIVEN ("input string")
-//        {
-//            string input =
-//R"V0G0N($ (0 x 2)
-//{
-//    2
-//        2
-//    2
-//}
-//kuk)V0G0N";
-//            REQUIRE (Cython2{}.process_text(input) == "2\n    2\n2\n2\n    2\n2\nkuk");
-//        }
-//    }
-//}
 
-//TEST_CASE ("declaring variables")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//
-//    GIVEN ("a declared variable")
-//    {
-//        input = "@ (last name) {bajs}";
-//
-//        THEN ("we snould get an empty string and 1 declared variable back")
-//        {
-////            Cython2 app {};
-//            string result = app.process_text (input);
-//            int nr_of_variables = app.get_variables().size();
-//            auto [name, value] = app.get_variables ().front ();
-//            app.clear_variables ();
-//
-//
-//            REQUIRE (result == "");
-//            REQUIRE (nr_of_variables == 1);
-//            REQUIRE (name == "last name");
-//            REQUIRE (value == "bajs");
-//        }
-//
-//        AND_THEN ("pasting it")
-//        {
-//            WHEN ("declaring a new one")
-//            {
-//                SECTION ("in the paranthesis")
-//                {
-//                    input += "@ (gillar $ {last name}){true}";
-//
-//                    THEN ("gillar bajs = true")
-//                    {
-//                        result = app.process_text (input);
-//                        nr_of_variables = app.get_variables().size();
-//                        auto [name_0, value_0] = app.get_variables()[0];
-//                        auto [name_1, value_1] = app.get_variables()[1];
-//                        app.clear_variables ();
-//
-//                        REQUIRE (result == "");
-//                        REQUIRE (nr_of_variables == 2);
-//                        REQUIRE (name_0 == "last name");
-//                        REQUIRE (value_0 == "bajs");
-//                        REQUIRE (name_1 == "gillar bajs");
-//                        REQUIRE (value_1 == "true");
-//                    }
-//                }
-//
-//                SECTION ("in the curly brackets")
-//                {
-//                    input += "@ (gillar){$ {last name} true}";
-//
-//                    THEN ("gillar = bajs true")
-//                    {
-//                        result = app.process_text (input);
-//                        nr_of_variables = app.get_variables().size();
-//                        auto [name_0, value_0] = app.get_variables()[0];
-//                        auto [name_1, value_1] = app.get_variables()[1];
-//                        app.clear_variables ();
-//
-//                        REQUIRE (result == "");
-//                        REQUIRE (nr_of_variables == 2);
-//                        REQUIRE (name_0 == "last name");
-//                        REQUIRE (value_0 == "bajs");
-//                        REQUIRE (name_1 == "gillar");
-//                        REQUIRE (value_1 == "bajs true");
-//                    }
-//                }
-//            }
-//
-//            input += "${last name}";
-//            REQUIRE (app.process_text(input) == "bajs");
-//        }
-//
-//        AND_WHEN ("declaring the same variable again but with a different value")
-//        {
-//            input += "@ (last name) {Wenkel}";
-//
-//            THEN ("we should get the same variable but now with a another value")
-//            {
-//                Cython2 app {};
-//                string result = app.process_text (input);
-//                int nr_of_variables = app.get_variables ().size ();
-//                auto [name, value] = app.get_variables ().front ();
-//                app.clear_variables ();
-//
-//                REQUIRE (result == "");
-//                REQUIRE (nr_of_variables == 1);
-//                REQUIRE (name == "last name");
-//                REQUIRE (value == "Wenkel");
-//
-//            }
-//        }
-//
-//        AND_GIVEN ("another declared variable")
-//        {
-//            input += "@ (j) {name}";
-//
-//            THEN ("we should still get an empty string, but this time with 2 variables")
-//            {
-//                result = app.process_text (input);
-//                nr_of_variables = app.get_variables().size();
-//                auto [name_0, value_0] = app.get_variables()[0];
-//                auto [name_1, value_1] = app.get_variables()[1];
-//                app.clear_variables ();
-//
-//
-//                REQUIRE (result == "");
-//                REQUIRE (nr_of_variables == 2);
-//                REQUIRE (name_0 == "last name");
-//                REQUIRE (value_0 == "bajs");
-//                REQUIRE (name_1 == "j");
-//                REQUIRE (value_1 == "name");
-//
-//
-//                AND_WHEN ("adding a nested paste to use these two variables")
-//                {
-//                    input += "$ {last ${j}}";
-//
-//                    THEN ("the paste would first become $ {last name}")
-//                    {
-//                        AND_THEN ("the whole paste would just become bajs")
-//                        {
-//                            REQUIRE (app.process_text(input) == "bajs");
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
+
+#if defined (READY)
+
+TEST_CASE ("decl @(x){foo}")
+{
+    SECTION ("no spaces")
+    {
+        GIVEN ("input string")
+        {
+            Cython2 app {};
+            string input = {"@(förnamn){Philip}"};
+            REQUIRE (app.process_text(input) == "");
+            
+            auto [variable_name, variable_value] = app.get_variables ().front ();
+            REQUIRE (variable_name == "förnamn");
+            REQUIRE (variable_value == "Philip");
+        }
+    }
+    SECTION ("with spaces")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"@  (förnamn)  {Philip}"};
+            REQUIRE (Cython2{}.process_text(input) == "");
+        }
+    }
+    SECTION ("with new lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"@\n\n(förnamn)\n\n{Philip}"};
+            REQUIRE (Cython2{}.process_text(input) == "");
+        }
+    }
+}
+TEST_CASE ("comment #{foo}")
+{
+    SECTION ("no spaces or new lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"#{Philip}"};
+            REQUIRE (Cython2{}.process_text(input) == "");
+        }
+    }
+    SECTION ("white lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"#  {Philip}"};
+            REQUIRE (Cython2{}.process_text(input) == "");
+        }
+    }
+    SECTION ("with new lines")
+    {
+        GIVEN ("input string")
+        {
+            string input = {"#\n\n{Philip}"};
+            REQUIRE (Cython2{}.process_text(input) == "");
+        }
+    }
+}
+TEST_CASE ("test loop $(0 x y){}")
+{
+    Cython2 app {};
+    string result = "";
+    int nr_of_variables = 0;
+    
+    SECTION ("with plain text")
+    {
+        SECTION ("basic")
+        {
+            GIVEN ("input string")
+            {
+                string input = "$(0 x 3){hej}";
+                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
+            }
+        }
+        SECTION ("with spaces")
+        {
+            GIVEN ("input string")
+            {
+                string input = "$  (0 x 3)  {hej}";
+                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
+            }
+        }
+        SECTION ("with new lines")
+        {
+            GIVEN ("input string")
+            {
+                string input = R"V0G0N($
+                
+(0 x 3)
+                
+{hej})V0G0N";
+                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
+            }
+        }
+        
+        SECTION ("with new line after first curly brackets")
+        {
+            GIVEN ("input string")
+            {
+                string input = R"V0G0N($(0 x 3)
+{
+hej})V0G0N";
+                REQUIRE (Cython2{}.process_text(input) == "hejhejhej");
+            }
+        }
+        SECTION ("with new line after first curly brackets and before last")
+        {
+            GIVEN ("input string")
+            {
+                string input = R"V0G0N($(0 x 3)
+{
+hej
+}
+kuk)V0G0N";
+                REQUIRE (Cython2{}.process_text(input) == "hej\nhej\nhej\nkuk");
+            }
+        }
+    }
+    SECTION ("pasting loop variable in plain text")
+    {
+        GIVEN ("input string")
+        {
+            string input = "$(0 x 3){hej${x}}";
+            get_result
+            get_nr_of_variables
+            
+            REQUIRE (result == "hej0hej1hej2");
+            REQUIRE (nr_of_variables == 0);
+        }
+    }
+    
+    SECTION ("2 nested looping")
+    {
+        string input = "$(0 a 3){$(0 b 2){${a}${b}}}";
+        get_result
+        get_nr_of_variables
+        
+        REQUIRE (result == "000110112021");
+        REQUIRE (nr_of_variables == 0);
+    }
+    
+    SECTION ("indention, with new line after first bracket then indention")
+    {
+        /**
+         fix so that:
+         
+             $ (0 i 2)
+             {
+                 hej
+             }
+             kuk
+         
+         becomes:
+         
+            hej
+            kuk
+         
+         and not:
+                hej
+            
+            kuk
+         */
+        GIVEN ("input string")
+        {
+            string input =
+R"V0G0N($ (0 x 2)
+{
+    2
+        2
+    2
+}
+kuk)V0G0N";
+            REQUIRE (Cython2{}.process_text(input) == "2\n    2\n2\n2\n    2\n2\nkuk");
+        }
+    }
+}
+
+TEST_CASE ("declaring variables")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    
+    GIVEN ("a declared variable")
+    {
+        input = "@ (last name) {bajs}";
+        
+        THEN ("we snould get an empty string and 1 declared variable back")
+        {
+//            Cython2 app {};
+            string result = app.process_text (input);
+            int nr_of_variables = app.get_variables().size();
+            auto [name, value] = app.get_variables ().front ();
+            app.clear_variables ();
+            
+            
+            REQUIRE (result == "");
+            REQUIRE (nr_of_variables == 1);
+            REQUIRE (name == "last name");
+            REQUIRE (value == "bajs");
+        }
+        
+        AND_THEN ("pasting it")
+        {
+            WHEN ("declaring a new one")
+            {
+                SECTION ("in the paranthesis")
+                {
+                    input += "@ (gillar $ {last name}){true}";
+                    
+                    THEN ("gillar bajs = true")
+                    {
+                        result = app.process_text (input);
+                        nr_of_variables = app.get_variables().size();
+                        auto [name_0, value_0] = app.get_variables()[0];
+                        auto [name_1, value_1] = app.get_variables()[1];
+                        app.clear_variables ();
+                        
+                        REQUIRE (result == "");
+                        REQUIRE (nr_of_variables == 2);
+                        REQUIRE (name_0 == "last name");
+                        REQUIRE (value_0 == "bajs");
+                        REQUIRE (name_1 == "gillar bajs");
+                        REQUIRE (value_1 == "true");
+                    }
+                }
+                
+                SECTION ("in the curly brackets")
+                {
+                    input += "@ (gillar){$ {last name} true}";
+                    
+                    THEN ("gillar = bajs true")
+                    {
+                        result = app.process_text (input);
+                        nr_of_variables = app.get_variables().size();
+                        auto [name_0, value_0] = app.get_variables()[0];
+                        auto [name_1, value_1] = app.get_variables()[1];
+                        app.clear_variables ();
+                        
+                        REQUIRE (result == "");
+                        REQUIRE (nr_of_variables == 2);
+                        REQUIRE (name_0 == "last name");
+                        REQUIRE (value_0 == "bajs");
+                        REQUIRE (name_1 == "gillar");
+                        REQUIRE (value_1 == "bajs true");
+                    }
+                }
+            }
+            
+            input += "${last name}";
+            REQUIRE (app.process_text(input) == "bajs");
+        }
+        
+        AND_WHEN ("declaring the same variable again but with a different value")
+        {
+            input += "@ (last name) {Wenkel}";
+            
+            THEN ("we should get the same variable but now with a another value")
+            {
+                Cython2 app {};
+                string result = app.process_text (input);
+                int nr_of_variables = app.get_variables ().size ();
+                auto [name, value] = app.get_variables ().front ();
+                app.clear_variables ();
+                
+                REQUIRE (result == "");
+                REQUIRE (nr_of_variables == 1);
+                REQUIRE (name == "last name");
+                REQUIRE (value == "Wenkel");
+                
+            }
+        }
+        
+        AND_GIVEN ("another declared variable")
+        {
+            input += "@ (j) {name}";
+            
+            THEN ("we should still get an empty string, but this time with 2 variables")
+            {
+                result = app.process_text (input);
+                nr_of_variables = app.get_variables().size();
+                auto [name_0, value_0] = app.get_variables()[0];
+                auto [name_1, value_1] = app.get_variables()[1];
+                app.clear_variables ();
+                
+                
+                REQUIRE (result == "");
+                REQUIRE (nr_of_variables == 2);
+                REQUIRE (name_0 == "last name");
+                REQUIRE (value_0 == "bajs");
+                REQUIRE (name_1 == "j");
+                REQUIRE (value_1 == "name");
+                
+                
+                AND_WHEN ("adding a nested paste to use these two variables")
+                {
+                    input += "$ {last ${j}}";
+                    
+                    THEN ("the paste would first become $ {last name}")
+                    {
+                        AND_THEN ("the whole paste would just become bajs")
+                        {
+                            REQUIRE (app.process_text(input) == "bajs");
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 
@@ -618,357 +622,357 @@ TEST_CASE ("declpasting")
     }
 }
 
-//TEST_CASE ("declpaste with paste")
-//{
-//    SECTION ("declare, then declpaste with a paste")
-//    {
-//        GIVEN ("a declared variable")
-//        {
-//            Cython2 app;
-//            string input = "@ (last name) {Wenkel}";
-//            REQUIRE (app.process_text (input) == "");
-//            REQUIRE (app.get_variables().front().first == "last name");
-//            REQUIRE (app.get_variables().front().second == "Wenkel");
-//
-//            THEN ("declpaste a new variable")
-//            {
-//                WHEN ("also pasting the first variable inside the decleration")
-//                {
-//                    input += "$(philip ${last name}){en god människa}";
-//                    REQUIRE (app.process_text(input) == "en god människa");
-//
-////                    REQUIRE (Cython2{}.process_text(input) == "en god människa");
-//                }
-//            }
-//        }
-//
-//    }
-//    GIVEN ("input string")
-//    {
-//        string inpu = "@(namn)";
-//    }
-//}
-//
-//TEST_CASE ("pasting")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    GIVEN ("a variable")
-//    {
-//        input = "@(x){12}";
-//        THEN ("pasting it once")
-//        {
-//            input += "${x}";
-//            get_result
-//            REQUIRE (result == "12");
-//        }
-//
-//        THEN ("pasting it twice")
-//        {
-//            input += "${x}${x}";
-//            get_result
-//            REQUIRE (result == "1212");
-//        }
-//
-//    }
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input = R"V0G0N(@(k){K}
-//${k}
-//#{kuk}
-//${k}
-//)V0G0N";
-//    get_result
-//    REQUIRE (result == "K\nK\n");
-//
-//    app.clear_variables();
-//}
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input = R"V0G0N(@(k){K}
-//${k}
-//#{kuk}
-//)V0G0N";
-//    get_result
-//    REQUIRE (result == "K\n");
-//}
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input = R"V0G0N(@(k){K}
-//${k}
-//@(k){kuk}
-//)V0G0N";
-//    get_result
-//    REQUIRE (result == "K\n");
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input = R"V0G0N(@(k){hej}
-//${k}
-//#{{}}
-//
-//
-//
-//k)V0G0N";
-//
-//    get_result
-//    string facit = R"V0G0N(hej
-//
-//
-//
-//k)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input = R"V0G0N(@(k){hej}
-//${k}
-//@(jg){hejsan}
-//
-//
-//
-//k)V0G0N";
-//
-//    get_result
-//    string facit = R"V0G0N(hej
-//
-//
-//
-//k)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input = "$ (0 x 5)"
-//"{\n"
-//"    2\n"
-//"}";
-//
-//    get_result
-//    string facit = R"V0G0N(2
-//2
-//2
-//2
-//2)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input =
-//    R"V0G0N(
-//$(kuk)
-//{
-//    hej
-//    $(snopp)
-//    {
-//        SNOPP
-//    }
-//    ${snopp}
-//})V0G0N";
-//
-//    get_result
-//    string facit = R"V0G0N(
-//hej
-//SNOPP
-//SNOPP
-//)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input =
-//    R"V0G0N(
-//
-//@(ph)
-//{
-//    wenkel
-//}
-//${ph}
-//
-//)V0G0N";
-//
-//    get_result
-//    string facit =
-//"\n"
-//"\n"
-//"wenkel\n"
-//"\n"
-//"\n";
-//
-////    REQUIRE (result == facit);
-//}
-//
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input =
-//    R"V0G0N(@ (ph)
-//    {
-//wenkel
-//}
-//${ph})V0G0N";
-//
-//    get_result
-//    string facit = "wenkel";
-//
-//    REQUIRE (result == facit);
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input =
-//    R"V0G0N(
-//@(i)
-//{
-//    {
-//        a
-//    }
-//}
-//${i}
-//)V0G0N";
-//
-//    get_result
-//    string facit = R"V0G0N(
-//{
-//    a
-//}
-//)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input =
-//    R"V0G0N(
-//$(i)
-//{
-//    {
-//        a
-//    }
-//}
-//)V0G0N";
-//
-//    get_result
-//    string facit = R"V0G0N(
-//{
-//    a
-//}
-//)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
-//
-//TEST_CASE ("")
-//{
-//    Cython2 app {};
-//    string input = "";
-//
-//    string result = "";
-//    int nr_of_variables = 0;
-//
-//    input =
-//    R"V0G0N(
-//$(0 i 2)
-//{
-//    {
-//        a
-//    }
-//}
-//)V0G0N";
-//
-//    get_result
-//    string facit = R"V0G0N(
-//{
-//    a
-//}
-//{
-//    a
-//}
-//)V0G0N";
-//
-//    REQUIRE (result == facit);
-//}
+TEST_CASE ("declpaste with paste")
+{
+    SECTION ("declare, then declpaste with a paste")
+    {
+        GIVEN ("a declared variable")
+        {
+            Cython2 app;
+            string input = "@ (last name) {Wenkel}";
+            REQUIRE (app.process_text (input) == "");
+            REQUIRE (app.get_variables().front().first == "last name");
+            REQUIRE (app.get_variables().front().second == "Wenkel");
+            
+            THEN ("declpaste a new variable")
+            {
+                WHEN ("also pasting the first variable inside the decleration")
+                {
+                    input += "$(philip ${last name}){en god människa}";
+                    REQUIRE (app.process_text(input) == "en god människa");
+                    
+//                    REQUIRE (Cython2{}.process_text(input) == "en god människa");
+                }
+            }
+        }
+        
+    }
+    GIVEN ("input string")
+    {
+        string inpu = "@(namn)";
+    }
+}
 
+TEST_CASE ("pasting")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    GIVEN ("a variable")
+    {
+        input = "@(x){12}";
+        THEN ("pasting it once")
+        {
+            input += "${x}";
+            get_result
+            REQUIRE (result == "12");
+        }
+        
+        THEN ("pasting it twice")
+        {
+            input += "${x}${x}";
+            get_result
+            REQUIRE (result == "1212");
+        }
+        
+    }
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){K}
+${k}
+#{kuk}
+${k}
+)V0G0N";
+    get_result
+    REQUIRE (result == "K\nK\n");
+    
+    app.clear_variables();
+}
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){K}
+${k}
+#{kuk}
+)V0G0N";
+    get_result
+    REQUIRE (result == "K\n");
+}
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){K}
+${k}
+@(k){kuk}
+)V0G0N";
+    get_result
+    REQUIRE (result == "K\n");
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){hej}
+${k}
+#{{}}
+
+
+
+k)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(hej
+
+
+
+k)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N(@(k){hej}
+${k}
+@(jg){hejsan}
+
+
+
+k)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(hej
+
+
+
+k)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = "$ (0 x 5)"
+"{\n"
+"    2\n"
+"}";
+    
+    get_result
+    string facit = R"V0G0N(2
+2
+2
+2
+2)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+$(kuk)
+{
+    hej
+    $(snopp)
+    {
+        SNOPP
+    }
+    ${snopp}
+})V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+hej
+SNOPP
+SNOPP
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+    
+@(ph)
+{
+    wenkel
+}
+${ph}
+    
+)V0G0N";
+    
+    get_result
+    string facit =
+"\n"
+"\n"
+"wenkel\n"
+"\n"
+"\n";
+    
+//    REQUIRE (result == facit);
+}
+
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(@ (ph)
+    {
+wenkel
+}
+${ph})V0G0N";
+    
+    get_result
+    string facit = "wenkel";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+@(i)
+{
+    {
+        a
+    }
+}
+${i}
+)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+{
+    a
+}
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+$(i)
+{
+    {
+        a
+    }
+}
+)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+{
+    a
+}
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
+    
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input =
+    R"V0G0N(
+$(0 i 2)
+{
+    {
+        a
+    }
+}
+)V0G0N";
+    
+    get_result
+    string facit = R"V0G0N(
+{
+    a
+}
+{
+    a
+}
+)V0G0N";
+    
+    REQUIRE (result == facit);
+}
+#endif
 
 //TEST_CASE ("")
 //{
