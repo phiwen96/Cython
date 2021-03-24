@@ -7,7 +7,6 @@ template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent.
     using Parent = State2 <parent...>;
     virtual void _process (iter i, Context2& ctx)
     {
-//        cout << "hi" << endl;
         if (*i == '\n')
         {
             ctx.value += *i;
@@ -15,9 +14,7 @@ template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent.
             
         } else if (*i == ' ' and ctx.indention.first == false)
         {
-            cout << "hi::" << *i << "::" << endl;
             ++ctx.indention.second;
-//            Parent::template transition<State <STR ("{\nx"), self>>(ctx);
             Parent::template transition<'{', '\n', 'x', '{', '\n', parent...>(ctx);
             
         } else
@@ -41,20 +38,12 @@ template <char... parent> struct State2 <'{', '\n', 'x', parent...> : State2 <pa
             {
                 ctx.indention.second = 0;
                 ctx.indention.first = true;
+                
+                // go back to {\n so that doesnt $(){ skip newlines
                 Parent::template transition <parent...> (ctx);
             }
             
-        }
-        else if (*i == '\n')
-        {
-            ctx.value += '\n';
-            ctx.indention.second = 0;
-            ctx.indention.first = false;
-            Parent::template transition <parent...> (ctx);
-
-        }
-        
-        else
+        } else
         {
             ctx.indention.second = 0;
             ctx.indention.first = false;
