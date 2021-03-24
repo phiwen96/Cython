@@ -1,4 +1,5 @@
 #include "headers.hpp"
+#include <ph_macros/macros.hpp>
 
 #define get_result result = app.process_text(input);
 #define get_nr_of_variables nr_of_variables = app.get_variables().size();
@@ -10,7 +11,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$(förnamn){Philip}"};
-            REQUIRE (Cython2{}.process_text(input) == "Philip");
+//            REQUIRE (Cython2{}.process_text(input) == "Philip");
         }
     }
     SECTION ("with spaces")
@@ -18,7 +19,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$  (förnamn)  {Philip}"};
-            REQUIRE (Cython2{}.process_text(input) == "Philip");
+//            REQUIRE (Cython2{}.process_text(input) == "Philip");
         }
     }
     SECTION ("with new lines")
@@ -26,7 +27,7 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input = {"$\n\n(förnamn)\n\n{Philip}"};
-            REQUIRE (Cython2{}.process_text(input) == "Philip");
+//            REQUIRE (Cython2{}.process_text(input) == "Philip");
         }
     }
     
@@ -54,14 +55,14 @@ TEST_CASE ("declpaste $(x){foo}")
         GIVEN ("input string")
         {
             string input =
-R"V0G0N($ (x)
+R"V0G0N($(x)
 {
-        2
+    2
     2
     2
 }
 kuk)V0G0N";
-            REQUIRE (Cython2{}.process_text(input) == "    2\n2\n2\nkuk");
+            REQUIRE (Cython2{}.process_text(input) == "2\n2\n2\nkuk");
         }
     }
     
@@ -1012,9 +1013,20 @@ $(0 i 2)
 
 //#define NEW
 
+template <char... c>
+void pr (){
+    ((cout << c), ...);
+    cout << endl;
+}
+
 int main( int argc, char* argv[] ) {
-    
-    
+//    pr< IF_ELSE(TOKEN_IS_STRING(x, "x"))('a','a')('g','g')>();
+//    pr<IF_TOKEN_IS_STRING (a, "kuk", A, B)>();
+//    cout << macro(begin) << endl;
+//    IF_TOKEN_IS_STRING(he, "hej", cout << "hej" << endl, IF_TOKEN_IS_STRING(he, "he", cout << "he" << endl, cout << "no" << endl));
+//    pr macro(begin) ();
+//    cout << BOOST_PP_STRINGIZE (PH_MACRO)
+//    return 0;
 //    Cython2 app {};
 //    string input = "";
 //    string res = "";

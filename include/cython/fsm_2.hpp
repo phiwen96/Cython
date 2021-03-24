@@ -7,6 +7,7 @@ template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent.
     using Parent = State2 <parent...>;
     virtual void _process (iter i, Context2& ctx)
     {
+//        cout << "hi" << endl;
         if (*i == '\n')
         {
             ctx.value += *i;
@@ -14,9 +15,10 @@ template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent.
             
         } else if (*i == ' ' and ctx.indention.first == false)
         {
+            cout << "hi::" << *i << "::" << endl;
             ++ctx.indention.second;
 //            Parent::template transition<State <STR ("{\nx"), self>>(ctx);
-            Parent::template transition<'{', '\n', 'x', parent...>(ctx);
+            Parent::template transition<'{', '\n', 'x', '{', '\n', parent...>(ctx);
             
         } else
         {
@@ -31,20 +33,38 @@ template <char... parent> struct State2 <'{', '\n', 'x', parent...> : State2 <pa
         if (*i == ' ')
         {
             ctx.potential += ' ';
+            
+            /**
+             check if current ++indentions == 4, if so then reset indention for next
+             */
             if (++ctx.indention.second == ctx.max_indention)
             {
                 ctx.indention.second = 0;
                 ctx.indention.first = true;
                 Parent::template transition <parent...> (ctx);
             }
-        } else
+            
+        }
+        else if (*i == '\n')
+        {
+            ctx.value += '\n';
+            ctx.indention.second = 0;
+            ctx.indention.first = false;
+            Parent::template transition <parent...> (ctx);
+
+        }
+        
+        else
         {
             ctx.indention.second = 0;
+            ctx.indention.first = false;
             Parent::template transition <parent...> (ctx);
             Parent:: _process (i, ctx);
         }
     }
 };
+
+
 
 template <char c> struct State2 <c, '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
@@ -216,6 +236,8 @@ template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
         }
     }
 };
+
+
 template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
     using self = State2 <c, '(', ')', '{'>;
@@ -263,13 +285,16 @@ template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
             ctx.potential += '{';
             ctx.value += *i;
             
-        } else if (*i == '\n')
+        }
+        else if (*i == '\n')
         {
+//            cout << "hi" << endl;
             ctx.potential += '\n';
 //            transition <State <STR ("{\n"), self>> (ctx);
             transition <'{', '\n', c, '(', ')', '{'> (ctx);
 
-        } else
+        }
+        else
         {
             ctx.value += *i;
             ctx.potential += *i;
@@ -317,7 +342,7 @@ template <char c> struct State2 <c, '(', ')'> : State2 <> {
         {
             if (hasParent (ctx))
             {
-                addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild (ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
 //                TRANSITION ("begin");
@@ -467,7 +492,7 @@ template <char c> struct State2 <c> : State2 <> {
     {
         if (hasParent (ctx))
         {
-            addResultFromChild (ctx.potential, ctx);
+            State2<>::addResultFromChild (ctx.potential, ctx);
             clear (ctx);
             
             if (ctx.looping)
@@ -653,7 +678,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' '> : State2 <> {
         {
             if (hasParent (ctx))
             {
-                addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild (ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
 
@@ -680,7 +705,7 @@ template <> struct State2 <'$', '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
         {
             if (hasParent (ctx))
             {
-                addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild (ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
             } else
@@ -713,9 +738,9 @@ template <> void State2<'$', '(', ')', '{'>::finish (Context2& ctx) {
     {
         ctx.value.pop_back ();
     }
-    if (hasParent(ctx))
+    if (hasParent (ctx))
     {
-        addResultFromChild (ctx.value, ctx);
+        State2<>::addResultFromChild (ctx.value, ctx);
         clear (ctx);
         
         if (ctx.looping)
@@ -743,7 +768,9 @@ template <> void State2<'@', '(', ')', '{'>::finish (Context2& ctx) {
     
     declare (ctx.variable, ctx.value, ctx);
     clear (ctx);
-    transition <'@', '(', ')', '{', DONE> (ctx);
+    transition <DONE> (ctx);
+
+//    transition <'@', '(', ')', '{', DONE> (ctx);
 
 //    TRANSITION ("T(...){ done")
 }
