@@ -46,70 +46,6 @@ template <char... parent> struct State2 <'{', '\n', 'x', parent...> : State2 <pa
     }
 };
 
-
-
-
-template <> struct State2 <BEGIN> : State2 <> {
-    virtual void _process (iter i, Context2& ctx){
-        
-        if (*i == DECLPASTE)
-        {
-            ctx.potential += *i;
-//            transition <State <STR ("T"), STATE ("$")>> (ctx);
-            transition <'$'> (ctx);
-
-        }
-        else if (*i == '#')
-        {
-            ctx.potential += '#';
-            transition <'#'> (ctx);
-
-//            transition <State <STR ("T"), STATE ("#")>> (ctx);
-
-        }
-        else if (*i == '@')
-        {
-            ctx.potential += '@';
-            transition <'@'> (ctx);
-
-//            transition <State <STR ("T"), STATE ("@")>> (ctx);
-
-        }
-        else
-        {
-            if (hasParent (ctx))
-            {
-                State2 <>::addResultFromChild (string {*i}, ctx);
-                
-            } else
-            {
-                ctx.result += *i;
-            }
-        }
-       
-
-    }
-
-};
-template <> struct State2 <DONE> : State2 <BEGIN> {};
-template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
-    virtual void _process (iter i, Context2& ctx){
-        if (*i == '\n')
-        {
-            ctx.potential += '\n';
-            transition <DONE> (ctx);
-        } else
-        {
-            transition <DONE> (ctx);
-            State2 <DONE>::_process (i, ctx);
-        }
-    }
-};
-
-
-
-
-
 template <char c> struct State2 <c, '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
 //    using self = State2 <c, '(', ')', '{'>;
@@ -222,14 +158,64 @@ template <> void State2 <'$', '{'>::finish (Context2& ctx) {
 };
 
 
+template <> struct State2 <BEGIN> : State2 <> {
+    virtual void _process (iter i, Context2& ctx){
+        
+        if (*i == DECLPASTE)
+        {
+            ctx.potential += *i;
+//            transition <State <STR ("T"), STATE ("$")>> (ctx);
+            transition <'$'> (ctx);
+
+        }
+        else if (*i == '#')
+        {
+            ctx.potential += '#';
+            transition <'#'> (ctx);
+
+//            transition <State <STR ("T"), STATE ("#")>> (ctx);
+
+        }
+        else if (*i == '@')
+        {
+            ctx.potential += '@';
+            transition <'@'> (ctx);
+
+//            transition <State <STR ("T"), STATE ("@")>> (ctx);
+
+        }
+        else
+        {
+            if (hasParent (ctx))
+            {
+                State2 <>::addResultFromChild (string {*i}, ctx);
+                
+            } else
+            {
+                ctx.result += *i;
+            }
+        }
+       
+
+    }
+
+};
+template <> struct State2 <DONE> : State2 <BEGIN> {};
 
 
-
-
-
-
-
-
+template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
+    virtual void _process (iter i, Context2& ctx){
+        if (*i == '\n')
+        {
+            ctx.potential += '\n';
+            transition <DONE> (ctx);
+        } else
+        {
+            transition <DONE> (ctx);
+            State2 <DONE>::_process (i, ctx);
+        }
+    }
+};
 template <char c> struct State2 <c, '(', ')', '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
     using self = State2 <c, '(', ')', '{'>;
@@ -321,7 +307,7 @@ template <char c> struct State2 <c, '(', ')'> : State2 <> {
 //            TRANSITION ("$(0 i 5){");
         } else if (*i == ' ')
         {
-            ctx.potential += '\n';
+            ctx.potential += ' ';
             
         } else if (*i == '\n')
         {
@@ -501,6 +487,8 @@ template <char c> struct State2 <c> : State2 <> {
         }
     }
 };
+
+
     
 
 
