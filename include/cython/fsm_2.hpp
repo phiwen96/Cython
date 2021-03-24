@@ -370,7 +370,7 @@ template <char c> struct State2 <c, '('> : State2 <> {
         {
             addChildContext <DECLARE> (ctx).potential += *i;
 
-        } else if (isnumber (*i))
+        } else if (isdigit (*i))
         {
             ctx.potential += *i;
             ctx.firstint = *i;
@@ -538,7 +538,7 @@ template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
 template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
-        if (isnumber (*i))
+        if (isdigit (*i))
         {
             ctx.firstint += *i;
         } else if (*i == ' ')
@@ -626,7 +626,7 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i'> : State2 <> {
 template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
-        if (isnumber (*i))
+        if (isdigit (*i))
         {
             ctx.secondint += *i;
             transition <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> (ctx);
@@ -654,7 +654,7 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
 template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
     void _process (iter i, Context2& ctx){
         ctx.potential += *i;
-        if (isnumber (*i))
+        if (isdigit (*i))
         {
             ctx.secondint += *i;
         } else if (*i == ')')

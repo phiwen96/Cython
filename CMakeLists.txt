@@ -1,5 +1,12 @@
 cmake_minimum_required (VERSION 3.19.4)
 
+set(CMAKE_C_COMPILER "gcc")
+set(CMAKE_CXX_COMPILER "g++")
+
+message("CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+message("CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+
+
 project (
 	cython
 	VERSION 1.0
@@ -67,3 +74,10 @@ if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MODERN_CMAKE_BUILD_TESTING) AND
 	add_subdirectory (tests)
 endif()
 
+
+
+
+
+
+# git pull origin new   
+# git clone --recurse-submodules https://github.com/phiwen96/cython.git  

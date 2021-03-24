@@ -4,7 +4,7 @@ using namespace std;
 #include <ph_type_list/type_list.hpp>
 #include <ph_system_file_path_checker/system_file_path_checker.hpp>
 //#include <ph_system_file_path_checker/handles.hpp>
-#include <cython/cython.hpp>
+// #include <cython/cython.hpp>
 #include <cython/cython_2.hpp>
 
 
@@ -111,13 +111,15 @@ struct does_not_exist
 #if defined (Debug)
 auto main (int,  char**) -> int
 {
-    int argc = 8;
-    char** argv = new char * [argc] {new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}, new char[]{"--code"}, new char[]{"@(name){phillo}"}, new char[]{"$(hej){då}"}};
+    return 0;
+    // int argc = 8;
+    // char** argv = new char * [argc] {new char [] {}, new char [] {"--input"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_pre/1.hpp"}, new char [] {"--output"}, new char [] {"/Users/philipwenkel/Documents/testfiles_for_cython/testFiles_post/1.hpp"}, new char[]{"--code"}, new char[]{"@(name){phillo}"}, new char[]{"$(hej){då}"}};
 #elif defined (Release)
 auto main (int argc,  char** argv) -> int
 {
 #endif
-    
+    cout << "hi" << endl;
+
 #ifndef NEW
     auto [input_path, output_paths, code] = inputfsm (argc, argv);
     using input_reader = system_file_path_checker <InputPathHandler, tag::constraints::path::must_exist, tag::constraints::file_type::can_be_any, handle_path_error, handle_file_type_error>;
@@ -151,11 +153,11 @@ ${ll}
 $(namn){${förnamn}}
 $(kiss){KISS}
 horans)V0G0N";
-    cout << Cython2 {}.process_text ( sss )<< endl;
+    std::cout << Cython2{}.process_text ( sss )<< std::endl;
                                      return 0;
 #endif
     
-
+cout << "hi" << endl;
     
     return 0;
 }
