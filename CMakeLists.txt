@@ -101,3 +101,4 @@ endif()
 # git pull origin new   
 # git clone --recurse-submodules https://github.com/phiwen96/cython.git  
 
+# cmake -Drun=libtest -Dwith_args="" -S . -B build && cmake --build build --config Debug -j 9 
