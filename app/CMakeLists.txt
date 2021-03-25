@@ -22,3 +22,4 @@ install(TARGETS ${self}
     DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+ph_run ()
