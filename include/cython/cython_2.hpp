@@ -18,9 +18,15 @@ struct Cython2
         .state = &begin_state
     };
     
+    
+    
+    
+    
     string process_text (string const& str)
-    {
-        
+    {        
+//        auto aa = []<char c>(c){
+//            cout << "hi" << endl;
+//        }(8);
 //        return "";
         ctx.result.clear ();
         
@@ -30,10 +36,10 @@ struct Cython2
   
         if (State2 <DONE>* d = dynamic_cast<State2 <DONE>*>(ctx.state))
         {
-            
+            ctx.result += ctx.potential;
         } else
         {
-            ctx.result += ctx.potential;
+//            ctx.result += ctx.potential;
         }
         return ctx.result;
     }

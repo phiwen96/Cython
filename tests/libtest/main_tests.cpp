@@ -728,7 +728,18 @@ TEST_CASE ("pasting")
     }
 }
     
+TEST_CASE ("")
+{
+    Cython2 app {};
+    string input = "";
     
+    string result = "";
+    int nr_of_variables = 0;
+    
+    input = R"V0G0N($(0 0 y){K})V0G0N";
+    get_result
+    REQUIRE (result == "$(0 0 y){K}");
+}
 
 TEST_CASE ("")
 {

@@ -64,22 +64,12 @@ template <char c> struct State2 <c, '{'> : State2 <> {
 //        cout << "yo" << endl;
         if constexpr (not parent_is_loop_type)
         {
-            if (*i == DECLPASTE)
-            {
-                addChildContext <DECLPASTE> (ctx).potential = *i;
+            auto fun = [i, this, &ctx] {
+                this -> addChildContext <c> (ctx).potential = *i;
+            };
+            
+            if (is_key (i, fun))
                 return;
-                
-            } else if (*i == DECLARE)
-            {
-                addChildContext <DECLARE> (ctx).potential = *i;
-                return;
-                
-            } else if (*i == COMMENT)
-            {
-                addChildContext <COMMENT> (ctx).potential = *i;
-                return;
-                
-            }
         }
         
         if (*i == '}')
@@ -134,10 +124,12 @@ template <char c> struct State2 <c, '{'> : State2 <> {
     }
 };
 template <> void State2 <DECLPASTE, '{'>::finish (Context2& ctx) {
+
     auto declared = ctx.findVariable (ctx.value);
+    
     if (declared)
     {
-        if (hasParent (ctx))
+        IF_CHILD
         {
 //            cout << "lol" << endl;
 //            cout << ":" << declared.value () -> second << endl;
@@ -171,48 +163,35 @@ template <> void State2 <DECLPASTE, '{'>::finish (Context2& ctx) {
 
 
 template <> struct State2 <BEGIN> : State2 <> {
+#define STAND_BY ctx.result += *i;
+    
+    template <char c>
+    void go_to_next_state (iter i, Context2& ctx) {
+        ctx.potential += *i;
+        transition <c> (ctx);
+    }
+    
     virtual void _process (iter i, Context2& ctx)  override{
         
-        if (*i == DECLPASTE)
+        IF_KEY (go_to_next_state)
+        
+        else IF_CHILD
         {
-            ctx.potential += *i;
-//            transition <State <STR ("T"), STATE ("$")>> (ctx);
-            transition <DECLPASTE> (ctx);
-
+            PUSH_PARENT (string {*i})
         }
-        else if (*i == COMMENT)
-        {
-            ctx.potential += COMMENT;
-            transition <COMMENT> (ctx);
-
-//            transition <State <STR ("T"), STATE ("#")>> (ctx);
-
-        }
-        else if (*i == DECLARE)
-        {
-            ctx.potential += DECLARE;
-            transition <DECLARE> (ctx);
-
-//            transition <State <STR ("T"), STATE ("@")>> (ctx);
-
-        }
+        
         else
         {
-            if (hasParent (ctx))
-            {
-                State2 <>::addResultFromChild (string {*i}, ctx);
-                
-            } else
-            {
-                ctx.result += *i;
-            }
+            STAND_BY
         }
+        
        
 
     }
     virtual ~State2 () override {
         
     }
+#undef STAND_BY
 };
 template <> struct State2 <DONE> : State2 <BEGIN> {
     virtual ~State2 () override {
@@ -350,37 +329,47 @@ struct Finish <DECLARE>
 
 template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
     using self = State2 <c, '(', ')', r...>;
+#define IF_SUCCESS if (*i == '{')
+#define EVOLVE \
+    ctx.bracketStack.push ('{'); \
+    transition <c, '(', ')', '{', r...> (ctx);
+    
+#define REGRESS_AS_MAIN \
+    ctx.result += ctx.potential; \
+    clear (ctx); \
+    transition <BEGIN> (ctx);
+    
+#define REGRESS_AS_CHILD \
+    State2<>::addResultFromChild ((string&&) ctx.potential, ctx); \
+    clear (ctx); \
+    transition <BEGIN> (ctx);
+    
+#define ON_FAILURE
+    
+#define IF_REFORMATTING if (*i == ' ' or *i == '\n')
+    
     virtual void _process (iter i, Context2& ctx) override
     {
         ctx.potential += *i;
         
-        if (*i == '{')
+        IF_SUCCESS
         {
-            ctx.bracketStack.push ('{');
-            transition <c, '(', ')', '{', r...> (ctx);
+            EVOLVE
 
-        } else if (*i == ' ')
+        } else IF_REFORMATTING
         {
-            ctx.potential += ' ';
+//            ctx.potential += '\n';
             
-        } else if (*i == '\n')
+        } else ON_FAILURE
         {
-            ctx.potential += '\n';
-            
-        } else
-        {
-            if (hasParent (ctx))
+            IF_CHILD
             {
-                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
-                clear (ctx);
-                transition <BEGIN> (ctx);
+                REGRESS_AS_CHILD
 //                TRANSITION ("begin");
 //                removeFromParent (ctx);
             } else
             {
-                ctx.result += ctx.potential;
-                clear (ctx);
-                transition <BEGIN> (ctx);
+                REGRESS_AS_MAIN
             }
         }
     }
@@ -392,30 +381,33 @@ template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
     
 };
 template <char c> struct State2 <c, '('> : State2 <> {
+#define IF_SUCCESS if (*i == ')')
+#define EVOLVE transition <c, '(', ')'> (ctx);
+#define IF_PREGNANT if (*i == DECLPASTE || *i == DECLARE)
+#define ADD_CHILD \
+    if (*i == DECLPASTE) \
+        addChildContext <DECLPASTE> (ctx); \
+    else if (*i == DECLARE) \
+        addChildContext <DECLARE> (ctx);//.potential += *i;
+//#define IF_STAND_BY_0
+
     
     virtual void _process (iter i, Context2& ctx) override
     {
-        if (*i == ')')
+        
+        ADD_POTENTIAL
+        
+        IF_SUCCESS
         {
-            ctx.potential += *i;
-            transition <c, '(', ')'> (ctx);
+            EVOLVE
             
-        } else if (*i == '\n')
+        } else IF_PREGNANT
         {
-            ctx.potential += '\n';
+            ADD_CHILD
             
-        } else if (*i == DECLPASTE)
-        {
-            addChildContext <DECLPASTE> (ctx).potential += *i;
-
-        }
-        else if (*i == DECLARE)
-        {
-            addChildContext <DECLARE> (ctx).potential += *i;
-
         } else if (isdigit (*i))
         {
-            ctx.potential += *i;
+//            ctx.potential += *i;
             ctx.firstint = *i;
             
             /**TODO generalize to @*/
@@ -423,12 +415,12 @@ template <char c> struct State2 <c, '('> : State2 <> {
         } else
         {
             ctx.variable += *i;
-            ctx.potential += *i;
+//            ctx.potential += *i;
         }
     }
     
     virtual void addResultFromChild (string&& res, Context2& ctx) override {
-        ctx.variable += res;
+        ctx.variable += (string&&) res;
     }
     virtual ~State2 () override {
         
@@ -467,9 +459,9 @@ template <char c> struct State2 <c> : State2 <> {
     
     void reset (Context2& ctx)
     {
-        if (hasParent (ctx))
+        IF_CHILD
         {
-            State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
+            PUSH_PARENT ((string&&) ctx.potential)
             clear (ctx);
             
             if (ctx.looping)
@@ -499,45 +491,53 @@ template <char c> struct State2 <c> : State2 <> {
 
 
 template <> struct State2 <COMMENT, '{'> : State2 <> {
-    virtual void _process (iter i, Context2& ctx) override{
+    
+#define EVOLVE_AS_MAIN \
+    ctx.potential.clear(); \
+    transition <COMMENT, '(', ')', '{', DONE> (ctx);
+    
+#define EVOLVE_AS_CHILD \
+    if (ctx.looping) \
+        transition <BEGIN> (ctx); \
+    else \
+        removeFromParent (ctx);
+
+#define IF_SUCCESS \
+    if (ctx.bracketStack.empty ())
+    
+#define STAND_BY ctx.bracketStack.push ('{');
+    
+    virtual void _process (iter i, Context2& ctx) override {
         
-        ctx.potential+= *i;
+        ADD_POTENTIAL
         
         if (*i == '}')
         {
             ctx.bracketStack.pop ();
             
-            if (ctx.bracketStack.empty ())
+            IF_SUCCESS
             {
-                reset (ctx);
+//                reset (ctx);
+                IF_CHILD
+                {
+                    EVOLVE_AS_CHILD
+                    
+                } else
+                {
+                    EVOLVE_AS_MAIN
+                }
             }
 
         } else if (*i == '{')
         {
-            ctx.bracketStack.push ('{');
+            STAND_BY
         }
     }
     
     virtual void addResultFromChild (string&& res, Context2& ctx) override{
         throw runtime_error ("");
     }
-    virtual void reset_hasNoParent (Context2& ctx) override{
-        ctx.potential.clear();
-//            transition<STATE ("T(...){ done")>(ctx);
-        transition <COMMENT, '(', ')', '{', DONE> (ctx);
 
-    }
-    virtual void reset_hasParent (Context2& ctx) override{
-        if (ctx.looping)
-        {
-//                TRANSITION ("begin");
-            transition <BEGIN> (ctx);
-
-        } else
-        {
-            removeFromParent (ctx);
-        }
-    }
     virtual ~State2 () override {
         
     }
@@ -568,11 +568,15 @@ template <> struct State2 <COMMENT, '{'> : State2 <> {
  */
 template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
 {
-    virtual void _process (iter i, Context2& ctx) override{
+    using next = State2 <DONE>;
+    
+    virtual void _process (iter i, Context2& ctx) override {
+        
         if (*i == '\n')
         {
-            ctx.potential += '\n';
-            transition <DONE> (ctx);
+            ADD_POTENTIAL
+            
+            ctx.transition_to <next> ();
             
         } else
         {
@@ -587,19 +591,26 @@ template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
 
 
 template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
+#define EVOLVE transition <DECLPASTE, '(', '0', ' '> (ctx);
+    
     void _process (iter i, Context2& ctx) override{
-        ctx.potential += *i;
+        
+        ADD_POTENTIAL
+        
         if (isdigit (*i))
         {
             ctx.firstint += *i;
+            
         } else if (*i == ' ')
         {
-            transition <DECLPASTE, '(', '0', ' '> (ctx);
+            EVOLVE
+            
         } else
         {
-            if (hasParent (ctx))
+            IF_CHILD
             {
-                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
+                PUSH_PARENT ((string&&) ctx.potential)
+                
                 clear (ctx);
                 transition <BEGIN> (ctx);
             } else
@@ -626,24 +637,23 @@ template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
     }
 };
 template <> struct State2 <DECLPASTE, '(', '0', ' '> : State2 <> {
+#define GIVE_BIRTH addChildContext<DECLPASTE>(ctx);//.potential = DECLPASTE;
+#define EVOLVE \
+    ctx.intvariable += *i; \
+    transition <DECLPASTE, '(', '0', ' ', 'i'> (ctx);
+    
     void _process (iter i, Context2& ctx) override{
+
+        ADD_POTENTIAL
         
-        
-        if (*i == ' ')
+        if (*i == DECLPASTE)
         {
-            ctx.potential += *i;
-            
-        } else if (*i == DECLPASTE)
-        {
-            addChildContext<DECLPASTE>(ctx).potential = DECLPASTE;
-            
+            GIVE_BIRTH
         }
 
         else
         {
-            ctx.potential += *i;
-            ctx.intvariable += *i;
-            transition <DECLPASTE, '(', '0', ' ', 'i'> (ctx);
+            EVOLVE
         }
     }
     void addResultFromChild (string&& res, Context2& ctx) override{
@@ -713,26 +723,41 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
     }
 };
 template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
-    void _process (iter i, Context2& ctx) override{
-        ctx.potential += *i;
+#define EVOLVE transition <DECLPASTE, '(', ')', LOOP> (ctx);
+    
+#define REGRESS_AS_MAIN \
+    ctx.result += ctx.potential; \
+    clear (ctx); \
+    transition <BEGIN> (ctx);
+    
+#define REGRESS_AS_CHILD \
+    State2<>::addResultFromChild ((string&&) ctx.potential, ctx); \
+    clear (ctx); \
+    transition <BEGIN> (ctx);
+
+    
+    
+    void _process (iter i, Context2& ctx) override {
+        
+        ADD_POTENTIAL
+        
         if (isdigit (*i))
         {
             ctx.secondint += *i;
+            
         } else if (*i == ')')
         {
-            transition <DECLPASTE, '(', ')', LOOP> (ctx);
+            EVOLVE
+            
         } else
         {
-            if (hasParent (ctx))
+            IF_CHILD
             {
-                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
-                clear (ctx);
-                transition <BEGIN> (ctx);
+                REGRESS_AS_CHILD
+                
             } else
             {
-                ctx.result += ctx.potential;
-                clear (ctx);
-                transition <BEGIN> (ctx);
+                REGRESS_AS_MAIN
             }
         }
     }
@@ -756,9 +781,12 @@ template <> void State2<DECLPASTE, '(', ')', '{'>::finish (Context2& ctx) {
     {
         ctx.value.pop_back ();
     }
-    if (hasParent (ctx))
+    
+    IF_CHILD
     {
-        State2<>::addResultFromChild ((string&&) ctx.value, ctx);
+        PUSH_PARENT ((string&&) ctx.value)
+        
+        
         clear (ctx);
         
         if (ctx.looping)
@@ -785,7 +813,7 @@ template <> void State2<DECLARE, '(', ')', '{'>::finish (Context2& ctx) {
         ctx.value.pop_back ();
     }
     
-    ctx.declare_variable (move (ctx.variable), move (ctx.value));
+    ctx.declare_variable ((string&&) ctx.variable, (string&&) ctx.value);
 //    declare (ctx.variable, ctx.value, ctx);
 
     clear (ctx);

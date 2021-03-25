@@ -14,6 +14,28 @@ using namespace std;
 #define DECLARE '@'
 #define COMMENT '#'
 
+#define KEYS DECLPASTE, DECLARE, COMMENT
+
+using iter = string::const_iterator;
+
+template <char c, char... r>
+auto _if_is_key (iter d, auto&& func) -> decltype (auto){
+    if (c == *d)
+    {
+        func ();
+        return true;
+    }
+    else if constexpr (sizeof... (r) == 0)
+        return false;
+    else
+        return _if_is_key <r...> (d, forward <decltype (func)> (func));
+}
+
+template <class F>
+auto is_key (iter c, F func) -> decltype (auto) {
+    return _if_is_key <KEYS> (c, forward <F> (func));
+}
+ 
 #define BAS
 
 #define NO_PASTE 'n', 'o', ' ', 'p', 'a', 's', 't', 'e'
@@ -21,11 +43,15 @@ using namespace std;
 #define SUCCESS 's', 'u', 'c', 'c', 'e', 's', 's'
 #define FAIL 'f', 'a', 'i', 'l'
 
-using iter = string::const_iterator;
 
 
+#define IF_KEY(...) if (*i == DECLPASTE) {__VA_ARGS__<DECLPASTE> (i, ctx);} else if (*i == DECLARE) {__VA_ARGS__<DECLARE> (i, ctx);} else if (*i == COMMENT) {__VA_ARGS__<COMMENT> (i, ctx);}
 
 
+#define IF_KEY2(...) __builtin_choose_expr (*i == DECLPASTE, __VA_ARGS__, (__builtin_choose_expr (*i == DECLARE, __VA_ARGS__, (__builtin_choose_expr (*i == COMMENT, __VA_ARGS__, BOOST_PP_EMPTY ())))))
+#define IF_CHILD if (hasParent (ctx))
+#define PUSH_PARENT(...) State2 <>::addResultFromChild (__VA_ARGS__, ctx);
+#define ADD_POTENTIAL ctx.potential += *i;
 
 template <char...>
 struct State2;
@@ -79,6 +105,7 @@ struct Context2 {
     
     void declare_variable (string&& name, string&& value)
     {
+        
         auto declared = declaredVariables.begin ();
         for (; declared < declaredVariables.end (); ++declared) {
             if (declared -> first == name) {
