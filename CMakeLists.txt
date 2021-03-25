@@ -1,12 +1,9 @@
 cmake_minimum_required (VERSION 3.19.4)
 
-set(CMAKE_C_COMPILER "gcc")
-set(CMAKE_CXX_COMPILER "g++")
+# set(CMAKE_C_COMPILER "gcc")
+# set(CMAKE_CXX_COMPILER "g++")
 
 
-
-# message("CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
-# message("CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 
 project (
@@ -29,13 +26,15 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	set (CMAKE_CXX_EXTENSIONS ON)
 
 	# add_compile_options(-Wall -Wextra -pedantic -Werror)
-	add_compile_options (-fcoroutines -Wmissing-attributes -Wno-attributes -Waddress -Wjump-misses-init -Wempty-body -Wdangling-else -Wunsafe-loop-optimizations -Wno-free-nonheap-object -Wtautological-compare -Wduplicated-cond -Wduplicated-branches -Wsuggest-attribute=malloc -Wmissing-noreturn -Wsuggest-attribute=noreturn -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wstring-compare -Wuninitialized -Wunused-value -Wunused-local-typedefs -Wunused-label -Wunused-function -Wunused-but-set-variable -Wunused-but-set-parameter -Wparentheses -Wmissing-braces -Wmissing-attributes -Wmisleading-indentation -Wmain -Wdelete-non-virtual-dtor -Wdeprecated-copy -Wclass-memaccess -Wnon-virtual-dtor -Wreorder -Wno-pessimizing-move -Wno-redundant-move -Woverloaded-virtual -Wno-virtual-move-assign -Wno-placement-new -Wsuggest-final-types -Wsuggest-final-methods -Wsuggest-override -Wuseless-cast)
+	add_compile_options (-Wmissing-attributes -Wno-attributes -Waddress -Wjump-misses-init -Wempty-body -Wdangling-else -Wunsafe-loop-optimizations -Wno-free-nonheap-object -Wtautological-compare -Wduplicated-cond -Wduplicated-branches -Wsuggest-attribute=malloc -Wmissing-noreturn -Wsuggest-attribute=noreturn -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wstring-compare -Wuninitialized -Wunused-value -Wunused-local-typedefs -Wunused-label -Wunused-function -Wunused-but-set-variable -Wunused-but-set-parameter -Wparentheses -Wmissing-braces -Wmissing-attributes -Wmisleading-indentation -Wmain -Wdelete-non-virtual-dtor -Wdeprecated-copy -Wclass-memaccess -Wnon-virtual-dtor -Wreorder -Wno-pessimizing-move -Wno-redundant-move -Woverloaded-virtual -Wno-virtual-move-assign -Wno-placement-new -Wsuggest-final-types -Wsuggest-final-methods -Wsuggest-override -Wuseless-cast)
 	#-Wunused-variable -Wunused-parameter -Wunused-macros -Wjump-misses-init -Wjump-misses-init
 	 
 	# Let's nicely support folders
 	# Let's nicely support folders in IDEs
 	set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
+	# execute_process(COMMAND "echo $<PLATFORM_ID">)
+	add_compile_definitions (SYSTEM_NAME=$<PLATFORM_ID>)
 
 
 	# Testing only available if this is the main app
@@ -108,3 +107,6 @@ endif()
 
 # cmake -Drun=libtest -Dwith_args="" -S . -B build && cmake --build build --config Debug -j 9 
 # cmake -Wno-dev -DCMAKE_CONFIGURATION_TYPES="Debug;Release;Kuk" -S . -B xbuild -GXcode && cmake --open xbuild
+
+# cmake CC=/usr/bin/gcc CXX=/usr/bin/g++ cmake ... -Wno-dev -DCMAKE_CONFIGURATION_TYPES="Debug;Release;Kuk" -S . -B xbuild -GXcode && cmake --open xbuild
+# -DCMAKE_C_COMPILER=/usr/local/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/local/bin/x86_64-apple-darwin20-g++-10

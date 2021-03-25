@@ -1,7 +1,7 @@
 #ifndef CYTHON_2_HPP
 #define CYTHON_2_HPP
 #include "fsm_2.hpp"
-#include <coroutine>
+
 using namespace std;
 
 
@@ -24,7 +24,7 @@ struct Cython2
 //     }
     void kiss () {}
     [[deprecated ("reason")]] void kiss2 (){}
-
+    
     
 #pragma message ("hej")
     
