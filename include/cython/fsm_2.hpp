@@ -220,29 +220,23 @@ template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
 
 template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> {
     using self = State2 <c, '(', ')', '{', r...>;
-    inline static constexpr bool loop = is_same_v <State2 <c, '(', ')', '{', r...>, State2 <c, '(', ')', '{', LOOP>>;
-    
+    inline static constexpr bool i_am_looping = is_same_v <State2 <c, '(', ')', '{', r...>, State2 <c, '(', ')', '{', LOOP>>;
+
+#define IF_PREGNANT if (*i == DECLPASTE || *i == DECLARE || *i == COMMENT)
+#define ADD_CHILD if (*i == DECLPASTE) addChildContext <DECLPASTE> (ctx).potential = *i; \
+    else if (*i == DECLARE) addChildContext <DECLARE> (ctx).potential = *i; \
+    else addChildContext <COMMENT> (ctx).potential = *i; \
+    return;
+#define IF_SUCCESS if (ctx.bracketStack.empty ())
+#define EVOLVE_1 transition <'{', '\n', c, '(', ')', '{', r...> (ctx);
     
     virtual void _process (iter i, Context2& ctx) override
     {
-        if constexpr (not loop)
+        if constexpr (not i_am_looping)
         {
-            if (*i == DECLPASTE)
+            IF_PREGNANT
             {
-//                cout << "hi" << endl;
-                addChildContext <DECLPASTE> (ctx).potential = *i;
-                return;
-                
-            } else if (*i == DECLARE)
-            {
-                addChildContext <DECLARE> (ctx).potential = *i;
-                return;
-                
-            } else if (*i == COMMENT)
-            {
-                addChildContext <COMMENT> (ctx).potential = *i;
-                return;
-                
+                ADD_CHILD
             }
         }
         
@@ -250,7 +244,7 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
         {
             ctx.bracketStack.pop ();
             
-            if (ctx.bracketStack.empty ())
+            IF_SUCCESS
             {
                 finish (ctx);
                 
@@ -279,7 +273,7 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
 //            cout << "hi" << endl;
             ctx.potential += '\n';
 //            transition <State <STR ("{\n"), self>> (ctx);
-            transition <'{', '\n', c, '(', ')', '{', r...> (ctx);
+            EVOLVE_1
 
         }
         else
@@ -290,7 +284,7 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
     }
     virtual void addResultFromChild (string&& res, Context2& ctx) override
     {
-        if constexpr (loop)
+        if constexpr (i_am_looping)
         {
             ctx.loop += res;
             return;

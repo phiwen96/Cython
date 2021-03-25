@@ -18,12 +18,23 @@ struct Cython2
         .state = &begin_state
     };
     
+    void foo (int i)[[ensures r: r == x]] {
+        
+    }
+    void kiss () {}
+    [[deprecated ("reason")]] void kiss2 (){}
+
     
+#pragma message ("hej")
     
-    
-    
+    struct Te {};
+    Te promise (){return {};}
+
+//#error 1 + 2 = 3
     string process_text (string const& str)
-    {        
+    {
+       
+ 
 //        auto aa = []<char c>(c){
 //            cout << "hi" << endl;
 //        }(8);
