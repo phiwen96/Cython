@@ -11,6 +11,16 @@ using namespace std;
 
 
 
+
+
+
+
+
+
+
+
+
+
 #define get_result result = app.process_text(input);
 #define get_nr_of_variables nr_of_variables = app.get_variables().size();
 
