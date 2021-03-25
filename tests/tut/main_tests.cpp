@@ -1,7 +1,8 @@
 #include <catch2/catch.hpp>
 #include <experimental/coroutine>
 #include <concepts>
-
+#include <cython/state_machine.hpp>
+namespace {
 template <class T, class U>
 concept convertible = std::is_convertible_v<T, U>;
 using namespace std;
@@ -138,7 +139,187 @@ struct state1
 
 TEST_CASE ("")
 {
-    variant <state0, state1> v = state1{};
-    v = visit (overload{[&](state0&)->state1{cout << "state0" << endl; return {};}, [&](state1&)-> state1{cout << "state1" << endl; return {};}}, v);
+    
+//    variant <state0, state1> v = state1{};
+//    v = visit (overload{[&](state0&)->state1{cout << "state0" << endl; return {};}, [&](state1&)-> state1{cout << "state1" << endl; return {};}}, v);
 //    overload ([](int i){cout << "int" << endl;}, [](string s){cout << "string" << endl;})(v);
 }
+
+}
+
+
+
+
+
+struct event
+{
+    struct l_paran {
+        friend ostream& operator<< (ostream& os, l_paran const&) {
+            os << "(";
+            return os;
+        }
+    };
+    struct r_paran {
+        friend ostream& operator<< (ostream& os, r_paran const&) {
+            os << ")";
+            return os;
+        }
+    };
+    struct l_bracket {
+        friend ostream& operator<< (ostream& os, l_bracket const&) {
+            os << "{";
+            return os;
+        }
+    };
+    struct r_bracket {
+        friend ostream& operator<< (ostream& os, r_bracket const&) {
+            os << "}";
+            return os;
+        }
+    };
+    struct dollar {
+        friend ostream& operator<< (ostream& os, dollar const&) {
+            os << "$";
+            return os;
+        }
+    };
+    struct alpha {
+        friend ostream& operator<< (ostream& os, alpha const&) {
+            os << "@";
+            return os;
+        }
+    };
+    struct hashtag {
+        friend ostream& operator<< (ostream& os, hashtag const&) {
+            os << "#";
+            return os;
+        }
+    };
+};
+
+
+
+template <int a, int...>
+struct s {
+    template <typename machine>
+    auto execute (machine&&) -> decltype (auto){
+        cout << "state " << a << ": working on machine" << endl;
+    }
+    
+    friend ostream& operator<< (ostream& os, s const&) {
+        os << a;
+        return os;
+    }
+};
+
+template <>
+struct s <2> : s <2, 0>
+{
+    
+    
+//    template <typename machine>
+//    [[noreturn]] auto execute (machine&&) -> decltype (auto){
+////        return {};
+//    }
+    template <typename event>
+    auto handle (event&&) -> decltype (auto) {
+        return s <2> {};
+    }
+};
+
+template <>
+struct s <1> : s <1, 0>
+{
+//    template <typename machine>
+//    auto execute (machine&&) -> decltype (auto) {
+////        return {};
+//    }
+    
+   
+    auto handle (auto&&) -> decltype (auto) {
+        return transition_to <s <1>> {};
+    }
+    auto handle (event::dollar) -> decltype (auto) {
+        return transition_to <s <2>> {};
+    }
+};
+
+
+
+template <>
+struct s <3> : s <3, 0>
+{
+//    template <typename machine>
+//    auto execute (machine&&) -> decltype (auto) {
+////        return {};
+//    }
+
+    auto handle (auto&&) -> decltype (auto) {
+        return s <3> {};
+    }
+};
+
+template <>
+struct s <4> : s <4, 0>
+{
+//    template <typename machine>
+//    [[noreturn]] auto execute (machine&&) -> decltype (auto) {
+////        return {};
+//    }
+
+    auto handle (auto&&) -> decltype (auto) {
+        return s <4> {};
+    }
+};
+
+
+
+
+
+
+
+//#define DECL(z, n, text) struct  s ## n {};
+//
+//BOOST_PP_REPEAT(20, DECL, _);
+
+
+
+
+
+
+
+
+
+
+
+
+
+TEST_CASE ("")
+{
+    string input = "$(0 x 2)";
+    state_machine <s <1>, s <2>, s <3>> machine;
+    for (char i : input)
+    {
+        switch (i) {
+            case '$':
+                machine.handle (event::dollar {});
+                break;
+                
+            default:
+                break;
+        }
+    }
+        
+    
+    
+}
+
+
+
+
+
+
+
+
+
+
