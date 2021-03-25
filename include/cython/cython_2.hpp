@@ -1,6 +1,7 @@
 #ifndef CYTHON_2_HPP
 #define CYTHON_2_HPP
 #include "fsm_2.hpp"
+#include <coroutine>
 using namespace std;
 
 
@@ -18,9 +19,9 @@ struct Cython2
         .state = &begin_state
     };
     
-    void foo (int i)[[ensures r: r == x]] {
+//     void foo (int i)[[ensures r: r == x]] {
         
-    }
+//     }
     void kiss () {}
     [[deprecated ("reason")]] void kiss2 (){}
 

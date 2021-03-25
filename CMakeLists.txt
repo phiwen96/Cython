@@ -29,7 +29,10 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	set (CMAKE_CXX_EXTENSIONS ON)
 
 	# add_compile_options(-Wall -Wextra -pedantic -Werror)
-	add_compile_options (-Wmissing-attributes -Wno-attributes -Waddress -Wjump-misses-init -Wempty-body -Wdangling-else -Wunused-macros -Wunsafe-loop-optimizations -Wno-free-nonheap-object -Wshadow -Wtautological-compare -Wduplicated-cond -Wduplicated-branches -Wsuggest-attribute=malloc -Wmissing-noreturn -Wsuggest-attribute=noreturn -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wstring-compare -Wuninitialized -Wunused-value -Wunused-variable -Wunused-local-typedefs -Wunused-parameter -Wunused-label -Wunused-function -Wunused-but-set-variable -Wunused-but-set-parameter -Wparentheses -Wmissing-braces -Wmissing-attributes -Wmisleading-indentation -Wmain -Wdelete-non-virtual-dtor -Wdeprecated-copy -Wclass-memaccess -Wnon-virtual-dtor -Wreorder -Wno-pessimizing-move -Wno-redundant-move -Wrange-loop-construct -Woverloaded-virtual -Wno-mismatched-new-delete -Wno-virtual-move-assign -Wno-vexing-parse -Wno-placement-new -Wsuggest-final-types -Wsuggest-final-methods -Wsuggest-override -Wuseless-cast)
+	add_compile_options (-fcoroutines -Wmissing-attributes -Wno-attributes -Waddress -Wjump-misses-init -Wempty-body -Wdangling-else -Wunsafe-loop-optimizations -Wno-free-nonheap-object -Wtautological-compare -Wduplicated-cond -Wduplicated-branches -Wsuggest-attribute=malloc -Wmissing-noreturn -Wsuggest-attribute=noreturn -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wstring-compare -Wuninitialized -Wunused-value -Wunused-local-typedefs -Wunused-label -Wunused-function -Wunused-but-set-variable -Wunused-but-set-parameter -Wparentheses -Wmissing-braces -Wmissing-attributes -Wmisleading-indentation -Wmain -Wdelete-non-virtual-dtor -Wdeprecated-copy -Wclass-memaccess -Wnon-virtual-dtor -Wreorder -Wno-pessimizing-move -Wno-redundant-move -Woverloaded-virtual -Wno-virtual-move-assign -Wno-placement-new -Wsuggest-final-types -Wsuggest-final-methods -Wsuggest-override -Wuseless-cast)
+	#-Wunused-variable -Wunused-parameter -Wunused-macros -Wjump-misses-init -Wjump-misses-init
+	 
+	# Let's nicely support folders
 	# Let's nicely support folders in IDEs
 	set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
