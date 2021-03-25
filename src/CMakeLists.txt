@@ -58,3 +58,4 @@ install(TARGETS ${self}
 
     
 
+ph_run ()

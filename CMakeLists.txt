@@ -40,6 +40,7 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	include (CTest)
 
 	set (run cython_app CACHE STRING "run executable")
+	set (with_args "" CACHE STRING "run executable with args")
 
 
 endif()
