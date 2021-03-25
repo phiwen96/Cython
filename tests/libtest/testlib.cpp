@@ -1052,6 +1052,8 @@ void pr (){
 }
 
 int main( int argc, char* argv[] ) {
+
+	cout << "hi" << endl;
 //    pr< IF_ELSE(TOKEN_IS_STRING(x, "x"))('a','a')('g','g')>();
 //    pr<IF_TOKEN_IS_STRING (a, "kuk", A, B)>();
 //    cout << macro(begin) << endl;

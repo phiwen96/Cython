@@ -3,8 +3,10 @@ cmake_minimum_required (VERSION 3.19.4)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
-message("CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
-message("CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+
+
+# message("CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+# message("CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 
 project (
@@ -14,6 +16,33 @@ project (
 	LANGUAGES CXX
 )	
 
+
+
+
+
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+	set(CMAKE_MESSAGE_LOG_LEVEL "WARNING")
+
+	# Let's ensure -std=g++xx instead of -std=c++xx
+	set (CMAKE_CXX_STANDARD 20)
+	set (CMAKE_CXX_STANDARD_REQUIRED ON)
+	set (CMAKE_CXX_EXTENSIONS ON)
+
+	# Let's nicely support folders in IDEs
+	set_property (GLOBAL PROPERTY USE_FOLDERS ON)
+
+
+
+	# Testing only available if this is the main app
+	# Note this needs to be done in the main CMakeLists
+	# since it calls enable_testing, which must be in the
+	# main CMakeLists.
+	include (CTest)
+
+	set (run cython_app CACHE STRING "run executable")
+
+
+endif()
 
 add_subdirectory (cmake/phake)
 
@@ -31,39 +60,6 @@ if (NOT TARGET ph_macros)
 	add_subdirectory (dependencies/ph_macros)
 endif ()
 
-
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-	
-	# Let's ensure -std=g++xx instead of -std=c++xx
-	set (CMAKE_CXX_STANDARD 20)
-	set (CMAKE_CXX_STANDARD_REQUIRED ON)
-	set (CMAKE_CXX_EXTENSIONS ON)
-
-	# Let's nicely support folders in IDEs
-	set_property (GLOBAL PROPERTY USE_FOLDERS ON)
-
-
-
-	# Testing only available if this is the main app
-	# Note this needs to be done in the main CMakeLists
-	# since it calls enable_testing, which must be in the
-	# main CMakeLists.
-	include (CTest)
-
-
-
-   # Docs only available if this is the main app
-   	# find_package (Doxygen)
-
-	# if (Doxygen_FOUND)
-	# 	add_subdirectory (docs)
-   	# else()
-    #  		message(STATUS "Doxygen not found, not building docs")
-   	# endif()
-
-
-endif()
-
 find_package (Boost 1.74 REQUIRED)
 
 add_subdirectory (src)
@@ -76,8 +72,31 @@ endif()
 
 
 
+# add_custom_command
+#      OUTPUT ${CMAKE_CURRENT_LIST_DIR}/wrapper
+#      COMMAND $(CMAKE_COMMAND)
+#           -D CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+#           -P ${CMAKE_CURRENT_SOURCE_DIR}/the_cmake_script.cmake 
+#      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/the_cmake_script.cmake 
+#      COMMAND Generating wrapper script...
+#      VERBATIM
+#  )
 
+
+#  file(WRITE ${CMAKE_CURRENT_LIST_DIR}/run.sh
+#  "#!/usr/bin/env bash
+#  # Note that './main' is relative from whatever directory you are in
+#  # Use just main assuming the install prefix is in your bath
+#  # Or use $<TARGET_FILE:main> 
+#  # Or maybe ${CMAKE_INSTALL_PREFIX}/bin/main
+#  \"$<TARGET_FILE:testlib\">
+#  ")
+
+# add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/run.sh
+# 	COMMAND 
+# )
 
 
 # git pull origin new   
 # git clone --recurse-submodules https://github.com/phiwen96/cython.git  
+

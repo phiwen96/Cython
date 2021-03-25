@@ -1,4 +1,5 @@
-using namespace std;
+#include <iostream>
+using namespace std; 
 #include "inputfsm.hpp"
 #include "common.hpp"
 #include <ph_type_list/type_list.hpp>
