@@ -3,8 +3,7 @@ using namespace std;
 #include <const_str/const_str.hpp>
 #include <ph_macros/ph_macros.hpp>
 #define INDENTION 4
-#define SS2(x, y) EVAL (IF_ELSE (PH_MACRO_$token_is_string (x, "begin"))('b', 'e', 'g', 'i', 'n')())
-#define SS(x) IF_ELSE (PH_MACRO_$token_is_string (x, "begin")) ('b', 'e', 'g', 'i', 'n') ()
+
 
 #define BEGIN 'b', 'e', 'g', 'i', 'n'
 
@@ -19,6 +18,9 @@ using namespace std;
 
 #define NO_PASTE 'n', 'o', ' ', 'p', 'a', 's', 't', 'e'
 
+#define SUCCESS 's', 'u', 'c', 'c', 'e', 's', 's'
+#define FAIL 'f', 'a', 'i', 'l'
+
 using iter = string::const_iterator;
 
 
@@ -32,6 +34,7 @@ struct State2;
 
 
 struct Context2 {
+    
     using variable_iter = vector <pair <string, string>>::iterator;
     
     
@@ -56,6 +59,12 @@ struct Context2 {
     
     void process (iter it);
     
+    template <class T>
+    void transition_to ()
+    {
+        state = new T;
+    }
+    
     
     auto findVariable (string const& name) -> optional <variable_iter>
     {
@@ -67,6 +76,31 @@ struct Context2 {
         }
         return {};
     }
+    
+    void declare_variable (string&& name, string&& value)
+    {
+        auto declared = declaredVariables.begin ();
+        for (; declared < declaredVariables.end (); ++declared) {
+            if (declared -> first == name) {
+                swap (declared -> second, value);
+                return;
+            }
+        }
+        declaredVariables.emplace_back ((string&&) name, (string&&) value);
+    }
+    
+    void declare_variable (string const& name, string const& value)
+    {
+        auto declared = declaredVariables.begin ();
+        for (; declared < declaredVariables.end (); ++declared) {
+            if (declared -> first == name) {
+                declared -> second = value;
+                return;
+            }
+        }
+        declaredVariables.emplace_back (name, value);
+    }
+    
 };
 
 
@@ -92,11 +126,14 @@ struct State2 <> {
     State2 <> * parent (Context2& ctx);
     void declare (string const& var, string const& val, Context2& ctx);
     optional <string> declared (string const&, Context2& ctx);
-    virtual void addResultFromChild (string const& res, Context2& ctx);
+    virtual void addResultFromChild (string&& res, Context2& ctx);
     void reset (Context2& ctx);
     virtual void reset_hasNoParent (Context2& ctx){}
     virtual void reset_hasParent (Context2& ctx){}
     void clear (Context2& ctx);
+    virtual ~State2 () {
+        
+    }
 };
 
 
@@ -155,12 +192,12 @@ void State2<>::reset (Context2& ctx){
 }
 
 
-void State2<>::addResultFromChild (string const& res, Context2& ctx) {
+void State2<>::addResultFromChild (string&& res, Context2& ctx) {
 #if defined (Debug)
     if (ctx.parent == nullptr || ctx.parent -> state == nullptr)
         throw runtime_error ("");
 #endif
-    ctx.parent -> state -> addResultFromChild (res, *ctx.parent);
+    ctx.parent -> state -> addResultFromChild ((string&&) res, *ctx.parent);
 }
 
 
@@ -240,8 +277,17 @@ template <>
 struct _Done <COMMENT>
 {
     using type = State2 <DONE, NO_PASTE>;
+    
 };
 
 
 template <char... c>
 using Done = typename _Done <c...>::type;
+
+template <char...>
+struct _get_next_transition;
+
+
+
+template <char... c>
+using get_next_transition = typename _get_next_transition <c...>::type;

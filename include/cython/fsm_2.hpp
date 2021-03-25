@@ -5,7 +5,7 @@
 template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent...> {
     using self = State2 <parent..., '\n'>;
     using Parent = State2 <parent...>;
-    virtual void _process (iter i, Context2& ctx)
+    virtual void _process (iter i, Context2& ctx) override
     {
         if (*i == '\n')
         {
@@ -25,7 +25,7 @@ template <char... parent> struct State2 <'{', '\n', parent...> : State2 <parent.
 };
 template <char... parent> struct State2 <'{', '\n', 'x', parent...> : State2 <parent...> {
     using Parent = State2 <parent...>;
-    virtual void _process (iter i, Context2& ctx)
+    virtual void _process (iter i, Context2& ctx) override
     {
         if (*i == ' ')
         {
@@ -59,7 +59,7 @@ template <char c> struct State2 <c, '{'> : State2 <> {
     inline static constexpr bool parent_is_loop_type = false;//is_same_v <T, STATE ("$(0 i 5){")>;
 //    using self = State2 <c, '(', ')', '{'>;
     
-    virtual void _process (iter i, Context2& ctx)
+    virtual void _process (iter i, Context2& ctx) override
     {
 //        cout << "yo" << endl;
         if constexpr (not parent_is_loop_type)
@@ -114,7 +114,7 @@ template <char c> struct State2 <c, '{'> : State2 <> {
             ctx.potential += *i;
         }
     }
-    virtual void addResultFromChild (string const& res, Context2& ctx)
+    virtual void addResultFromChild (string&& res, Context2& ctx) override
     {
         if constexpr (parent_is_loop_type)
         {
@@ -129,6 +129,9 @@ template <char c> struct State2 <c, '{'> : State2 <> {
     }
     
     void finish (Context2& ctx);
+    virtual ~State2 () override {
+        
+    }
 };
 template <> void State2 <DECLPASTE, '{'>::finish (Context2& ctx) {
     auto declared = ctx.findVariable (ctx.value);
@@ -138,7 +141,7 @@ template <> void State2 <DECLPASTE, '{'>::finish (Context2& ctx) {
         {
 //            cout << "lol" << endl;
 //            cout << ":" << declared.value () -> second << endl;
-            State2 <>::addResultFromChild (declared.value()->second, ctx);
+            State2 <>::addResultFromChild ((string&&) declared.value()->second, ctx);
             clear (ctx);
             
             if (ctx.looping)
@@ -168,7 +171,7 @@ template <> void State2 <DECLPASTE, '{'>::finish (Context2& ctx) {
 
 
 template <> struct State2 <BEGIN> : State2 <> {
-    virtual void _process (iter i, Context2& ctx){
+    virtual void _process (iter i, Context2& ctx)  override{
         
         if (*i == DECLPASTE)
         {
@@ -207,13 +210,19 @@ template <> struct State2 <BEGIN> : State2 <> {
        
 
     }
-
+    virtual ~State2 () override {
+        
+    }
 };
-template <> struct State2 <DONE> : State2 <BEGIN> {};
+template <> struct State2 <DONE> : State2 <BEGIN> {
+    virtual ~State2 () override {
+        
+    }
+};
 
 
 template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
-    virtual void _process (iter i, Context2& ctx){
+    virtual void _process (iter i, Context2& ctx)  override {
         if (*i == '\n')
         {
             ctx.potential += '\n';
@@ -224,6 +233,9 @@ template <char c> struct State2 <c, '(', ')', '{', DONE> : State2 <DONE> {
             State2 <DONE>::_process (i, ctx);
         }
     }
+    virtual ~State2 () override {
+        
+    }
 };
 
 
@@ -232,7 +244,7 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
     inline static constexpr bool loop = is_same_v <State2 <c, '(', ')', '{', r...>, State2 <c, '(', ')', '{', LOOP>>;
     
     
-    virtual void _process (iter i, Context2& ctx)
+    virtual void _process (iter i, Context2& ctx) override
     {
         if constexpr (not loop)
         {
@@ -263,6 +275,13 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
             {
                 finish (ctx);
                 
+                if constexpr (c == '@')
+                {
+                    using next_transition = get_next_transition <c, SUCCESS>;
+                    
+                    ctx.transition_to <next_transition> ();
+                }
+                
             } else
             {
                 ctx.potential += '}';
@@ -290,7 +309,7 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
             ctx.potential += *i;
         }
     }
-    virtual void addResultFromChild (string const& res, Context2& ctx)
+    virtual void addResultFromChild (string&& res, Context2& ctx) override
     {
         if constexpr (loop)
         {
@@ -306,11 +325,32 @@ template <char c, char... r> struct State2 <c, '(', ')', '{', r...> : State2 <> 
     }
     
     void finish (Context2& ctx);
+    virtual ~State2 () override {
+        
+    }
+};
+
+template <char...>
+struct Finish;
+
+template <>
+struct Finish <DECLARE>
+{
+    void finish (Context2& ctx)
+    {
+//        if (ctx.value.back () == '\n')
+//        {
+//            ctx.value.pop_back ();
+//        }
+//
+//        declare (ctx.variable, ctx.value, ctx);
+//        clear (ctx);
+    }
 };
 
 template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
     using self = State2 <c, '(', ')', r...>;
-    virtual void _process (iter i, Context2& ctx)
+    virtual void _process (iter i, Context2& ctx) override
     {
         ctx.potential += *i;
         
@@ -331,7 +371,7 @@ template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
         {
             if (hasParent (ctx))
             {
-                State2<>::addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
 //                TRANSITION ("begin");
@@ -346,11 +386,14 @@ template <char c, char... r> struct State2 <c, '(', ')', r...> : State2 <> {
     }
     
     void finish (Context2& ctx);
+    virtual ~State2 () override {
+        
+    }
     
 };
 template <char c> struct State2 <c, '('> : State2 <> {
     
-    virtual void _process (iter i, Context2& ctx)
+    virtual void _process (iter i, Context2& ctx) override
     {
         if (*i == ')')
         {
@@ -384,13 +427,16 @@ template <char c> struct State2 <c, '('> : State2 <> {
         }
     }
     
-    virtual void addResultFromChild (string const& res, Context2& ctx){
+    virtual void addResultFromChild (string&& res, Context2& ctx) override {
         ctx.variable += res;
+    }
+    virtual ~State2 () override {
+        
     }
 };
 template <char c> struct State2 <c> : State2 <> {
    
-    void _process (iter i, Context2& ctx){
+    void _process (iter i, Context2& ctx) override{
         
         ctx.potential += *i;
         
@@ -423,7 +469,7 @@ template <char c> struct State2 <c> : State2 <> {
     {
         if (hasParent (ctx))
         {
-            State2<>::addResultFromChild (ctx.potential, ctx);
+            State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
             clear (ctx);
             
             if (ctx.looping)
@@ -442,6 +488,9 @@ template <char c> struct State2 <c> : State2 <> {
             transition <BEGIN> (ctx);
         }
     }
+    virtual ~State2 () override {
+        
+    }
 };
 
 
@@ -450,7 +499,7 @@ template <char c> struct State2 <c> : State2 <> {
 
 
 template <> struct State2 <COMMENT, '{'> : State2 <> {
-    virtual void _process (iter i, Context2& ctx){
+    virtual void _process (iter i, Context2& ctx) override{
         
         ctx.potential+= *i;
         
@@ -469,16 +518,16 @@ template <> struct State2 <COMMENT, '{'> : State2 <> {
         }
     }
     
-    virtual void addResultFromChild (string const& res, Context2& ctx){
+    virtual void addResultFromChild (string&& res, Context2& ctx) override{
         throw runtime_error ("");
     }
-    virtual void reset_hasNoParent (Context2& ctx){
+    virtual void reset_hasNoParent (Context2& ctx) override{
         ctx.potential.clear();
 //            transition<STATE ("T(...){ done")>(ctx);
         transition <COMMENT, '(', ')', '{', DONE> (ctx);
 
     }
-    virtual void reset_hasParent (Context2& ctx){
+    virtual void reset_hasParent (Context2& ctx) override{
         if (ctx.looping)
         {
 //                TRANSITION ("begin");
@@ -489,10 +538,9 @@ template <> struct State2 <COMMENT, '{'> : State2 <> {
             removeFromParent (ctx);
         }
     }
-    virtual string trans (){
-        return "#{";
+    virtual ~State2 () override {
+        
     }
- 
 };
 
 
@@ -520,7 +568,7 @@ template <> struct State2 <COMMENT, '{'> : State2 <> {
  */
 template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
 {
-    virtual void _process (iter i, Context2& ctx){
+    virtual void _process (iter i, Context2& ctx) override{
         if (*i == '\n')
         {
             ctx.potential += '\n';
@@ -532,11 +580,14 @@ template <> struct State2 <DONE, NO_PASTE> : State2 <DONE>
             State2 <DONE>::_process (i, ctx);
         }
     }
+    virtual ~State2 () override {
+        
+    }
 };
 
 
 template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
-    void _process (iter i, Context2& ctx){
+    void _process (iter i, Context2& ctx) override{
         ctx.potential += *i;
         if (isdigit (*i))
         {
@@ -548,7 +599,7 @@ template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
         {
             if (hasParent (ctx))
             {
-                State2<>::addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
             } else
@@ -559,22 +610,23 @@ template <> struct State2 <DECLPASTE, '(', '0'> : State2 <> {
             }
         }
     }
-    void addResultFromChild (string const& res){
-        throw runtime_error ("oops");
-    }
+
     
-    virtual void reset_hasNoParent (Context2& ctx){
+    virtual void reset_hasNoParent (Context2& ctx) override{
         throw runtime_error ("");
     }
-    virtual void reset_hasParent (Context2& ctx){
+    virtual void reset_hasParent (Context2& ctx) override{
         throw runtime_error ("");
     }
     virtual string trans (){
         return "$(x";
     }
+    virtual ~State2 () override {
+        
+    }
 };
 template <> struct State2 <DECLPASTE, '(', '0', ' '> : State2 <> {
-    void _process (iter i, Context2& ctx){
+    void _process (iter i, Context2& ctx) override{
         
         
         if (*i == ' ')
@@ -594,23 +646,26 @@ template <> struct State2 <DECLPASTE, '(', '0', ' '> : State2 <> {
             transition <DECLPASTE, '(', '0', ' ', 'i'> (ctx);
         }
     }
-    void addResultFromChild (string const& res, Context2& ctx){
+    void addResultFromChild (string&& res, Context2& ctx) override{
         ctx.intvariable += res;
         transition <DECLPASTE, '(', '0', ' ', 'i'> (ctx);
     }
     
-    virtual void reset_hasNoParent (Context2& ctx){
+    virtual void reset_hasNoParent (Context2& ctx) override{
         throw runtime_error ("f");
     }
-    virtual void reset_hasParent (Context2& ctx){
+    virtual void reset_hasParent (Context2& ctx) override{
         throw runtime_error ("f");
     }
     virtual string trans (){
         return "$(0 ";
     }
+    virtual ~State2 () override {
+        
+    }
 };
 template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i'> : State2 <> {
-    void _process (iter i, Context2& ctx){
+    void _process (iter i, Context2& ctx) override{
         ctx.potential += *i;
         if (*i == ' ')
         {
@@ -622,9 +677,12 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i'> : State2 <> {
             ctx.intvariable += *i;
         }
     }
+    virtual ~State2 () override {
+        
+    }
 };
 template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
-    void _process (iter i, Context2& ctx){
+    void _process (iter i, Context2& ctx) override{
         ctx.potential += *i;
         if (isdigit (*i))
         {
@@ -638,7 +696,7 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
         {
             if (hasParent (ctx))
             {
-                State2<>::addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
 
@@ -650,9 +708,12 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' '> : State2 <> {
             }
         }
     }
+    virtual ~State2 () override {
+        
+    }
 };
 template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> : State2 <> {
-    void _process (iter i, Context2& ctx){
+    void _process (iter i, Context2& ctx) override{
         ctx.potential += *i;
         if (isdigit (*i))
         {
@@ -664,7 +725,7 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> : State2 <> 
         {
             if (hasParent (ctx))
             {
-                State2<>::addResultFromChild (ctx.potential, ctx);
+                State2<>::addResultFromChild ((string&&) ctx.potential, ctx);
                 clear (ctx);
                 transition <BEGIN> (ctx);
             } else
@@ -674,6 +735,9 @@ template <> struct State2 <DECLPASTE, '(', '0', ' ', 'i', ' ', '5'> : State2 <> 
                 transition <BEGIN> (ctx);
             }
         }
+    }
+    virtual ~State2 () override {
+        
     }
 };
 
@@ -694,7 +758,7 @@ template <> void State2<DECLPASTE, '(', ')', '{'>::finish (Context2& ctx) {
     }
     if (hasParent (ctx))
     {
-        State2<>::addResultFromChild (ctx.value, ctx);
+        State2<>::addResultFromChild ((string&&) ctx.value, ctx);
         clear (ctx);
         
         if (ctx.looping)
@@ -712,6 +776,7 @@ template <> void State2<DECLPASTE, '(', ')', '{'>::finish (Context2& ctx) {
         clear (ctx);
         transition <DONE> (ctx);
     }
+    
 }
 template <> void State2<DECLARE, '(', ')', '{'>::finish (Context2& ctx) {
     
@@ -720,13 +785,11 @@ template <> void State2<DECLARE, '(', ')', '{'>::finish (Context2& ctx) {
         ctx.value.pop_back ();
     }
     
-    declare (ctx.variable, ctx.value, ctx);
+    ctx.declare_variable (move (ctx.variable), move (ctx.value));
+//    declare (ctx.variable, ctx.value, ctx);
+
     clear (ctx);
-    transition <DONE> (ctx);
-
-//    transition <DECLARE, '(', ')', '{', DONE> (ctx);
-
-//    TRANSITION ("T(...){ done")
+//    transition <DONE, NO_PASTE> (ctx);
 }
 template <> void State2<DECLPASTE, '(', ')', '{', LOOP>::finish (Context2& ctx) {
     int i = stoi (ctx.firstint);
@@ -734,28 +797,17 @@ template <> void State2<DECLPASTE, '(', ')', '{', LOOP>::finish (Context2& ctx) 
     
     for (; i < end; ++i)
     {
-        declare (ctx.intvariable, to_string (i), ctx);
-//                    cout << ctx.intvariable << to_string (i) << endl;
-//                    cout << "bajs::" << ctx.value << endl;
-//                    addChildContext <STATE ("begin")> (ctx);
-//                    string temp = ctx.value;
-//                    ctx.value.clear ();
+        ctx.declare_variable (ctx.intvariable, to_string (i));
         auto* childstate = new State2 <>;
         Context2* childctx = new Context2 {&ctx, ctx.declaredVariables, childstate};
         childstate -> transition <BEGIN> (*childctx);
-//                    ctx.children.push_back (childctx);
-//                addChildContext <STATE ("begin")> (ctx);
         childctx -> looping = true;
         for (iter j = ctx.value.begin (); j < ctx.value.end (); ++j)
         {
-            
             childctx -> process (j);
-        
-//                        chainChildren (j, ctx);
         }
         childctx -> looping = false;
-        
-//                    cout << "kuk" << endl;
+
         delete childstate;
         delete childctx;
     }
@@ -793,11 +845,9 @@ template <> void State2<DECLPASTE, '(', ')', '{', LOOP>::finish (Context2& ctx) 
         ctx.loop.pop_back ();
     }
     
-    
-    
     if (hasParent (ctx))
     {
-        State2 <>::addResultFromChild (ctx.loop, ctx);
+        State2 <>::addResultFromChild ((string&&) ctx.loop, ctx);
         ctx.potential.clear ();
         ctx.variable.clear ();
         ctx.value.clear ();
@@ -816,7 +866,6 @@ template <> void State2<DECLPASTE, '(', ')', '{', LOOP>::finish (Context2& ctx) 
             removeFromParent (ctx);
         }
         
-//                    removeFromParent (ctx);
     } else
     {
         ctx.result += ctx.loop;
@@ -833,3 +882,10 @@ template <> void State2<DECLPASTE, '(', ')', '{', LOOP>::finish (Context2& ctx) 
 }
 
 
+
+
+template <>
+struct _get_next_transition <DECLARE, SUCCESS>
+{
+    using type = decltype (State2 <DONE, NO_PASTE> {});
+};

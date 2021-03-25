@@ -28,6 +28,8 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	set (CMAKE_CXX_STANDARD_REQUIRED ON)
 	set (CMAKE_CXX_EXTENSIONS ON)
 
+	# add_compile_options(-Wall -Wextra -pedantic -Werror)
+	add_compile_options (-Wdelete-non-virtual-dtor -Wdeprecated-copy -Wclass-memaccess -Wnon-virtual-dtor -Wreorder -Wno-pessimizing-move -Wno-redundant-move -Wrange-loop-construct -Woverloaded-virtual -Wno-mismatched-new-delete -Wno-virtual-move-assign -Wno-vexing-parse -Wno-placement-new -Wsuggest-final-types -Wsuggest-final-methods -Wsuggest-override -Wuseless-cast)
 	# Let's nicely support folders in IDEs
 	set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -102,3 +104,4 @@ endif()
 # git clone --recurse-submodules https://github.com/phiwen96/cython.git  
 
 # cmake -Drun=libtest -Dwith_args="" -S . -B build && cmake --build build --config Debug -j 9 
+# cmake -Wno-dev -DCMAKE_CONFIGURATION_TYPES="Debug;Release;Kuk" -S . -B xbuild -GXcode && cmake --open xbuild
