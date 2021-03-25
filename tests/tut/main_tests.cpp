@@ -124,15 +124,6 @@ struct overload : T...
 template<class... Ts> overload(Ts...) -> overload<decay_t<Ts>...>;
 
 
-struct state0
-{
-    
-};
-
-struct state1
-{
-    
-};
 
 
 
@@ -198,63 +189,63 @@ struct event
 };
 
 
-template <int, int, class...>
-struct s;
+//template <int, int, class...>
+//struct s;
 
 
 
-template <int a, class... T>
-struct s <0, a, T...>  : overload <T...>
-{
-    using overload <T...>::overload;
-    
-    
-    template <typename machine>
-    auto execute (machine&&) -> decltype (auto) {
-        cout << "state " << a << ": working on machine" << endl;
-    }
-    
-    auto handle (auto&&) -> decltype (auto) {
-        cout << "state " << a << ": working on machine" << endl;
-    }
-    
-    friend ostream& operator<< (ostream& os, s const&) {
-        os << a;
-        return os;
-    }
-};
-
-template <class... T>
-struct s <2, 0, T...> : s <0, 2, T...>
-{
-    using s <0, 2, T...>::s;
-//    template <typename machine>
-//    [[noreturn]] auto execute (machine&&) -> decltype (auto){
-////        return {};
-//    }
-    auto handle (auto&&) -> transition_to <s <2, 0, T...>> {
-        return transition_to <s <2, 0, T...>> {};
-    }
-};
-
-template <class... T>
-struct s <1, 0, T...> : s <0, 1, T...>
-{
-    using s <0, 1, T...>::s;
+//template <int a, class... T>
+//struct s <0, a, T...>  : overload <T...>
+//{
+//    using overload <T...>::overload;
+//
+//
 //    template <typename machine>
 //    auto execute (machine&&) -> decltype (auto) {
-////        return {};
+//        cout << "state " << a << ": working on machine" << endl;
 //    }
-    
-   
+//
 //    auto handle (auto&&) -> decltype (auto) {
-//        return transition_to <s <1>> {};
+//        cout << "state " << a << ": working on machine" << endl;
 //    }
-    auto handle (event::dollar const& e) -> decltype (auto) {
-        s <0, 1, T...>::handle (e);
-        return transition_to <s <1, 0, T...>> {};
-    }
-};
+//
+//    friend ostream& operator<< (ostream& os, s const&) {
+//        os << a;
+//        return os;
+//    }
+//};
+//
+//template <class... T>
+//struct s <2, 0, T...> : s <0, 2, T...>
+//{
+//    using s <0, 2, T...>::s;
+////    template <typename machine>
+////    [[noreturn]] auto execute (machine&&) -> decltype (auto){
+//////        return {};
+////    }
+//    auto handle (auto&&) -> transition_to <s <2, 0, T...>> {
+//        return transition_to <s <2, 0, T...>> {};
+//    }
+//};
+//
+//template <class... T>
+//struct s <1, 0, T...> : s <0, 1, T...>
+//{
+//    using s <0, 1, T...>::s;
+////    template <typename machine>
+////    auto execute (machine&&) -> decltype (auto) {
+//////        return {};
+////    }
+//
+//
+////    auto handle (auto&&) -> decltype (auto) {
+////        return transition_to <s <1>> {};
+////    }
+//    auto handle (event::dollar const& e) -> decltype (auto) {
+//        s <0, 1, T...>::handle (e);
+//        return transition_to <s <1, 0, T...>> {};
+//    }
+//};
 
 
 
@@ -299,13 +290,20 @@ struct s <1, 0, T...> : s <0, 1, T...>
 
 
 
-
-
-
-template <int i, class... T>
-struct state : T...
+template <class... T>
+struct state1 : T...
 {
-    state (T&&... t) : T {forward <T> (t)}...
+    state1 (T&&... t) : T {forward <T> (t)}...
+    {
+        
+    }
+};
+
+
+template <class... T>
+struct state2 : T...
+{
+    state2 (T&&... t) : T {forward <T> (t)}...
     {
         
     }
@@ -313,6 +311,18 @@ struct state : T...
 
 
 
+template <typename... T>
+struct machine
+{
+    tuple <T...> av_states;
+    variant <T...> state;
+    
+    
+    machine (T&&... t) : av_states {forward <T> (t)...}, state {get <0> (av_states)}
+    {
+        
+    }
+};
 
 TEST_CASE ("")
 {
@@ -320,6 +330,33 @@ TEST_CASE ("")
 //    overload d {[](){return 2;}};
 //    s<1, 0> s{[](){return 2;}};
 //    state_machine <s <1>, s <2>> machine;
+    machine m
+    {
+        state1
+        {
+            [](event::dollar, auto&& m)
+            {
+                
+            },
+            
+            []<typename T>(T&&, ...)
+            {
+                
+            }
+        },
+        
+        state2
+        {
+            [](event::dollar, auto&& m)
+            {
+                
+            },
+            
+            []<typename T>(T&&, ...)
+            {
+                
+            }}
+    };
     
     
 //    machine.current_state = visit (overload {[](auto&&)->s<1>{cout << "hola s1" << endl;return{};}}, machine.current_state);
