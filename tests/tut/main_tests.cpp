@@ -13,7 +13,7 @@ template <typename T>
 struct Generator
 {
 	struct promise_type;
-	using handle_type = coroutine_handle<promise_type>;
+	using handle_type = coroutine_handle <promise_type>;
 
 	struct promise_type
 	{
@@ -113,15 +113,8 @@ TEST_CASE ("")
 
 
 
-template <class... T>
-struct overload : T...
-{
-    overload (T&&... t) : T{forward <T> (t)}...
-    {
 
-    }
-};
-template<class... Ts> overload(Ts...) -> overload<decay_t<Ts>...>;
+//template<class... Ts> overload(Ts...) -> overload<decay_t<Ts>...>;
 
 
 
@@ -322,56 +315,238 @@ struct machine
     {
         
     }
+    
+    template <typename O>
+    [[nodiscard]] auto handle (O&& o) -> decltype (auto) {
+        state = visit (declval<T>()..., state);
+    }
 };
+
+struct AA {
+    
+};
+
+template <typename T, typename... U>
+struct Generator2
+{
+    struct promise_type;
+    using handle_type = coroutine_handle <promise_type>;
+
+    struct promise_type
+    {
+        T value_;
+            
+        
+//        variant <T> vars;
+        
+        exception_ptr exception_;
+
+        Generator2 get_return_object()
+        {
+            return Generator2(handle_type::from_promise(*this));
+        }
+        suspend_always initial_suspend() { return {}; }
+        suspend_always final_suspend() noexcept { return {}; }
+        void unhandled_exception() { exception_ = current_exception(); }
+//        template <convertible <T> From> // C++20 concept
+//        suspend_always yield_value(From &&from)
+//        {
+//            value_ = forward<From>(from);
+//            return {};
+//        }
+        
+        
+        
+//        template <convertible <T> From> // C++20 concept
+        suspend_always yield_value(decay_t<T> t, decay<U>... from)
+        {
+            value_ = forward<T>(t);
+            return {};
+        }
+        void return_void() {}
+    };
+
+    handle_type h_;
+
+    Generator2(handle_type h) : h_(h) {}
+    ~Generator2()
+    {
+        h_.destroy();
+    }
+    explicit operator bool()
+    {
+        fill();
+        return !h_.done();
+    }
+    auto operator()() -> decltype (auto)
+    {
+        fill();
+        full_ = false;
+        return move (h_.promise().value_);
+    }
+
+private:
+    bool full_ = false;
+
+    void fill()
+    {
+        if (!full_)
+        {
+            h_();
+            if (h_.promise().exception_)
+                rethrow_exception(h_.promise().exception_);
+            full_ = true;
+        }
+    }
+};
+
+//template <typename... T>
+//Generator2<T...>
+
+
+
+//template <class R>
+//auto counter7 (void (*f)()) -> Generator2 <void (*)(void)>
+//{
+//    for (;;)
+//        co_yield f;
+//}
+
+template <class T>
+auto counter7 (T&& t) -> Generator2 <decay_t <T>>
+{
+    for (int i = 0; i < 10; ++i)
+    {
+//        cout << "hi" << endl;
+        t (4);
+        t (string{"hej"});
+        co_yield t;
+    }
+//        ((co_yield t), ...);
+}
+
+
+
+
+template <class... T>
+struct overload : T...
+{
+//    T t;
+    using T::operator ()...;
+    
+    using self = overload <T...>;
+
+    overload (T&&... t) : T {forward <T> (t)}...
+    {
+
+    }
+
+    overload () : T {}... {
+
+    }
+
+    overload (self&& s) : T {(self&&) s}...
+    {
+
+    }
+
+    overload (self const& s) : T {s}...
+    {
+
+    }
+
+    self& operator= (self other)
+    {
+        swap (*this, other);
+        return *this;
+    }
+    
+//    self& operator=(self&& other)
+//    {
+//        swap (*this, other);
+//        return *this;
+//    }
+
+    friend void swap (self& lhs, self& rhs)
+    {
+        using std::swap;
+    }
+
+
+    ~overload () {
+
+    }
+    
+};
+
+//template <class... T>
+//overload (T...) -> overload <T...>;
+
 
 TEST_CASE ("")
 {
+    
+    
+    
+    
+    
     string input = "$(0 x 2)";
+    
+    void(*f)() ={};
+    
+    auto state_1 = counter7 (overload {[](string){cout << "a" << endl;}, [](int){cout << "b" << endl;}});      //   [](string){return 2;}
+    state_1 ();
+    cout << "lds,dls,d" << endl;
+    
 //    overload d {[](){return 2;}};
 //    s<1, 0> s{[](){return 2;}};
 //    state_machine <s <1>, s <2>> machine;
-    machine m
-    {
-        state1
-        {
-            [](event::dollar, auto&& m)
-            {
-                
-            },
-            
-            []<typename T>(T&&, ...)
-            {
-                
-            }
-        },
-        
-        state2
-        {
-            [](event::dollar, auto&& m)
-            {
-                
-            },
-            
-            []<typename T>(T&&, ...)
-            {
-                
-            }}
-    };
+//    machine m
+//    {
+//        state1
+//        {
+//            [](event::dollar, auto&& m)
+//            {
+//
+//            },
+//
+//            []<typename T>(T&&, ...)
+//            {
+//
+//            }
+//        },
+//
+//        state2
+//        {
+//            [](event::dollar, auto&& m)
+//            {
+//
+//            },
+//
+//            []<typename T>(T&&, ...)
+//            {
+//
+//            }}
+//    };
+    
+    
+    
+    
     
     
 //    machine.current_state = visit (overload {[](auto&&)->s<1>{cout << "hola s1" << endl;return{};}}, machine.current_state);
 //
-//    for (char i : input)
-//    {
-//        switch (i) {
-//            case '$':
-//                machine.handle (event::dollar {});
-//                break;
-//
-//            default:
-//                break;
-//        }
-//    }
+    for (char i : input)
+    {
+        switch (i) {
+            case '$':
+//                m.handle (event::dollar {});
+                break;
+
+            default:
+                break;
+        }
+    }
         
     
     
