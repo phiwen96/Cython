@@ -21,13 +21,16 @@ struct state_machine
     }
     
 
-    auto handle (auto&& e) -> decltype (auto) {
+    template <typename event>
+    auto handle (event const& e) -> decltype (auto) {
         cout << "machine: handling event " << e << endl;
-        auto pass_event_to_state = [e, this] (auto&& state) {
+        auto pass_event_to_state = [&e, this] <typename S> (S&& state) {
             state.handle (e).execute (*this);
         };
-        visit (pass_event_to_state, current_state);
+        visit (move (pass_event_to_state), current_state);
     }
+    
+    
     
     
 };
