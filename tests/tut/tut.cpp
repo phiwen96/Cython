@@ -15,8 +15,8 @@ concept same = std::is_same_v<T, U>;
 
 struct default_sentinel_t { };
 
-template <class T>
-requires requires (typename T::promise_type p) {
+template <typename T>
+requires requires (typename T::promise_type p, T t) {
     p.value;
 }
 struct generator_iter
@@ -41,6 +41,8 @@ private:
 template <class T>
 struct generator
 {
+    using value_type = T;
+    
     struct promise
     {
         T value;
@@ -107,6 +109,20 @@ struct generator
     explicit operator bool() {
             return !handle.done();
         }
+    
+    template <typename O>
+    requires requires (T t, O o) {
+        o = t;
+    }
+    operator O () {
+        if (handle.done())
+        {
+            throw runtime_error ("no, coroutine is done");
+        }
+        
+        handle.resume();
+        return handle.promise().value;
+    }
     auto operator () () -> decltype (auto) {
         // will allocate a new stack frame and store the return-address of the caller in the
         // stack frame before transfering execution to the function.
@@ -173,8 +189,9 @@ generator<T> range(T first, const T last) {
 int main(int argc, char const *argv[])
 {
     auto res = coro_function <generator<int>>  ();
-    cout << res() << endl;
-
+    int a = res;
+//    cout << res() << endl;
+    
     
     for (char i : range(65, 91)) {
             std::cout << i << ' ' << endl;
