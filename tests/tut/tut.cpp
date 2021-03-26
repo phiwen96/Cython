@@ -13,71 +13,55 @@ concept convertible = std::is_convertible_v<T, U>;
 template <class T, class U>
 concept same = std::is_same_v<T, U>;
 
-
+struct default_sentinel_t { };
 
 
 template <class T>
-struct resumable
+struct generator
 {
     struct promise
     {
         T value;
         
-        promise (string s = __builtin_FUNCTION(), int i = __builtin_LINE()) {
-            cout << "promis  " << s << " " << i << endl;
+        auto get_return_object () -> decltype (auto) {
+            return generator {coroutine_handle<promise>::from_promise(*this)};
         }
-        ~promise () {
-            cout << "~promis  " << endl;
+        static constexpr auto initial_suspend () noexcept {
+            return suspend_always{};
         }
-        
-        auto get_return_object (string s = __builtin_FUNCTION(), int i = __builtin_LINE()) -> decltype (auto) {
-            cout << "get_return_object () " << s << " " << i << endl;
-            return resumable {coroutine_handle<promise>::from_promise(*this)};
+        static constexpr auto final_suspend () noexcept {
+            return suspend_always{};
         }
-        static constexpr suspend_always initial_suspend () noexcept {
-            return {};
-        }
-        static constexpr suspend_always final_suspend () noexcept {
-            return {};
-        }
-        
-        template <typename U>
-        suspend_always yield_value (U&& u) noexcept {
-            value = forward <U> (u);
-            return {};
+        auto yield_value (auto&& u) noexcept {
+            value = forward <decltype (u)> (u);
+            return suspend_always{};
         }
         constexpr void return_void () {}
-        
-        
-        
-        // Disallow co_await in generator coroutines.
-//        void await_transform() = delete;
-        
+        void await_transform() = delete;
         [[noreturn]] static void unhandled_exception () {
             throw;
 //            terminate();
         }
-        
         static void* operator new (size_t sz) {
-            cout << "allocation heap for coroutine" << endl;//: " << sz << " bytes" << endl;
+//            cout << "allocation heap for coroutine" << endl;//: " << sz << " bytes" << endl;
             return ::operator new (sz);
         }
         static void operator delete (void* ptr) {
             ::operator delete (ptr);
-            cout << "deallocating heap for coroutine" << endl;
+//            cout << "deallocating heap for coroutine" << endl;
         }
     };
     
     using promise_type = promise;
     coroutine_handle <promise_type> handle;
     
-    explicit resumable (coroutine_handle <promise_type> h, string s = __builtin_FUNCTION()) : handle {h} {
-        cout << "resumable ()" << s << endl;
-    }
-    resumable (resumable&& other) : handle {exchange (other.handle, {})} {
+    explicit generator (coroutine_handle <promise_type> h) : handle {h} {
         
     }
-    resumable& operator=(resumable&& other) noexcept {
+    generator (generator&& other) : handle {exchange (other.handle, {})} {
+        
+    }
+    generator& operator=(generator&& other) noexcept {
            if (this != &other) {
                if (handle) {
                    handle.destroy();
@@ -89,26 +73,26 @@ struct resumable
            }
            return *this;
        }
-    ~resumable () {
+    ~generator () {
         // destroy the coroutine
         if (handle)
         {
             handle.destroy();
         }
     }
-    resumable(resumable const&) = delete;
-    resumable& operator=(const resumable&) = delete;
+    generator(generator const&) = delete;
+    generator& operator=(const generator&) = delete;
     
     bool resume () {
         
-        cout << "resuming coroutine " << "\t" << endl;
+//        cout << "resuming coroutine " << "\t" << endl;
         
         // resumes the coroutine from the point it was suspended
         if (not handle.done())
         {
             
             handle.resume ();
-            cout << "suspending coroutine " << "\t" <<  endl;
+//            cout << "suspending coroutine " << "\t" <<  endl;
 
                 // will allocate a new stack frame and store the return-address of the caller in the
                 // stack frame before transfering execution to the function.
@@ -127,30 +111,27 @@ struct resumable
            void operator++() {
                handle.resume();
            }
-           const T& operator*() const {
-               return *handle.promise().current_value;
+           auto operator*()  -> decltype (auto) {
+               return handle.promise().value;
            }
-           bool operator==(std::default_sentinel_t) const {
+           bool operator==(default_sentinel_t) const {
                return !handle || handle.done();
            }
-    
-           explicit Iter(coroutine_handle <promise_type> handle) :
-           handle{handle}
-           {}
+           explicit Iter (coroutine_handle <promise_type> handle) : handle{handle} {}
     
        private:
            coroutine_handle <promise_type> handle;
        };
     
-       Iter begin() {
-           if (handle) {
-               handle.resume();
-           }
-           return Iter{handle};
-       }
-       std::default_sentinel_t end() {
-           return {};
-       }
+    Iter begin() {
+        if (handle) {
+            handle.resume();
+        }
+        return Iter{handle};
+    }
+    default_sentinel_t end() {
+        return {};
+    }
 
 };
 
@@ -158,20 +139,30 @@ struct resumable
 template <coroutine T>
 T coro_function ()
 {
-    cout << "coro_function" << endl;
     cout << "0" << endl;
-    co_await suspend_always {};
+//    co_await suspend_always {};
+   
     co_return;
     cout << "1" << endl;
 }
 
 
+template<typename T>
+generator<T> range(T first, const T last) {
+    while (first < last) {
+        co_yield first++;
+    }
+}
+
 int main(int argc, char const *argv[])
 {
-    auto res = coro_function <resumable<int>>  ();
+    auto res = coro_function <generator<int>>  ();
     res.resume ();
-    res.resume ();
+
     
+    for (char i : range(65, 91)) {
+            std::cout << i << ' ' << endl;
+    }
     
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
