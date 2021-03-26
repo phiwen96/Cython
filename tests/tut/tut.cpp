@@ -3,39 +3,52 @@
 #include <experimental/coroutine>
 #include <concepts>
 #include <ph_concepts/concepts.hpp>
+#include <ph_coroutines/coroutines.hpp>
+#include <ph_coroutines/generator/generator.hpp>
 using namespace std;
 using namespace experimental;
 using namespace ph::concepts;
 using namespace std::chrono_literals;
 
-template <class T, class U>
-concept convertible = std::is_convertible_v<T, U>;
-template <class T, class U>
-concept same = std::is_same_v<T, U>;
 
-struct default_sentinel_t { };
 
-template <typename T>
-requires requires (typename T::promise_type p, T t) {
-    p.value;
-}
-struct generator_iter
+//struct default_sentinel_t { };
+
+
+
+template <class G, class T>
+
+struct prom
 {
-    using promise_type = typename T::promise_type;
-public:
-    void operator++() {
-        handle.resume();
-    }
-    auto operator*() -> decltype (auto) {
-        return handle.promise().value;
-    }
-    bool operator==(default_sentinel_t) const {
-        return !handle || handle.done();
-    }
-    explicit generator_iter (coroutine_handle <promise_type> handle) : handle{handle} {}
+    T value;
 
-private:
-    coroutine_handle <promise_type> handle;
+    auto get_return_object () -> decltype (auto) {
+        return G {coroutine_handle<prom>::from_promise(*this)};
+    }
+    static constexpr auto initial_suspend () noexcept {
+        return suspend_always{};
+    }
+    static constexpr auto final_suspend () noexcept {
+        return suspend_always{};
+    }
+    [[nodiscard]] auto yield_value (auto&& u) noexcept {
+        value = forward <decltype (u)> (u);
+        return suspend_always{};
+    }
+    constexpr void return_void () {}
+    void await_transform() = delete;
+    [[noreturn]] static void unhandled_exception () {
+        throw;
+//            terminate();
+    }
+    [[nodiscard]] static void* operator new (size_t sz) {
+//            cout << "allocation heap for coroutine" << endl;//: " << sz << " bytes" << endl;
+        return ::operator new (sz);
+    }
+    [[nodiscard]] static void operator delete (void* ptr) {
+        ::operator delete (ptr);
+//            cout << "deallocating heap for coroutine" << endl;
+    }
 };
 
 template <class T>
@@ -43,40 +56,7 @@ struct generator
 {
     using value_type = T;
     
-    struct promise
-    {
-        T value;
-        
-        auto get_return_object () -> decltype (auto) {
-            return generator {coroutine_handle<promise>::from_promise(*this)};
-        }
-        static constexpr auto initial_suspend () noexcept {
-            return suspend_always{};
-        }
-        static constexpr auto final_suspend () noexcept {
-            return suspend_always{};
-        }
-        [[nodiscard]] auto yield_value (auto&& u) noexcept {
-            value = forward <decltype (u)> (u);
-            return suspend_always{};
-        }
-        constexpr void return_void () {}
-        void await_transform() = delete;
-        [[noreturn]] static void unhandled_exception () {
-            throw;
-//            terminate();
-        }
-        [[nodiscard]] static void* operator new (size_t sz) {
-//            cout << "allocation heap for coroutine" << endl;//: " << sz << " bytes" << endl;
-            return ::operator new (sz);
-        }
-        [[nodiscard]] static void operator delete (void* ptr) {
-            ::operator delete (ptr);
-//            cout << "deallocating heap for coroutine" << endl;
-        }
-    };
-    
-    using promise_type = promise;
+    using promise_type = prom <generator, T>;
     coroutine_handle <promise_type> handle;
     
     explicit generator (coroutine_handle <promise_type> h) : handle {h} {
@@ -108,7 +88,7 @@ struct generator
     generator& operator=(const generator&) = delete;
     explicit operator bool() {
             return !handle.done();
-        }
+    }
     
     template <typename O>
     requires requires (T t, O o) {
@@ -123,6 +103,7 @@ struct generator
         handle.resume();
         return handle.promise().value;
     }
+    
     auto operator () () -> decltype (auto) {
         // will allocate a new stack frame and store the return-address of the caller in the
         // stack frame before transfering execution to the function.
@@ -136,33 +117,17 @@ struct generator
         handle.resume();
         return handle.promise().value;
     }
+
+    using iterator = generator_iter<generator>;
     
-    // Range-based for loop support.
-//       class Iter {
-//       public:
-//           void operator++() {
-//               handle.resume();
-//           }
-//           auto operator*()  -> decltype (auto) {
-//               return handle.promise().value;
-//           }
-//           bool operator==(default_sentinel_t) const {
-//               return !handle || handle.done();
-//           }
-//           explicit Iter (coroutine_handle <promise_type> handle) : handle{handle} {}
-//
-//       private:
-//           coroutine_handle <promise_type> handle;
-//       };
-    
-    generator_iter<generator<T>> begin() {
+    auto begin() -> decltype (auto) {
         if (handle) {
             handle.resume();
         }
-        return generator_iter<generator<T>>{handle};
+        return generator_iter <generator>{handle};
     }
-    default_sentinel_t end() {
-        return {};
+    auto end() -> decltype (auto) {
+        return typename iterator::sentinel{};
     }
 
 };
