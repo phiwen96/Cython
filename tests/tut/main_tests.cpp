@@ -489,14 +489,12 @@ TEST_CASE ("")
     
     
     
-    
     string input = "$(0 x 2)";
     
-    void(*f)() ={};
+    void(*f)() = {};
     
     auto state_1 = counter7 (overload {[](string){cout << "a" << endl;}, [](int){cout << "b" << endl;}});      //   [](string){return 2;}
-    state_1 ();
-    cout << "lds,dls,d" << endl;
+//    state_1 ();
     
 //    overload d {[](){return 2;}};
 //    s<1, 0> s{[](){return 2;}};
