@@ -104,27 +104,21 @@ struct generator
     }
     generator(generator const&) = delete;
     generator& operator=(const generator&) = delete;
-    
-    bool resume () {
-        
-//        cout << "resuming coroutine " << "\t" << endl;
+    explicit operator bool() {
+            return !handle.done();
+        }
+    auto operator () () -> decltype (auto) {
+        // will allocate a new stack frame and store the return-address of the caller in the
+        // stack frame before transfering execution to the function.
         
         // resumes the coroutine from the point it was suspended
-        if (not handle.done())
-        {
-            
-            handle.resume ();
-//            cout << "suspending coroutine " << "\t" <<  endl;
-
-                // will allocate a new stack frame and store the return-address of the caller in the
-                // stack frame before transfering execution to the function.
-            
-        } else
+        if (handle.done())
         {
             throw runtime_error ("no, coroutine is done");
         }
         
-        return not handle.done ();
+        handle.resume();
+        return handle.promise().value;
     }
     
     // Range-based for loop support.
@@ -164,7 +158,7 @@ T coro_function ()
     cout << "0" << endl;
 //    co_await suspend_always {};
    
-    co_return;
+    co_yield 6;
     cout << "1" << endl;
 }
 
@@ -179,7 +173,7 @@ generator<T> range(T first, const T last) {
 int main(int argc, char const *argv[])
 {
     auto res = coro_function <generator<int>>  ();
-    res.resume ();
+    cout << res() << endl;
 
     
     for (char i : range(65, 91)) {
