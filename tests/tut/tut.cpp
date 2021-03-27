@@ -209,21 +209,26 @@ struct co_future
         T value;
         
         // producing the value returned from the invocation of the coroutine
-        auto get_return_object () -> decltype (auto) {
-            return co_future {coroutine_handle<co_promise>::from_promise(*this)};
+        co_future <T> get_return_object () {
+            return coroutine_handle<co_promise>::from_promise(*this);
         }
         
         // behaviour when the coroutine is created
         static constexpr auto initial_suspend () noexcept {
             struct awaitable
             {
-                constexpr bool await_ready () const noexcept {return true;}
+                // call await_ready
+                constexpr bool await_ready () const noexcept {return false;}
+                
+                // if not ready
                 constexpr void await_suspend (coroutine_handle <>) const noexcept {}
+                
+                // if ready
                 constexpr void await_resume () const noexcept {}
             };
             
 //            return awaitable{};
-            return suspend_always {};
+            return awaitable {};
         }
         
         // behaviour before the coroutine is destroyed
@@ -236,19 +241,22 @@ struct co_future
             };
             
 //            return awaitable{};
-            return suspend_always {};
+            return awaitable {};
 
         }
         
+        // customizing behaviour for when a value is yielded from the coroutine
         [[nodiscard]] auto yield_value (auto&& u) noexcept {
+//            cout << "yielding " << u << endl;
             value = forward <decltype (u)> (u);
             return suspend_always{};
         }
         
         // customizing the behaviour (before) when the coroutine finally returns
-        void return_value (auto&& value) {
+        void return_value (auto&& v) {
 //            cout << "yo" << endl;
-            value = forward <decltype (value)> (value);
+//            cout << "returning " << v << endl;
+            value = forward <decltype (v)> (v);
         }
 //        void return_void () {
 //
@@ -265,6 +273,10 @@ struct co_future
     using promise_type = co_promise;
     
     coroutine_handle <promise_type> handle;
+    
+    co_future () = delete;
+    co_future (co_future const&) = delete;
+    
     co_future (coroutine_handle <promise_type> h) : handle {h} {}
     co_future (co_future&& other) : handle {exchange (other.handle, {})} {}
     ~co_future () {
@@ -289,14 +301,22 @@ struct co_future
 //        return handle.promise().value;
     }
     
+    T get () {
+        return handle.promise().value;
+    }
+    
 };
 
 co_future <int> a () {
-    cout << "a" << endl;
+    cout << "a0" << endl;
     co_await suspend_always {};
-    cout << "b" << endl;
+    cout << "b1" << endl;
+    
 //    co_return 42;
     co_return 43;
+}
+co_future <int> b () {
+    auto answer = co_await a ();
 }
 
 int main(int argc, char const *argv[])
@@ -305,10 +325,12 @@ int main(int argc, char const *argv[])
     auto coro = a();
     cout << coro.resume () << endl;
 //    fu.resume(); // resume from main
-    thread{[coro = move (coro)] () mutable {
+    int aa = async([coro = move (coro)] () mutable {
         this_thread::sleep_for(2s);
         cout << coro.resume () << endl;
-    }}.join ();
+        return coro.get ();
+    }).get ();
+    cout << aa << endl;
     return 0;
 //    array<int, 10> dices;
 //    fill (dices.begin(), dices.end(), 0);
