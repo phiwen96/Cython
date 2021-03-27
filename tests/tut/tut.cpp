@@ -11,7 +11,7 @@
 #include <ph_time/Date.hpp>
 #include <ph_macros/macros.hpp>
 #include <ph_debug/debug.hpp>
-#include <future>
+
 
 using namespace std;
 using namespace experimental;
@@ -171,10 +171,15 @@ int heavy_work (int a, int b) {
 void thread_based () {
     auto task = packaged_task <decltype (heavy_work)> {heavy_work};
     auto futur = task.get_future ();
-    phthread a (move (task), 1, 2);
-    a.detach();
+    thread {move (task), 1, 2}.detach();
     cout << futur.get() << endl;
 }
+
+void task_based () {
+    cout << async (heavy_work, 1, 2).get() << endl;
+}
+
+
 
 int main(int argc, char const *argv[])
 {
