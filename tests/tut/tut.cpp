@@ -183,7 +183,9 @@ void task_based () {
 
 int main(int argc, char const *argv[])
 {
-//    debug (1)
+    auto latc = latch {4};
+    
+    auto bar = barrier{8, []{}};
     auto futur = async (heavy_work, 1, 2);
     auto futur2 = async (heavy_work, 2, 3);
     cout << futur.get() << endl;
