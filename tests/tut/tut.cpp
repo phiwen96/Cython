@@ -7,6 +7,8 @@
 #include <ph_coroutines/generator/generator.hpp>
 #include <ph_coroutines/generator/iterator.hpp>
 #include <ph_coroutines/promise.hpp>
+#include <ph_time/time.hpp>
+#include <ph_time/Date.hpp>
 
 using namespace std;
 using namespace experimental;
@@ -127,6 +129,8 @@ void fun () {
 
 int main(int argc, char const *argv[])
 {
+  
+    cout << now () << endl;
     thread th1 {fun};
     th1.detach();
     cout << this_thread::get_id() << endl;
