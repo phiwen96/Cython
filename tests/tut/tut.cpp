@@ -9,6 +9,7 @@
 #include <ph_coroutines/promise.hpp>
 #include <ph_time/time.hpp>
 #include <ph_time/Date.hpp>
+#include <ph_macros/macros.hpp>
 
 using namespace std;
 using namespace experimental;
@@ -120,21 +121,49 @@ coro hej () {
     cout << "end" << endl;
 }
 
+#define DEBUGGING 1
 
+struct _debug {
+    string function_name;
+    string time_called;
+    __thread_id thread_id;
+    
+    _debug (string&& function_name) : function_name {function_name}, time_called {now ()}, thread_id {this_thread::get_id()} {
+//        cout << function_name << " (...) time: " << time_called << " thread: " << thread_id << endl;
+    }
+    ~_debug () {
+        cout << "========================================" << endl;
+        cout << function_name << "\n\t time: " << time_called << "~ " << now () << "\n\tthread: " << thread_id << endl;
+        cout << "========================================" << endl;
+    }
+};
+
+[[nodiscard]] auto debug (string called = __builtin_FUNCTION ()) -> _debug {
+    return {move (called)};
+}
+
+#define CURRENT_FUNCTION __PRETTY_FUNTION__
+
+#define debug(x) IF_ELSE(x)(auto _##__COUNTER__ = debug (__PRETTY_FUNCTION__))();
 
 void fun () {
+//    auto _d = debug (__PRETTY_FUNCTION__);
+    debug (1)
     cout << this_thread::get_id() << endl;
-    this_thread::sleep_for(2s);
+    
+//    this_thread::sleep_for(2s);
 }
 
 int main(int argc, char const *argv[])
 {
-  
+
+    
+    
     cout << now () << endl;
     thread th1 {fun};
-    th1.detach();
-    cout << this_thread::get_id() << endl;
-    this_thread::sleep_for(2s);
+    th1.join();
+//    cout << this_thread::get_id() << endl;
+//    this_thread::sleep_for(2s);
 
     
     auto c = hej ();
