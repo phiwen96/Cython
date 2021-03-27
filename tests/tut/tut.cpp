@@ -11,6 +11,7 @@
 #include <ph_time/Date.hpp>
 #include <ph_macros/macros.hpp>
 #include <ph_debug/debug.hpp>
+#include <future>
 
 using namespace std;
 using namespace experimental;
@@ -39,7 +40,7 @@ T coro_function ()
 
 
 template<typename T>
-generator <promise <generator, gen_iterator, T>> range(T first, const T last) {
+generator <ph::promise <generator, gen_iterator, T>> range(T first, const T last) {
     while (first < last) {
         co_yield first++;
     }
@@ -68,14 +69,14 @@ void threadCaller()
 struct [[nodiscard]] coro
 {
     
-    struct promise
+    struct _promise
     {
         void return_void () {
             cout << "return_void ()" << endl;
         }
         coro  get_return_object () {
             cout << "get_return_object" << endl;
-            return coroutine_handle <promise> :: from_promise (*this);
+            return coroutine_handle <_promise> :: from_promise (*this);
         }
         auto initial_suspend () {
             return suspend_always{};
@@ -87,9 +88,9 @@ struct [[nodiscard]] coro
         
         }
     };
-    using promise_type = promise;
-    coroutine_handle <promise> handle;
-    coro (coroutine_handle<promise> h) : handle {h} {}
+    using promise_type = _promise;
+    coroutine_handle <_promise> handle;
+    coro (coroutine_handle<_promise> h) : handle {h} {}
     void go () {
         
         if (handle.done())
@@ -114,6 +115,36 @@ struct awaitablee {
     }
 };
 
+struct phthread : thread
+{
+    using thread::thread;
+    
+    string started_time;
+    string started_by;
+    
+    
+    void join (string s = __builtin_FUNCTION ()) {
+        start (move (s));
+        thread::join();
+    }
+    void detach (string s = __builtin_FUNCTION ()) {
+        start (move (s));
+        thread::detach();
+    }
+    ~phthread () {
+//        cout << "~phthread ()" << endl;
+        cout << "========================================" << endl;
+        cout << started_by << "\n\t time: " << started_time << "~ " << now () << "\n\tthread: " << this_thread::get_id() << endl;
+        cout << "========================================" << endl;
+        thread::~thread();
+    }
+    
+private:
+    void start (string&& started_by) {
+        started_time = now ();
+        this->started_by = move (started_by);
+    }
+};
 
 
 coro hej () {
@@ -122,68 +153,57 @@ coro hej () {
     cout << "end" << endl;
 }
 
-#define DEBUGGING 1
-
-//struct _debug {
-//    string function_name;
-//    string time_called;
-//    __thread_id thread_id;
-//    
-//    _debug (string&& function_name) : function_name {function_name}, time_called {now ()}, thread_id {this_thread::get_id()} {
-////        cout << function_name << " (...) time: " << time_called << " thread: " << thread_id << endl;
-//    }
-//    ~_debug () {
-//        cout << "========================================" << endl;
-//        cout << function_name << "\n\t time: " << time_called << "~ " << now () << "\n\tthread: " << thread_id << endl;
-//        cout << "========================================" << endl;
-//    }
-//};
-//
-//[[nodiscard]] auto debug (string called = __builtin_FUNCTION ()) -> _debug {
-//    return {move (called)};
-//}
-//
-//#define debug(x) IF_ELSE(x)(auto _##__COUNTER__ = debug (__PRETTY_FUNCTION__))();
 
 void fun () {
 //    auto _d = debug (__PRETTY_FUNCTION__);
-    debug (1)
+//    debug (1)
+    this_thread::sleep_for(2s);
     cout << this_thread::get_id() << endl;
     
 //    this_thread::sleep_for(2s);
 }
 
+int heavy_work (int a, int b) {
+    this_thread::sleep_for(1s);
+    return a + b;
+}
+
+void thread_based () {
+    auto task = packaged_task <decltype (heavy_work)> {heavy_work};
+    auto futur = task.get_future ();
+    phthread a (move (task), 1, 2);
+    a.detach();
+    cout << futur.get() << endl;
+}
+
 int main(int argc, char const *argv[])
 {
-
-    
-    
-    cout << now () << endl;
-    thread th1 {fun};
-    th1.join();
+//    debug (1)
+    auto futur = async (heavy_work, 1, 2);
+    auto futur2 = async (heavy_work, 2, 3);
+    cout << futur.get() << endl;
+    cout << futur2.get() << endl;
+//    phthread th1 {fun};
+//
+//    th1.join();
 //    cout << this_thread::get_id() << endl;
 //    this_thread::sleep_for(2s);
 
     
-    auto c = hej ();
-    c.go();
-//    c.go ();
-    
-    return 0;
-    threadCaller();
-    return 0;
+//    auto c = hej ();
+//    c.go();
+
 //    std::this_thread::sleep_for(std::chrono::seconds(5));
 //    auto res = coro_function <generator<int>>  ();
 //    int a = res;
 //    cout << res() << endl;
 //
 //
-    for (char i : range(65, 91)) {
-            std::cout << i << ' ' << endl;
-    }
+//    for (char i : range(65, 91)) {
+//            std::cout << i << ' ' << endl;
+//    }
     
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
-    cout << "===============================================================================" << endl;
     return 0;
 }
