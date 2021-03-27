@@ -19,3 +19,6 @@
 [submodule "dependencies/ph_coroutines"]
 	path = dependencies/ph_coroutines
 	url = https://github.com/phiwen96/ph_coroutines
+[submodule "dependencies/ph_time"]
+	path = dependencies/ph_time
+	url = https://github.com/phiwen96/ph_time
