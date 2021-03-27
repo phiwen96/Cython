@@ -6,6 +6,8 @@
 //#include <ph_coroutines/coroutines.hpp>
 #include <ph_coroutines/generator/generator.hpp>
 #include <ph_coroutines/generator/iterator.hpp>
+#include <ph_coroutines/promise.hpp>
+
 using namespace std;
 using namespace experimental;
 using namespace ph::concepts;
@@ -17,121 +19,8 @@ using namespace std::chrono_literals;
 
 
 
-template <class G, class T>
 
-struct prom
-{
-    T value;
 
-    auto get_return_object () -> decltype (auto) {
-        return G {coroutine_handle<prom>::from_promise(*this)};
-    }
-    static constexpr auto initial_suspend () noexcept {
-        return suspend_always{};
-    }
-    static constexpr auto final_suspend () noexcept {
-        return suspend_always{};
-    }
-    [[nodiscard]] auto yield_value (auto&& u) noexcept {
-        value = forward <decltype (u)> (u);
-        return suspend_always{};
-    }
-    constexpr void return_void () {}
-    void await_transform() = delete;
-    [[noreturn]] static void unhandled_exception () {
-        throw;
-//            terminate();
-    }
-    [[nodiscard]] static void* operator new (size_t sz) {
-//            cout << "allocation heap for coroutine" << endl;//: " << sz << " bytes" << endl;
-        return ::operator new (sz);
-    }
-    [[nodiscard]] static void operator delete (void* ptr) {
-        ::operator delete (ptr);
-//            cout << "deallocating heap for coroutine" << endl;
-    }
-};
-
-template <class T>
-struct generator
-{
-    using value_type = T;
-    
-    using promise_type = prom <generator, T>;
-    coroutine_handle <promise_type> handle;
-    
-    explicit generator (coroutine_handle <promise_type> h) : handle {h} {
-        
-    }
-    generator (generator&& other) : handle {exchange (other.handle, {})} {
-        
-    }
-    generator& operator=(generator&& other) noexcept {
-           if (this != &other) {
-               if (handle) {
-                   handle.destroy();
-               }
-               swap (handle, other.handle);
-           } else
-           {
-               throw runtime_error ("coro");
-           }
-           return *this;
-       }
-    ~generator () {
-        // destroy the coroutine
-        if (handle)
-        {
-            handle.destroy();
-        }
-    }
-    generator(generator const&) = delete;
-    generator& operator=(const generator&) = delete;
-    explicit operator bool() {
-            return !handle.done();
-    }
-    
-    template <typename O>
-    requires requires (T t, O o) {
-        o = t;
-    }
-    operator O () {
-        if (handle.done())
-        {
-            throw runtime_error ("no, coroutine is done");
-        }
-        
-        handle.resume();
-        return handle.promise().value;
-    }
-    
-    auto operator () () -> decltype (auto) {
-        // will allocate a new stack frame and store the return-address of the caller in the
-        // stack frame before transfering execution to the function.
-        
-        // resumes the coroutine from the point it was suspended
-        if (handle.done())
-        {
-            throw runtime_error ("no, coroutine is done");
-        }
-        
-        handle.resume();
-        return handle.promise().value;
-    }
-
-    using iterator = generator_iter<generator>;
-    
-    auto begin() -> decltype (auto) {
-        if (handle) {
-            handle.resume();
-        }
-        return generator_iter <generator>{handle};
-    }
-    auto end() -> decltype (auto) {
-        return typename iterator::sentinel{};
-    }
-
-};
 
 
 template <coroutine T>
@@ -146,19 +35,117 @@ T coro_function ()
 
 
 template<typename T>
-generator<T> range(T first, const T last) {
+generator <promise <generator, gen_iterator, T>> range(T first, const T last) {
     while (first < last) {
         co_yield first++;
     }
 }
 
+
+void independentThread()
+{
+    std::cout << "Starting concurrent thread.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::cout << "Exiting concurrent thread.\n";
+}
+ 
+void threadCaller()
+{
+    std::cout << "Starting thread caller.\n";
+    std::thread t(independentThread);
+    t.detach();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::cout << "Exiting thread caller.\n";
+}
+
+
+
+
+struct [[nodiscard]] coro
+{
+    
+    struct promise
+    {
+        void return_void () {
+            cout << "return_void ()" << endl;
+        }
+        coro  get_return_object () {
+            cout << "get_return_object" << endl;
+            return coroutine_handle <promise> :: from_promise (*this);
+        }
+        auto initial_suspend () {
+            return suspend_always{};
+        }
+        auto final_suspend () noexcept {
+            return suspend_always {};
+        }
+        void unhandled_exception () {
+        
+        }
+    };
+    using promise_type = promise;
+    coroutine_handle <promise> handle;
+    coro (coroutine_handle<promise> h) : handle {h} {}
+    void go () {
+        
+        if (handle.done())
+            throw runtime_error ("");
+        
+        handle.resume();
+        
+    }
+};
+
+struct awaitablee {
+    bool await_ready () {
+        return false;
+    }
+    void await_suspend (coroutine_handle<> h) {
+        cout << "hi" << endl;
+        thread([]{cout << "thread" << endl;}).detach();
+        
+    }
+    void await_resume () {
+        
+    }
+};
+
+
+
+coro hej () {
+    cout << "begin" << endl;
+    co_await awaitablee {};
+    cout << "end" << endl;
+}
+
+
+
+void fun () {
+    cout << this_thread::get_id() << endl;
+    this_thread::sleep_for(2s);
+}
+
 int main(int argc, char const *argv[])
 {
-    auto res = coro_function <generator<int>>  ();
-    int a = res;
+    thread th1 {fun};
+    th1.detach();
+    cout << this_thread::get_id() << endl;
+    this_thread::sleep_for(2s);
+
+    
+    auto c = hej ();
+    c.go();
+//    c.go ();
+    
+    return 0;
+    threadCaller();
+    return 0;
+//    std::this_thread::sleep_for(std::chrono::seconds(5));
+//    auto res = coro_function <generator<int>>  ();
+//    int a = res;
 //    cout << res() << endl;
-    
-    
+//
+//
     for (char i : range(65, 91)) {
             std::cout << i << ' ' << endl;
     }
