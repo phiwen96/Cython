@@ -100,7 +100,7 @@ struct coreturn {
             this->value = value;
             return std::experimental::suspend_always{};
         }
-    private:
+//    private:
         T value;
     };
 protected:
@@ -140,12 +140,37 @@ struct eager : public coreturn<T> {
 template<typename T>
 struct lazy : public coreturn<T> {
     using coreturn<T>::coreturn;
-    using handle_type = typename coreturn<T>::handle_type;;
+    using handle_type = typename coreturn<T>::handle_type;
+    using coreturn<T>::coro;
+    
     T get() {
         std::cout << "We got asked for the return value..." << std::endl;
         if ( not this->coro.done() ) this->coro.resume();
             return coreturn<T>::get();
         return coreturn<T>::get();
+    }
+    
+    auto operator co_await() {
+        struct awaitable_type {
+            handle_type coro;
+            bool await_ready() {
+                const auto ready = coro.done();
+                std::cout << "Await " << (ready ? "is ready" : "isn't ready") << std::endl;
+                return coro.done();
+            }
+            void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+                std::cout << "Got to resume the lazy" << std::endl;
+                coro.resume();
+                std::cout << "Got to resume the awaiter" << std::endl;
+                awaiting.resume();
+            }
+            auto await_resume() {
+                const auto r = coro.promise().value;
+                std::cout << "Await value is returned: " << r << std::endl;
+                return r;
+            }
+        };
+        return awaitable_type{coro};
     }
     struct promise_type : public coreturn<T>::promise {
         auto get_return_object() {
@@ -171,7 +196,7 @@ lazy<int> lazy_answer() {
     co_return 42;
 }
 
-lazy<int> await_lazy_answer() {
+eager<int> await_lazy_answer() {
     std::cout << "Started await_answer" << std::endl;
     auto a = lazy_answer();
     std::cout << "Got a coroutine, let's get a value" << std::endl;
