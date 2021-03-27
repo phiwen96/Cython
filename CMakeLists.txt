@@ -13,7 +13,9 @@ project (
 	LANGUAGES CXX
 )	
 
-
+include(ProcessorCount)
+ProcessorCount(N)
+add_compile_definitions(PROCESSOR_COUNT=${N})
 
 
 
@@ -71,6 +73,9 @@ if (NOT TARGET ph_coroutines)
 endif ()
 if (NOT TARGET ph_time)
 	add_subdirectory (dependencies/ph_time)
+endif ()
+if (NOT TARGET ph_debug)
+	add_subdirectory (dependencies/ph_debug)
 endif ()
 
 find_package (Boost 1.74 REQUIRED)
