@@ -95,6 +95,11 @@ struct coreturn {
         void unhandled_exception() {
             std::exit(1);
         }
+        auto yield_value(T value) {
+            std::cout << "Yielded " << value << std::endl;
+            this->value = value;
+            return std::experimental::suspend_always{};
+        }
     private:
         T value;
     };
@@ -116,6 +121,7 @@ struct eager : public coreturn<T> {
     using handle_type = typename coreturn<T>::handle_type;
     T get() {
         std::cout << "We got asked for the return value..." << std::endl;
+        if ( not this->coro.done() ) this->coro.resume();
         return coreturn<T>::get();
     }
     struct promise_type : public coreturn<T>::promise {
@@ -137,7 +143,8 @@ struct lazy : public coreturn<T> {
     using handle_type = typename coreturn<T>::handle_type;;
     T get() {
         std::cout << "We got asked for the return value..." << std::endl;
-        this->coro.resume();
+        if ( not this->coro.done() ) this->coro.resume();
+            return coreturn<T>::get();
         return coreturn<T>::get();
     }
     struct promise_type : public coreturn<T>::promise {
@@ -154,14 +161,25 @@ struct lazy : public coreturn<T> {
 
 
 
-eager<int> answer_0() {
+eager<int> eager_answer() {
     std::cout << "Thinking deep thoughts..." << std::endl;
     co_return 42;
 }
 
-lazy<int> answer_1() {
+lazy<int> lazy_answer() {
     std::cout << "Thinking deep thoughts..." << std::endl;
     co_return 42;
+}
+
+lazy<int> await_lazy_answer() {
+    std::cout << "Started await_answer" << std::endl;
+    auto a = lazy_answer();
+    std::cout << "Got a coroutine, let's get a value" << std::endl;
+    auto v = co_await a;
+    std::cout << "And the coroutine value is: " << v << std::endl;
+    v = co_await a;
+    std::cout << "And the coroutine value is still: " << v << std::endl;
+    co_return 0;
 }
 
 
@@ -171,9 +189,7 @@ int main(int argc, char const *argv[])
 
 
     
-    auto a = answer_1();
-        std::cout << "Got a coroutine, let's get a value" << std::endl;
-        a.get();
+    return await_lazy_answer().get();
 //        std::cout << "And the coroutine value is: " << v << std::endl;
 
 //	int result = Catch::Session().run( argc, argv );
