@@ -22,3 +22,6 @@
 [submodule "dependencies/ph_time"]
 	path = dependencies/ph_time
 	url = https://github.com/phiwen96/ph_time
+[submodule "dependencies/ph_debug"]
+	path = dependencies/ph_debug
+	url = https://github.com/phiwen96/ph_debug
