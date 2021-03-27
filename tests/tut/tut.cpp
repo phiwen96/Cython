@@ -11,6 +11,7 @@
 #include <ph_time/Date.hpp>
 #include <ph_macros/macros.hpp>
 #include <ph_debug/debug.hpp>
+#include <ph_time/timer.hpp>
 
 
 using namespace std;
@@ -164,32 +165,173 @@ void fun () {
 }
 
 int heavy_work (int a, int b) {
-    this_thread::sleep_for(1s);
+    this_thread::sleep_for(10s);
     return a + b;
 }
 
 void thread_based () {
     auto task = packaged_task <decltype (heavy_work)> {heavy_work};
     auto futur = task.get_future ();
-    thread {move (task), 1, 2}.detach();
-    cout << futur.get() << endl;
+    cout << "hi" << endl;
+//    thread {move (task), 1, 2}.detach();
+    futur.wait();
 }
 
 void task_based () {
-    cout << async (heavy_work, 1, 2).get() << endl;
+    async (heavy_work, 1, 2).wait();
 }
 
 
 
+
+
+auto random_int (int min, int max) {
+    static thread_local auto engine = default_random_engine {random_device{}()};
+    auto dist = uniform_int_distribution<>{min, max};
+    return dist (engine);
+}
+
+atomic<int> goal = random_int(0, 10000);
+atomic<bool> done {false};
+
+atomic_flag flag;
+
+template <typename T>
+struct co_future
+{
+    struct co_awaiter
+    {
+        
+    };
+    
+    struct co_promise
+    {
+        T value;
+        
+        // producing the value returned from the invocation of the coroutine
+        auto get_return_object () -> decltype (auto) {
+            return co_future {coroutine_handle<co_promise>::from_promise(*this)};
+        }
+        
+        // behaviour when the coroutine is created
+        static constexpr auto initial_suspend () noexcept {
+            struct awaitable
+            {
+                constexpr bool await_ready () const noexcept {return true;}
+                constexpr void await_suspend (coroutine_handle <>) const noexcept {}
+                constexpr void await_resume () const noexcept {}
+            };
+            
+//            return awaitable{};
+            return suspend_always {};
+        }
+        
+        // behaviour before the coroutine is destroyed
+        static constexpr auto final_suspend () noexcept {
+            struct awaitable
+            {
+                constexpr bool await_ready () const noexcept {return false;}
+                constexpr void await_suspend (coroutine_handle <>) const noexcept {}
+                constexpr void await_resume () const noexcept {}
+            };
+            
+//            return awaitable{};
+            return suspend_always {};
+
+        }
+        
+        [[nodiscard]] auto yield_value (auto&& u) noexcept {
+            value = forward <decltype (u)> (u);
+            return suspend_always{};
+        }
+        
+        // customizing the behaviour (before) when the coroutine finally returns
+        void return_value (auto&& value) {
+//            cout << "yo" << endl;
+            value = forward <decltype (value)> (value);
+        }
+//        void return_void () {
+//
+//        }
+        
+//        void await_transform() = delete;
+        
+        // handling exceptions that are not handled inside the coroutine body
+        [[noreturn]] static void unhandled_exception () {
+            terminate();
+        }
+    };
+    
+    using promise_type = co_promise;
+    
+    coroutine_handle <promise_type> handle;
+    co_future (coroutine_handle <promise_type> h) : handle {h} {}
+    co_future (co_future&& other) : handle {exchange (other.handle, {})} {}
+    ~co_future () {
+        if (handle)
+            handle.destroy ();
+    }
+    
+    // resumes the coroutine from the point it was suspended.
+    // returns "still work to do?"
+    bool resume () {
+        if (not handle.done())
+        {
+            handle.resume();
+//            throw std::runtime_error ("no, coroutine is done");
+        }
+//        else
+//        {
+//            throw runtime_error ("");
+//        }
+        return !handle.done();
+        
+//        return handle.promise().value;
+    }
+    
+};
+
+co_future <int> a () {
+    cout << "a" << endl;
+    co_await suspend_always {};
+    cout << "b" << endl;
+//    co_return 42;
+    co_return 43;
+}
+
 int main(int argc, char const *argv[])
 {
-    auto latc = latch {4};
+//    thread_based();
+    auto coro = a();
+    cout << coro.resume () << endl;
+//    fu.resume(); // resume from main
+    thread{[coro = move (coro)] () mutable {
+        this_thread::sleep_for(2s);
+        cout << coro.resume () << endl;
+    }}.join ();
+    return 0;
+//    array<int, 10> dices;
+//    fill (dices.begin(), dices.end(), 0);
     
-    auto bar = barrier{8, []{}};
-    auto futur = async (heavy_work, 1, 2);
-    auto futur2 = async (heavy_work, 2, 3);
-    cout << futur.get() << endl;
-    cout << futur2.get() << endl;
+//    auto l = latch {10};
+    cout << goal << endl;
+    
+    
+    
+   
+    
+    
+    
+  
+    
+//    auto latc = latch {4};
+//    latc.try_wait();
+//    latc.try_wait();
+////    auto bar = barrier{}.
+//    auto futur = async (heavy_work, 1, 2);
+//    auto futur2 = async (heavy_work, 2, 3);
+//    cout << futur.get() << endl;
+//    cout << futur2.get() << endl;
 //    phthread th1 {fun};
 //
 //    th1.join();
