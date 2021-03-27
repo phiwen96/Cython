@@ -12,6 +12,7 @@
 #include <ph_macros/macros.hpp>
 #include <ph_debug/debug.hpp>
 #include <ph_time/timer.hpp>
+#include <future>
 
 
 using namespace std;
@@ -208,9 +209,12 @@ struct co_future
     {
         T value;
         
+        // a reference to to the coroutine waiting for the task to complete AKA a waiting coroutine
+        coroutine_handle <co_promise> continuation;
+        
         // producing the value returned from the invocation of the coroutine
         co_future <T> get_return_object () {
-            return coroutine_handle<co_promise>::from_promise(*this);
+            return co_future {*this};
         }
         
         // behaviour when the coroutine is created
@@ -228,20 +232,26 @@ struct co_future
             };
             
 //            return awaitable{};
-            return awaitable {};
+//            return awaitable {};
+            return suspend_always {};
+//            return suspend_never {};
         }
         
         // behaviour before the coroutine is destroyed
-        static constexpr auto final_suspend () noexcept {
+        auto final_suspend () noexcept {
             struct awaitable
             {
-                constexpr bool await_ready () const noexcept {return false;}
-                constexpr void await_suspend (coroutine_handle <>) const noexcept {}
-                constexpr void await_resume () const noexcept {}
+                bool await_ready () noexcept {return false;}
+                auto await_suspend (coroutine_handle <co_promise> h) noexcept {
+                    return h.promise().continuation;
+//                    return h;
+                }
+                int await_resume () noexcept {return 3;}
             };
             
 //            return awaitable{};
-            return awaitable {};
+//            return suspend_never {};
+            return suspend_always {};
 
         }
         
@@ -258,14 +268,22 @@ struct co_future
 //            cout << "returning " << v << endl;
             value = forward <decltype (v)> (v);
         }
+        
+//        void return_value () {
+////            cout << "yo" << endl;
+////            cout << "returning " << v << endl;
+//        }
 //        void return_void () {
 //
 //        }
         
-//        void await_transform() = delete;
+//        auto await_transform() {
+//
+//        }
         
         // handling exceptions that are not handled inside the coroutine body
         [[noreturn]] static void unhandled_exception () {
+            cout << "oooops" << endl;
             terminate();
         }
     };
@@ -274,10 +292,10 @@ struct co_future
     
     coroutine_handle <promise_type> handle;
     
-    co_future () = delete;
+    co_future () = default;
     co_future (co_future const&) = delete;
     
-    co_future (coroutine_handle <promise_type> h) : handle {h} {}
+    co_future (promise_type& p) : handle {coroutine_handle<promise_type>::from_promise (p)} {}
     co_future (co_future&& other) : handle {exchange (other.handle, {})} {}
     ~co_future () {
         if (handle)
@@ -300,8 +318,28 @@ struct co_future
         
 //        return handle.promise().value;
     }
-    
     T get () {
+        return handle.promise().value;
+    }
+    
+    // true -> await_suspend
+    bool await_ready () const {
+        cout << "await_ready" << endl;
+        return false;
+    }
+    
+    // if await_ready = false
+    auto await_suspend (coroutine_handle<> h) {
+        cout << "await_suspend" << endl;
+        
+//        handle.promise().continuation = h;
+//        return h.promise().continuation;
+        return handle;
+    }
+    
+    // if awai_ready = true
+    T await_resume () {
+        cout << "await_resume" << endl;
         return handle.promise().value;
     }
     
@@ -309,28 +347,36 @@ struct co_future
 
 co_future <int> a () {
     cout << "a0" << endl;
-    co_await suspend_always {};
-    cout << "b1" << endl;
-    
+    co_yield 4;
+    cout << "a1" << endl;
+    co_return 4;
 //    co_return 42;
-    co_return 43;
+//    co_return 43;
 }
 co_future <int> b () {
-    auto answer = co_await a ();
+    cout << "b0" << endl;
+//    auto aa = a ();
+//    co_future<int> answer = a();
+//    answer.resume();
+    co_await a ();
+    cout << "b1" << endl;
+    co_return 10;
 }
 
 int main(int argc, char const *argv[])
 {
 //    thread_based();
-    auto coro = a();
+    auto coro = b();
     cout << coro.resume () << endl;
+    
+    
 //    fu.resume(); // resume from main
-    int aa = async([coro = move (coro)] () mutable {
-        this_thread::sleep_for(2s);
-        cout << coro.resume () << endl;
-        return coro.get ();
-    }).get ();
-    cout << aa << endl;
+//    int aa = async([coro = move (coro)] () mutable {
+//        this_thread::sleep_for(2s);
+//        cout << coro.resume () << endl;
+//        return coro.get ();
+//    }).get ();
+//    cout << aa << endl;
     return 0;
 //    array<int, 10> dices;
 //    fill (dices.begin(), dices.end(), 0);
