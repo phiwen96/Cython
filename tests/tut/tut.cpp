@@ -18,7 +18,7 @@
 using namespace std;
 using namespace experimental;
 using namespace ph::concepts;
-using namespace std::chrono_literals;
+using namespace chrono_literals;
 
 
 
@@ -56,17 +56,20 @@ auto random_int (int min, int max) {
 
 template<typename T>
 struct coreturn {
+    static inline int coro_nr = 0;
+    int coro_int = coro_nr;
     struct promise;
     friend struct promise;
-    using handle_type = std::experimental::coroutine_handle<promise>;
+    using handle_type = coroutine_handle<promise>;
     coreturn(const coreturn &) = delete;
     coreturn(coreturn &&s)
     : coro(s.coro) {
-        std::cout << "Coreturn wrapper moved" << std::endl;
+//        cout << "Coreturn wrapper moved" << endl;
         s.coro = nullptr;
+        ++coro_nr;
     }
     ~coreturn() {
-        std::cout << "Coreturn wrapper gone" << std::endl;
+//        cout << "Coreturn wrapper gone" << endl;
         if ( coro ) coro.destroy();
     }
     coreturn &operator = (const coreturn &) = delete;
@@ -77,39 +80,62 @@ struct coreturn {
     }
     struct promise {
         friend struct coreturn;
+        int coro_int = coro_nr;
         promise() {
-            std::cout << "Promise created" << std::endl;
+//            cout << "Promise created" << endl;
         }
         ~promise() {
-            std::cout << "Promise died" << std::endl;
+//            cout << "Promise died" << endl;
         }
+        
+        /**
+         co_return, whether or not we want to suspend
+         the coroutine after it returns a value to us
+         */
         auto return_value(T v) {
-            std::cout << "Got an answer of " << v << std::endl;
+            cout << coro_int << ":Got an answer of " << v << endl;
             value = v;
-            return std::experimental::suspend_never{};
+            return suspend_never{};
         }
+        
+        /**
+         Now that we've finished the coroutine,
+         we need to say whether we want to stop here or not
+         */
         auto final_suspend() noexcept {
-            std::cout << "Finished the coro" << std::endl;
-            return std::experimental::suspend_always{};
+            cout << coro_int << ":Finished the coro with value " << value << endl;
+            
+            return suspend_always{};
         }
+        
+        /**
+         What should happen if an exception tries
+         to escape from the coroutine?
+         */
         void unhandled_exception() {
-            std::exit(1);
+            exit(1);
         }
         auto yield_value(T value) {
-            std::cout << "Yielded " << value << std::endl;
+            cout << coro_int << ":Yielded " << value << endl;
             this->value = value;
-            return std::experimental::suspend_always{};
+            return suspend_always{};
         }
 //    private:
         T value;
     };
 protected:
+    
+    /**
+     needs to pull the value from
+     the coroutine_handle
+     */
     T get() {
         return coro.promise().value;
     }
     coreturn(handle_type h)
     : coro(h) {
-        std::cout << "Created a coreturn wrapper object" << std::endl;
+        ++coro_nr;
+//        cout << "Created a coreturn wrapper object" << endl;
     }
     handle_type coro;
 };
@@ -120,66 +146,105 @@ struct eager : public coreturn<T> {
     using coreturn<T>::coreturn;
     using handle_type = typename coreturn<T>::handle_type;
     T get() {
-        std::cout << "We got asked for the return value..." << std::endl;
+//        cout << "We got asked for the return value..." << endl;
         if ( not this->coro.done() ) this->coro.resume();
         return coreturn<T>::get();
     }
     struct promise_type : public coreturn<T>::promise {
         auto get_return_object() {
-            std::cout << "Send back a sync" << std::endl;
+//            cout << "Send back a sync" << endl;
             return eager<T>{handle_type::from_promise(*this)};
         }
         auto initial_suspend() {
-            std::cout << "Started the coroutine, don't stop now!" << std::endl;
-            return std::experimental::suspend_never{};
+//            cout << "Started the coroutine, don't stop now!" << endl;
+            return suspend_never{};
         }
     };
 };
 
 
 template<typename T>
-struct lazy : public coreturn<T> {
+struct lazy : public coreturn <T> {
+    using parent = coreturn <T>;
+    using coreturn<T>::coro_int;
+    using coreturn<T>::coro;
     using coreturn<T>::coreturn;
     using handle_type = typename coreturn<T>::handle_type;
-    using coreturn<T>::coro;
+//    using coreturn<T>::coro;
     
+    /**
+     resume the execution of the
+     coroutine at a time of our choosing.
+     */
     T get() {
-        std::cout << "We got asked for the return value..." << std::endl;
-        if ( not this->coro.done() ) this->coro.resume();
-            return coreturn<T>::get();
-        return coreturn<T>::get();
+        cout << coro_int << ":We got asked for the return value..." << endl;
+        
+        /**
+         make sure we only resume
+         the coroutine the first
+         time get is called
+         
+                done will return true only when
+                the coroutine is at its final
+                suspension point
+         */
+        if ( not parent::coro.done() )
+        {
+            parent::coro.resume();
+        }
+        
+        return parent::get();
     }
     
-    auto operator co_await() {
-        struct awaitable_type {
-            handle_type coro;
-            bool await_ready() {
-                const auto ready = coro.done();
-                std::cout << "Await " << (ready ? "is ready" : "isn't ready") << std::endl;
-                return coro.done();
-            }
-            void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-                std::cout << "Got to resume the lazy" << std::endl;
-                coro.resume();
-                std::cout << "Got to resume the awaiter" << std::endl;
-                awaiting.resume();
-            }
-            auto await_resume() {
-                const auto r = coro.promise().value;
-                std::cout << "Await value is returned: " << r << std::endl;
-                return r;
-            }
-        };
-        return awaitable_type{coro};
+    
+//    bool resume () {
+//        cout << coro_int << ":We are resuming" << endl;
+//
+//        if (not coreturn<T>::coro.done()) {
+//            coreturn<T>::coro.resume();
+//        }
+//        return coreturn<T>::coro.done();
+//    }
+    
+    bool await_ready() {
+        const auto ready = coro.done();
+        std::cout << coro_int << ":Await " << (ready ? "is ready" : "isn't ready") << std::endl;
+        return coro.done();
     }
-    struct promise_type : public coreturn<T>::promise {
-        auto get_return_object() {
-            std::cout << "Send back a lazy" << std::endl;
+    void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+        std::cout << coro_int << ":About to resume the lazy" << std::endl;
+        coro.resume();
+        std::cout << coro_int << ":About to resume the awaiter" << std::endl;
+//        awaiting.resume();
+        return awaiting;
+    }
+    auto await_resume() {
+        const auto r = coro.promise().value;
+        std::cout << coro_int << ":Await value is returned: " << r << std::endl;
+        return r;
+    }
+    
+    struct promise_type : public coreturn<T>::promise
+    {
+        
+        /**
+         We tell the promise_type how to construct
+         the sync object that the coroutine returns
+         */
+        auto get_return_object()
+        {
+//            cout << "Send back a lazy" << endl;
             return lazy<T>{handle_type::from_promise(*this)};
         }
-        auto initial_suspend() {
-            std::cout << "Started the coroutine, put the brakes on!" << std::endl;
-            return std::experimental::suspend_always{};
+        
+        /**
+         whether we want to start on the body
+         straight away or not.
+         */
+        auto initial_suspend()
+        {
+//            cout << "Started the coroutine, put the brakes on!" << endl;
+            return suspend_always{};
         }
     };
 };
@@ -187,35 +252,52 @@ struct lazy : public coreturn<T> {
 
 
 eager<int> eager_answer() {
-    std::cout << "Thinking deep thoughts..." << std::endl;
+//    cout << "Thinking deep thoughts..." << endl;
     co_return 42;
 }
 
 lazy<int> lazy_answer() {
-    std::cout << "Thinking deep thoughts..." << std::endl;
+//    cout << "Thinking deep thoughts..." << endl;
+    cout << "a0" << endl;
+    co_yield 62;
+    cout << "a1" << endl;
     co_return 42;
 }
 
-eager<int> await_lazy_answer() {
-    std::cout << "Started await_answer" << std::endl;
-    auto a = lazy_answer();
-    std::cout << "Got a coroutine, let's get a value" << std::endl;
-    auto v = co_await a;
-    std::cout << "And the coroutine value is: " << v << std::endl;
-    v = co_await a;
-    std::cout << "And the coroutine value is still: " << v << std::endl;
-    co_return 0;
+lazy<int> await_lazy_answer() {
+//    cout << "Started await_answer" << endl;
+//    auto a = lazy_answer();
+//    cout << "Got a coroutine, let's get a value" << endl;
+    cout << "b0" << endl;
+    int v = co_await lazy_answer();
+    cout << "b1" << endl;
+
+//    cout << "And the coroutine value is: " << v << endl;
+//    v = co_await a;
+//    cout << "And the coroutine value is still: " << v << endl;
+    co_return v;
 }
 
-
+template <class T>
+concept lazy_coroutine = requires (typename T::promise_type p) {
+    {p.initial_suspend ()} -> convertible <suspend_always>;
+};
 
 int main(int argc, char const *argv[])
 {
-
-
+    auto a = await_lazy_answer();
+    cout << a.get() << endl;
+    cout << a.get() << endl;
+    cout << a.get() << endl;
+    cout << a.get() << endl;
+//    cout << a.get() << endl;
+//    cout << a.get() << endl;
+//    cout << a.resume() << endl;
+//    cout << a.resume() << endl;
+//    cout << a.resume() << endl;
     
-    return await_lazy_answer().get();
-//        std::cout << "And the coroutine value is: " << v << std::endl;
+//    return await_lazy_answer().get();
+//        cout << "And the coroutine value is: " << v << endl;
 
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
