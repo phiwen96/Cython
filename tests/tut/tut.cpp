@@ -64,20 +64,20 @@ auto random_int (int min, int max) {
 
 
 struct co_task {
-    struct promise;
-    using promise_type = promise;
-    coroutine_handle <promise_type> handle;
-    explicit co_task (coroutine_handle <promise_type> handle) noexcept : handle {handle} {}
+    struct promise_type;
+    struct awaiter;
+    
     co_task (co_task&& other) noexcept : handle {exchange (other.handle, {})} {}
     ~co_task () {if (handle) handle.destroy();}
-    
-    struct awaiter;
     awaiter operator co_await () && noexcept;
     
+private:
+    explicit co_task (coroutine_handle <promise_type> handle) noexcept : handle {handle} {}
+    
+    coroutine_handle <promise_type> handle;
 };
 
-struct co_task::promise {
-    coroutine_handle <> continuation;
+struct co_task::promise_type {
     
     struct final_awaiter {
         bool await_ready () noexcept {return false;}
@@ -92,10 +92,12 @@ struct co_task::promise {
     void return_void () noexcept {}
     [[noreturn]] void unhandled_exception () noexcept {terminate();}
     final_awaiter final_suspend () noexcept {return {};}
+    
+    coroutine_handle <> continuation;
 };
 
 struct co_task::awaiter {
-    coroutine_handle <co_task::promise_type> handle;
+    
     bool await_ready () noexcept {return false;}
     void await_suspend (coroutine_handle <> continuation) noexcept {
         handle.promise().continuation = continuation;
@@ -103,7 +105,11 @@ struct co_task::awaiter {
     }
     void await_resume () noexcept {}
     
+private:
+    friend co_task;
     explicit awaiter (coroutine_handle <co_task::promise_type> handle) noexcept : handle (handle) {}
+    
+    coroutine_handle <co_task::promise_type> handle;
 };
 
 co_task::awaiter co_task::operator co_await() && noexcept {
