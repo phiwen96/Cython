@@ -90,10 +90,25 @@ struct co_task::promise {
     }
     suspend_always initial_suspend () noexcept {return {};}
     void return_void () noexcept {}
-    [[noreturn]] void unhandled_exceptions () noexcept {terminate();}
+    [[noreturn]] void unhandled_exception () noexcept {terminate();}
     final_awaiter final_suspend () noexcept {return {};}
 };
 
+struct co_task::awaiter {
+    coroutine_handle <co_task::promise_type> handle;
+    bool await_ready () noexcept {return false;}
+    void await_suspend (coroutine_handle <> continuation) noexcept {
+        handle.promise().continuation = continuation;
+        handle.resume();
+    }
+    void await_resume () noexcept {}
+    
+    explicit awaiter (coroutine_handle <co_task::promise_type> handle) noexcept : handle (handle) {}
+};
+
+co_task::awaiter co_task::operator co_await() && noexcept {
+    return awaiter {handle};
+}
 
 //eager<int> eager_answer() {
 ////    cout << "Thinking deep thoughts..." << endl;
@@ -105,7 +120,7 @@ co_task lazy_answer() {
     cout << "a0" << endl;
 //    co_yield 62;
     cout << "a1" << endl;
-    co_return 42;
+//    co_return 42;
 }
 
 co_task await_lazy_answer() {
@@ -120,7 +135,7 @@ co_task await_lazy_answer() {
 //    cout << "And the coroutine value is: " << v << endl;
 //    v = co_await a;
 //    cout << "And the coroutine value is still: " << v << endl;
-    co_return 10;
+//    co_return 10;
 }
 
 
