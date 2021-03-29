@@ -494,14 +494,12 @@ struct [[nodiscard]] co_task
                 }
             };
 
-//            return awaitable {};
             return suspend_always {};
         }
         auto final_suspend () noexcept
         {
             struct awaitable
             {
-//                coroutine_handle<>& coro;
                 auto await_ready () noexcept
                 {
                     return false;
@@ -523,7 +521,6 @@ struct [[nodiscard]] co_task
             };
 
             return awaitable {};
-//            return suspend_always {};
         }
         auto yield_value (int i)
         {
@@ -531,29 +528,17 @@ struct [[nodiscard]] co_task
             
             struct awaitable
             {
-                coroutine_handle<promise_type> co;
                 auto await_ready ()
                 {
                     return true;
                 }
                 void await_suspend (coroutine_handle <promise_type> current_coro)
                 {
-//                    co = current_coro;
-//                    return current_coro.promise().awaiting_coro;
-//                    auto precursor = current_coro.promise().awaiting_coro;
-//                    if (precursor)
-//                    {
-//                      return precursor;
-//                    }
-//                    return noop_coroutine();
-//                    return current_coro;
-//                    return suspend_always {};
 
                 }
                 auto await_resume ()
                 {
                     return 8;
-//                    return co;
                 }
             };
             return awaitable {};
@@ -581,6 +566,7 @@ struct [[nodiscard]] co_task
     }
     ~co_task ()
     {
+//        cout << "~co_task" << endl;
         if (not coro)
             throw runtime_error (":O");
         coro.destroy();
@@ -627,44 +613,326 @@ struct [[nodiscard]] co_task
         
         return awaitable {coro};
     }
-    
 };
+
+
+
 
 co_task c ()
 {
-    cout << "c0" << endl;
-    cout << "c1" << endl;
+    cout << "*" << endl;
+    cout << "*" << endl;
     co_return;
 }
 
 co_task b ()
 {
-    cout << "b0" << endl;
-    int i = co_yield 11;
-    cout << i << endl;
+    cout << "**" << endl;
+//    int i = co_yield 11;
+//    cout << i << endl;
     co_await c ();
-    cout << "b1" << endl;
+    cout << "**" << endl;
     
     co_return;
 }
 
 co_task a ()
 {
-    cout << "a0" << endl;
+    cout << "***" << endl;
 //    cout << co_await run0 () << endl;
 //    co_yield 10;
     co_await b();
 //    co_await b();
-    cout << "a1" << endl;
+    cout << "***" << endl;
     co_return;
 }
 
 
+
+struct CTP
+{
+
+    
+};
+
+atomic <int> current_threads = 0;
+
+
+struct [[nodiscard]] co_future
+{
+    co_future () = delete;
+    co_future (co_future const&) = delete;
+    co_future& operator= (co_future const&) = delete;
+    co_future& operator= (co_future&&) = delete;
+    struct promise_type
+    {
+        int value {10};
+        coroutine_handle <> awaiting_coro;
+        vector <coroutine_handle <>> queues;
+        inline static int nr = -1;
+        char i = ++nr + 97;
+        auto get_return_object ()
+        {
+            return co_future {*this};
+        }
+        auto initial_suspend ()
+        {
+ 
+            struct awaitable
+            {
+                auto await_ready ()
+                {
+                    return false;
+                }
+                auto await_suspend (coroutine_handle <> awaiting_coro)
+                {
+                    
+                }
+                auto await_resume ()
+                {
+                    
+                }
+            };
+
+            return suspend_always {};
+        }
+        auto final_suspend () noexcept
+        {
+            struct awaitable
+            {
+                auto await_ready () noexcept
+                {
+                    return false;
+                }
+                coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro) noexcept
+                {
+                    cout << "hi" << endl;
+                    auto precursor = current_coro.promise().awaiting_coro;
+                    if (precursor)
+                    {
+//                        cout << current_coro.promise().i << endl;
+//                        async(launch::async, [&precursor]{precursor.resume(); cout << "hi" << endl;});
+//                        precursor.resume();
+                        return precursor;
+                    }
+                    return noop_coroutine();
+                }
+                
+                auto await_resume () noexcept
+                {
+
+                }
+            };
+
+            return awaitable {};
+        }
+        auto yield_value (int i)
+        {
+            value = i;
+            
+            struct awaitable
+            {
+                auto await_ready ()
+                {
+                    return false;
+                }
+                void await_suspend (coroutine_handle <promise_type> current_coro)
+                {
+                    
+                }
+                auto await_resume ()
+                {
+                    return 8;
+                }
+            };
+            return awaitable {};
+//            return suspend_always {};
+        }
+        auto return_void ()
+        {
+            
+        }
+        [[noreturn]]
+        auto unhandled_exception ()
+        {
+            terminate();
+        }
+    };
+    
+    coroutine_handle <promise_type> coro;
+    co_future (promise_type& p) : coro {coroutine_handle<promise_type>::from_promise (p)}
+    {
+        
+    }
+    co_future (co_future&& other) : coro {exchange (other.coro, {})}
+    {
+        
+    }
+    ~co_future ()
+    {
+        cout << "~co_task" << coro.promise().i << endl;
+        if (not coro)
+            throw runtime_error (":O");
+        coro.destroy();
+    }
+    void run ()
+    {
+        if (not coro.done ())
+        {
+            coro.resume ();
+        }
+    }
+    operator bool ()
+    {
+        if (not coro.done ())
+        {
+            coro.resume ();
+        }
+        return not coro.done ();
+    }
+    auto operator () ()
+    {
+        if (not coro.done ())
+        {
+            coro.resume ();
+        }
+        else
+        {
+            throw runtime_error ("coro already done");
+        }
+    }
+
+    bool ready = false;
+    
+    
+    void do_work ()
+    {
+        
+    }
+    
+    struct awaitable
+    {
+        co_future& f;
+        
+        auto await_ready ()
+        {
+            
+            return false;
+        }
+//            auto await_suspend (coroutine_handle <> awaiting_coro)
+//            {
+//                coro.promise().awaiting_coro = awaiting_coro;
+////                return coro;
+//            }
+//#define SLOW
+        auto await_suspend (coroutine_handle <> awaiting_coro)
+        {
+#ifdef SLOW
+            cout << "slow" << endl;
+            f.coro.promise().awaiting_coro = awaiting_coro;
+            return f.coro;
+#else
+            ++current_threads;
+            thread{[a = f.coro, awaiting_coro]()mutable{
+//                cout << this_thread::get_id() << endl;
+                a.promise().awaiting_coro = awaiting_coro;
+                a.resume();;current_threads--;}
+                
+            }.detach();
+#endif
+            
+//            f.coro.promise().awaiting_coro = awaiting_coro;
+//            f.coro.resume();
+//            async(launch::async, [a = f.coro, awaiting_coro]()mutable{this_thread::sleep_for(2s);a.promise().awaiting_coro = awaiting_coro; a.resume();}).get();
+            
+            
+            
+//            cout << f.coro.promise().i << ":" << awaiting_coro.promise().i << endl;
+//            if (not f.ready) {
+//                f.queues.push_back(awaiting_coro);
+////                async (launch::async, []()mutable{this_thread::sleep_for(2s);});
+////                return awaiting_coro;
+//            }
+//            return f.coro;
+//            cout << f.coro.promise().i << endl;
+//                cout << awaiting_coro.promise().i << endl;
+//            awaiting_coro.resume();
+        }
+        auto await_resume ()
+        {
+//            return f.coro;
+        }
+    };
+    friend class awaitable;
+    awaitable operator co_await ()
+    {
+//        thread{[]{this_thread::sleep_for(2s);cout << "hi" << endl;}}.join();
+//        this_thread::sleep_for(2s);
+        
+        return awaitable {*this};
+    }
+};
+
+co_future D ()
+{
+    cout << "****" << endl;
+    cout << "~****" << endl;
+    co_return;
+}
+co_future C ()
+{
+    cout << "*" << endl;
+    cout << "~*" << endl;
+    co_return;
+}
+co_future B ()
+{
+    cout << "**" << endl;
+    co_await C();
+    cout << "~**" << endl;
+//    cout << "mythread:" << this_thread::get_id() << endl;
+    co_return;
+}
+
+co_future A ()
+{
+    cout << "***" << endl;
+    cout << "mythread:" << this_thread::get_id() << endl;
+    co_await D();
+    cout << "mythread:" << this_thread::get_id() << endl;
+    co_await B();
+    cout << "mythread:" << this_thread::get_id() << endl;
+    co_await B();
+    
+    cout << "~***" << endl;
+    co_return;
+}
+
 int main(int argc, char const *argv[])
 {
 
-    co_task coro = a();
-    cout << (bool) coro << endl;
+//    thread t{[]{co_future a = A(); a.run();}};
+//    t.join();
+    
+    
+    co_future a = A();
+    a.run();
+//    cout << "baaaaajs" << endl;
+    while (current_threads) {
+//        cout << "threads:" << current_threads << endl;
+    }
+
+//    (bool)a;
+//    async ([a = A()]()mutable ->co_future{(bool)a;}).get();
+
+    cout << "---------------" << endl;
+//    (bool)a;
+//    (bool)a;
+//    co_task coro = a();
+//    (bool) coro;
+//    cout << "-----------" << endl;
+//    (bool) coro;
+//    cout << (bool) coro << endl;
 //    cout << (bool) coro << endl;
 //    cout << (bool) coro << endl;
 //    cout << (bool) coro << endl;
@@ -674,5 +942,6 @@ int main(int argc, char const *argv[])
     
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
+    cout << "==================" << endl;
     return 0;
 }
