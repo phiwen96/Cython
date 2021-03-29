@@ -285,10 +285,17 @@ struct thr : thread
 //        ++current_threads;
     }
     
+    
+    
     ~thr () {
 //        cout << "~::" << m_thread << endl;
     }
 };
+
+//inline std::ostream& Blue(std::ostream &s){
+//    s << "\033[94m";
+//    return s;
+//}
 
 void out (auto& color, string&& s, string&& s2, int index) {
     for(int i = 0; i < index; ++i)
@@ -298,7 +305,7 @@ void out (auto& color, string&& s, string&& s2, int index) {
 //    cout << right << setw(0) << "[" << index << "] " << s << left << "\t" << s2 << endl;
 //    cout << s << internal << std::setfill('*') << setw(40) << s2 << "\n";
     
-    cout << left << setw(40) << s
+    cout << left << setw(30) << s << setw(20) << "|"
     <<  setw(30) << s2  << "kuk" << "\t" << endl;
 //         << setw(4) << hourlyRate << "\n";
 
@@ -690,7 +697,7 @@ co_future<int> run () {
 
 int main(int argc, char const *argv[])
 {
-    white << info << endl << red << "================================================================================================================" << endl << endl;
+    cout << info  << "================================================================================================================" << endl << endl;
     {
         auto aa = run();
 //        (bool)aa;
@@ -737,7 +744,7 @@ int main(int argc, char const *argv[])
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
 //    cout  <<"hej"<< _color::red << "================================================================================================================" << endl << endl;
-    red << endl << "================================================================================================================" << endl << endl;
+    cout << endl << "================================================================================================================" << endl << endl;
 
     return 0;
 }
