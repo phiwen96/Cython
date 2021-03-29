@@ -658,6 +658,7 @@ struct CTP
 atomic <int> current_threads = 0;
 
 
+template <typename T>
 struct [[nodiscard]] co_future
 {
     co_future () = delete;
@@ -666,7 +667,7 @@ struct [[nodiscard]] co_future
     co_future& operator= (co_future&&) = delete;
     struct promise_type
     {
-        int value {10};
+        T value;
         coroutine_handle <> awaiting_coro;
         vector <coroutine_handle <>> queues;
         inline static int nr = -1;
@@ -706,7 +707,7 @@ struct [[nodiscard]] co_future
                 }
                 coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro) noexcept
                 {
-                    cout << "hi" << endl;
+//                    cout << "hi" << endl;
                     auto precursor = current_coro.promise().awaiting_coro;
                     if (precursor)
                     {
@@ -720,37 +721,58 @@ struct [[nodiscard]] co_future
                 
                 auto await_resume () noexcept
                 {
-
+//                    return 3;
                 }
             };
 
             return awaitable {};
         }
-        auto yield_value (int i)
+        
+        
+        auto yield_value (auto&& lambda)
+        requires requires(){
+            lambda();
+        }
         {
+            thread{forward<decltype(lambda)>(lambda)}.detach();
+//            j.detach();
+            cout << "cool " << i << endl;
             value = i;
             
             struct awaitable
             {
+                promise_type& p;
                 auto await_ready ()
                 {
                     return false;
                 }
                 void await_suspend (coroutine_handle <promise_type> current_coro)
                 {
-                    
+//                    if (current_coro.address() == p.awaiting_coro.address())
+//                        cout << "dmfkmdkfmdkmf" << endl;
+//                    auto precursor = current_coro.promise().awaiting_coro;
+//                    if (precursor)
+//                    {
+////                        cout << current_coro.promise().i << endl;
+////                        async(launch::async, [&precursor]{precursor.resume(); cout << "hi" << endl;});
+////                        precursor.resume();
+//                        return precursor;
+//                    }
+//                    return noop_coroutine();
                 }
                 auto await_resume ()
                 {
-                    return 8;
+//                    return 8;
                 }
             };
-            return awaitable {};
-//            return suspend_always {};
+//            return awaitable {*this};
+            return suspend_never {};
         }
-        auto return_void ()
+        
+        
+        auto return_value (auto&& v)
         {
-            
+            value = forward<decltype(v)>(v);
         }
         [[noreturn]]
         auto unhandled_exception ()
@@ -801,6 +823,10 @@ struct [[nodiscard]] co_future
             throw runtime_error ("coro already done");
         }
     }
+    auto get () -> decltype (auto)
+    {
+        return coro.promise().value;
+    }
 
     bool ready = false;
     
@@ -832,13 +858,18 @@ struct [[nodiscard]] co_future
             f.coro.promise().awaiting_coro = awaiting_coro;
             return f.coro;
 #else
-            ++current_threads;
-            thread{[a = f.coro, awaiting_coro]()mutable{
-//                cout << this_thread::get_id() << endl;
-                a.promise().awaiting_coro = awaiting_coro;
-                a.resume();;current_threads--;}
-                
-            }.detach();
+//            ++current_threads;
+            f.coro.promise().awaiting_coro = awaiting_coro;
+            f.coro.resume();//current_threads--;
+//            return f.coro;
+//            thread{[a = f.coro, awaiting_coro]()mutable{
+////                cout << this_thread::get_id() << endl;
+////                this_thread::sleep_for(2s);
+//
+//                a.promise().awaiting_coro = awaiting_coro;
+//                a.resume();;current_threads--;}
+//
+//            }.detach();
 #endif
             
 //            f.coro.promise().awaiting_coro = awaiting_coro;
@@ -860,6 +891,7 @@ struct [[nodiscard]] co_future
         }
         auto await_resume ()
         {
+            return f.coro.promise().value;
 //            return f.coro;
         }
     };
@@ -873,39 +905,53 @@ struct [[nodiscard]] co_future
     }
 };
 
-co_future D ()
+co_future<int> D ()
 {
     cout << "****" << endl;
+    cout << "D:" << this_thread::get_id() << endl;
     cout << "~****" << endl;
-    co_return;
+    co_yield []{current_threads++;this_thread::sleep_for(2s);current_threads--;};
+//
+//    this_thread::sleep_for(2s);
+    co_return 5;
 }
-co_future C ()
+co_future<int> C ()
 {
     cout << "*" << endl;
+    cout << "C:" << this_thread::get_id() << endl;
     cout << "~*" << endl;
-    co_return;
+    co_yield []{current_threads++;this_thread::sleep_for(2s);current_threads--;};
+//    this_thread::sleep_for(2s);
+
+//    this_thread::sleep_for(2s);
+    co_return 6;
 }
-co_future B ()
+co_future<int> B ()
 {
     cout << "**" << endl;
-    co_await C();
+//    int i = co_await C();
+    
     cout << "~**" << endl;
+    co_yield []{current_threads++;this_thread::sleep_for(2s);current_threads--;};
 //    cout << "mythread:" << this_thread::get_id() << endl;
-    co_return;
+//    this_thread::sleep_for(2s);
+    co_return co_await C() + co_await D();
 }
 
-co_future A ()
+co_future<int> A ()
 {
     cout << "***" << endl;
+//    cout << "mythread:" << this_thread::get_id() << endl;
+//    co_await D();
+//    cout << "mythread:" << this_thread::get_id() << endl;
+//    co_await B();
     cout << "mythread:" << this_thread::get_id() << endl;
-    co_await D();
-    cout << "mythread:" << this_thread::get_id() << endl;
-    co_await B();
-    cout << "mythread:" << this_thread::get_id() << endl;
-    co_await B();
+//    co_await B();
+    cout << "A:" << this_thread::get_id() << endl;
+
     
     cout << "~***" << endl;
-    co_return;
+    co_return co_await B() + 2;
 }
 
 int main(int argc, char const *argv[])
@@ -914,18 +960,20 @@ int main(int argc, char const *argv[])
 //    thread t{[]{co_future a = A(); a.run();}};
 //    t.join();
     
-    
-    co_future a = A();
+    Timer<true> t ("time");
+    co_future<int> a = A();
     a.run();
 //    cout << "baaaaajs" << endl;
     while (current_threads) {
 //        cout << "threads:" << current_threads << endl;
     }
+    
 
 //    (bool)a;
 //    async ([a = A()]()mutable ->co_future{(bool)a;}).get();
 
     cout << "---------------" << endl;
+    cout << a.get() << endl;
 //    (bool)a;
 //    (bool)a;
 //    co_task coro = a();
