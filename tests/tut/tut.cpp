@@ -505,18 +505,14 @@ struct [[nodiscard]] co_task
                 {
                     return false;
                 }
-                auto await_suspend (coroutine_handle <promise_type> current_coro) noexcept
+                coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro) noexcept
                 {
-                    cout << "promise_type::final_suspend" << endl;
-//                    if (current_coro.promise().awaiting_coro)
-                    return current_coro.promise().awaiting_coro;
-//                    else
-//                        return current_coro;
-//                    return suspend_always {};
-//                    return false;
-//                    return current_coro.promise().awaiting_coro;
-//                    return current_coro;
-//                    return current_coro;
+                    auto precursor = current_coro.promise().awaiting_coro;
+                    if (precursor)
+                    {
+                      return precursor;
+                    }
+                    return noop_coroutine();
                 }
                 
                 auto await_resume () noexcept
