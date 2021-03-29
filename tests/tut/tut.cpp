@@ -314,7 +314,7 @@ void out (auto color, string&& s, string&& s2, int index) {
 //    cout << right << setw(0) << "[" << index << "] " << s << left << "\t" << s2 << endl;
 //    cout << s << internal << std::setfill('*') << setw(40) << s2 << "\n";
 //    Green b;
-    cout << red << " •  " << color;
+    cout << black << " •  " << color;
     cout << left << setw(30) << s;
     cout << setw(20);
     cout  <<  setw(30) << s2  << "kuk" << "\t" << endl;
@@ -330,7 +330,9 @@ void out (auto color, string&& s, string&& s2, int index) {
 #define D0 string h = to_string (__LINE__), string s = __builtin_FUNCTION(), int l = __builtin_LINE()
 #define D1(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
 #define D01(color, index) cout << color; out(string (color), string (__FUNCTION__), to_string(__LINE__), index);
-#define DWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << red << "~$  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl;
+#define BWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << white << " B  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl;
+#define EWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << cyan << " E  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl;
+
 atomic <bool> running {true};
 atomic <int> antal = 0;
 atomic <int> lol = 0;
@@ -400,23 +402,34 @@ struct [[nodiscard]] co_future <T>
         }
         auto initial_suspend (D0)
         {
-            D1(yellow, index)
+            
             struct awaitable
             {
                 int index;
                 auto await_ready (D0)
                 {
+                    bool ready = false;
+//                    if (ready){
+//                        BWRITE(yellow, index, initially resumed)
+//                    }
+//
+//                    else {
+//                        BWRITE(yellow, index, initially suspended)
+//                    }
+                        
                     D1(yellow, index)
+                    
                     return false;
                 }
                 auto await_suspend (coroutine_handle <> awaiting_coro, D0)
                 {
                     D1(yellow, index)
-                    DWRITE(yellow, index, initially suspended)
+                    EWRITE(yellow, index, initially suspended)
 //                    cout << endl << "\t" << yellow << "initially suspended at line " << l << endl;
                 }
                 auto await_resume ()
                 {
+                    BWRITE(yellow, index, resuming)
                     D01(yellow, index)
                     return 3;
                 }
@@ -429,12 +442,14 @@ struct [[nodiscard]] co_future <T>
         {
             struct awaitable
             {
+                promise_type const& f;
                 auto await_ready () noexcept
                 {
                     return false;
                 }
                 coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro) noexcept
                 {
+                    EWRITE(yellow, f.index, finally suspended)
 //                    cout << "hi" << endl;
                     auto precursor = current_coro.promise().awaiting_coro;
                     if (precursor)
@@ -453,7 +468,7 @@ struct [[nodiscard]] co_future <T>
                 }
             };
 
-            return awaitable {};
+            return awaitable {*this};
         }
         
         auto yield_value (int i, D0) {
@@ -614,6 +629,7 @@ struct [[nodiscard]] co_future <T>
             D1(green, f.index)
 
             f.coro.promise().awaiting_coro = awaiting_coro;
+            EWRITE(green, f.index, await_suspended)
 //            f.coro.resume();
         }
         auto await_resume (D0)
@@ -627,6 +643,7 @@ struct [[nodiscard]] co_future <T>
     friend class awaitable;
     awaitable operator co_await ()
     {
+        BWRITE(green, index, co_waited)
 //        thread{[]{this_thread::sleep_for(2s);cout << "hi" << endl;}}.join();
 //        this_thread::sleep_for(2s);
         
@@ -662,7 +679,10 @@ int main(int argc, char const *argv[])
     cout << white;
     {
         auto aa = run();
+        cout << blue << endl << "=====================================================CREATED=====================================================" << endl << endl;
         (bool)aa;
+        cout << blue << endl << "=====================================================RESUME_0=====================================================" << endl << endl;
+
 //        (bool)aa;
 //        (bool)aa;
 //        (bool)aa;
