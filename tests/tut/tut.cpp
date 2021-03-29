@@ -293,9 +293,16 @@ struct thr : thread
 void out (auto& color, string&& s, string&& s2, int index) {
     for(int i = 0; i < index; ++i)
     {
-        color << "\t";
+//        color << "\t";
     }
-    color << "[" << index << "] " << s << setw(20) << s2 << endl;
+//    cout << right << setw(0) << "[" << index << "] " << s << left << "\t" << s2 << endl;
+//    cout << s << internal << std::setfill('*') << setw(40) << s2 << "\n";
+    
+    cout << left << setw(40) << s
+    <<  setw(30) << s2  << "kuk" << "\t" << endl;
+//         << setw(4) << hourlyRate << "\n";
+
+//    color << "[" << index << "] " << s << setw(20) << s2 << endl;
 }
 string info =
 R"V0G0N(
@@ -725,7 +732,8 @@ int main(int argc, char const *argv[])
     
     
 
-    
+    cout << "hej" << "kil" << right << "kuk" << endl;
+    cout << right << setw(10) << 543 << right << setw(30) << 12 << endl;
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
 //    cout  <<"hej"<< _color::red << "================================================================================================================" << endl << endl;
