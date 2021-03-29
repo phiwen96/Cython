@@ -268,7 +268,7 @@ struct thr : thread
 //    using thread::thread;
     inline static atomic <int> current_threads = 0;
     int m_thread;
-    
+      
     thr() noexcept : thread {}, m_thread {current_threads} {
         cout << "::" << m_thread << endl;
 //        ++current_threads;
@@ -297,30 +297,40 @@ struct thr : thread
 //    return s;
 //}
 
-void out (auto& color, string&& s, string&& s2, int index) {
+
+
+template <typename... T>
+string format_string (T&&... s) {
+    stringstream ss;
+    ss << left;
+    ((ss << left << setw(30) << left << forward<T>(s) << setw(30)), ...);
+    return ss.str();
+}
+void out (auto color, string&& s, string&& s2, int index) {
     for(int i = 0; i < index; ++i)
     {
-//        color << "\t";
+        cout << "\t";
     }
 //    cout << right << setw(0) << "[" << index << "] " << s << left << "\t" << s2 << endl;
 //    cout << s << internal << std::setfill('*') << setw(40) << s2 << "\n";
-    
-    cout << left << setw(30) << s << setw(20) << "|"
-    <<  setw(30) << s2  << "kuk" << "\t" << endl;
+//    Green b;
+    cout << red << " •  " << color;
+    cout << left << setw(30) << s;
+    cout << setw(20);
+    cout  <<  setw(30) << s2  << "kuk" << "\t" << endl;
+//    cout << format_string(s, "|", s2) << endl;
 //         << setw(4) << hourlyRate << "\n";
 
 //    color << "[" << index << "] " << s << setw(20) << s2 << endl;
 }
-string info =
-R"V0G0N(
-await_ready     always called
-await_suspend   only called if about to suspend
-await_resume    always called
-)V0G0N";
+
+
+
 
 #define D0 string h = to_string (__LINE__), string s = __builtin_FUNCTION(), int l = __builtin_LINE()
-#define D1(color, index) out(color, string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
-#define D01(color, index) out(color, string (__FUNCTION__), to_string(__LINE__), index);
+#define D1(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
+#define D01(color, index) cout << color; out(string (color), string (__FUNCTION__), to_string(__LINE__), index);
+#define DWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << red << "~$  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl;
 atomic <bool> running {true};
 atomic <int> antal = 0;
 atomic <int> lol = 0;
@@ -340,32 +350,42 @@ struct Run
     }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
 struct [[nodiscard]] co_future <T>
 {
- 
-    
     co_future () = delete;
     co_future (co_future const&) = delete;
     co_future& operator= (co_future const&) = delete;
     co_future& operator= (co_future&&) = delete;
+    
     struct promise_type
     {
-        
         promise_type (promise_type const&) = delete;
         promise_type& operator= (promise_type const&) = delete;
         promise_type& operator= (promise_type&&) = delete;
         promise_type (D0) : index {antal++} {
+            
             ++lol;
 //            out("promise_type::" +  h +          "              <--  \t\t" + s + "::"  + to_string(l));
             D1 (yellow, index)
         }
-        
         ~promise_type () {
             --lol;
 //            out("~promise_type");
         }
-        
         int index;
         T value;
         coroutine_handle <> awaiting_coro;
@@ -387,11 +407,13 @@ struct [[nodiscard]] co_future <T>
                 auto await_ready (D0)
                 {
                     D1(yellow, index)
-                    return true;
+                    return false;
                 }
                 auto await_suspend (coroutine_handle <> awaiting_coro, D0)
                 {
                     D1(yellow, index)
+                    DWRITE(yellow, index, initially suspended)
+//                    cout << endl << "\t" << yellow << "initially suspended at line " << l << endl;
                 }
                 auto await_resume ()
                 {
@@ -523,7 +545,7 @@ struct [[nodiscard]] co_future <T>
         ++co_future<>::current_threads;
         coro.promise().index = antal;
     }
-    ~co_future (){D01(green, index)
+    ~co_future (){//D01(green, index)
 //        promise().out("~co_future");
 //        --co_future<>::current_threads;
 //        cout << "~co_task" << coro.promise().i << endl;
@@ -612,102 +634,39 @@ struct [[nodiscard]] co_future <T>
     }
 };
 
-co_future<int> D ()
-{
-    
-    cout << "****" << endl;
-    cout << "D:" << this_thread::get_id() << endl;
-    cout << "~****" << endl;
-    co_yield []()noexcept{this_thread::sleep_for(2s);};
-//
-//    this_thread::sleep_for(2s);
-    co_return 5;
-}
-co_future<int> C ()
-{
-    cout << "*" << endl;
-    cout << "C:" << this_thread::get_id() << endl;
-    cout << "~*" << endl;
-    co_yield []{this_thread::sleep_for(2s);};
-//    this_thread::sleep_for(2s);
 
-//    this_thread::sleep_for(2s);
-    co_return 6;
-}
-co_future <int> B ()
-{
-    cout << "**" << endl;
-//    int i = co_await C();
-    
-    cout << "~**" << endl;
-//    co_yield []{this_thread::sleep_for(2s);};
 
-    co_yield []{++co_future<>::current_threads;this_thread::sleep_for(2s);--co_future<>::current_threads;};
-//    cout << "mythread:" << this_thread::get_id() << endl;
-//    this_thread::sleep_for(2s);
-    co_return co_await C() + co_await D();
-}
-
-co_future<int> A ()
-{
-
-//    co_yield []{++co_future<>::current_threads;this_thread::sleep_for(2s);--co_future<>::current_threads;};
-
-//    ++co_future<>::current_threads;
-
-//    thr::current_threads;
-    cout << "***" << endl;
-//    cout << "mythread:" << this_thread::get_id() << endl;
-//    co_await D();
-//    cout << "mythread:" << this_thread::get_id() << endl;
-//    co_await B();
-    cout << "mythread:" << this_thread::get_id() << endl;
-//    co_await B();
-    cout << "A:" << this_thread::get_id() << endl;
-    
-    
-    cout << "~***" << endl;
-    co_return co_await B() + 2;
-}
 
 co_future<int> Q () {
-//    cout << "Q" << endl;
-//    co_yield []{this_thread::sleep_for(2s);};
-//    cout << "QQQQQQ" << endl;
-//    co_yield 4;
-    
     co_return 3;
 }
 
 co_future<int> run () {
-    
-//    cout << "run" << endl;
-//    int aa = co_await  Q ();
-//    cout << "1111111111" << endl;
-
-//    int bb = co_await Q ();
-//    cout << aa << "==" << endl;
-//    cout << bb << "==" << endl;
+    cout << co_await Q () << endl;
     co_return 0;
 }
 
-
-
-
+string info =
+R"V0G0N(
+await_ready     always called
+await_suspend   only called if about to suspend
+await_resume    called when resuming coro
+)V0G0N";
 
 int main(int argc, char const *argv[])
 {
     LoggingOutputStreambuf logger( std::cout );
-    MyStream s;
-//    s << "tjo" << endl;
-//    s.print();
-    cout << "bajs" << endl;
     
-    return 0;
-    cout << info  << "================================================================================================================" << endl << endl;
+
+    cout << white << info  << red << "================================================================================================================" << endl << endl;
+    cout << white;
     {
         auto aa = run();
+        (bool)aa;
 //        (bool)aa;
+//        (bool)aa;
+//        (bool)aa;
+        
     }
     
     
@@ -747,12 +706,12 @@ int main(int argc, char const *argv[])
     
     
 
-    cout << "hej" << "kil" << right << "kuk" << endl;
-    cout << right << setw(10) << 543 << right << setw(30) << 12 << endl;
+//    cout << "hej" << "kil" << right << "kuk" << endl;
+//    cout << right << setw(10) << 543 << right << setw(30) << 12 << endl;
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
 //    cout  <<"hej"<< _color::red << "================================================================================================================" << endl << endl;
-    cout << endl << "================================================================================================================" << endl << endl;
+    cout << endl << red << "================================================================================================================" << endl << endl;
 
     return 0;
 }
