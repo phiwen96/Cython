@@ -423,13 +423,15 @@ struct [[nodiscard]] co_future <T>
                 }
                 auto await_suspend (coroutine_handle <> awaiting_coro, D0)
                 {
+                    
                     D1(yellow, index)
-                    EWRITE(yellow, index, initially suspended)
+                    EWRITE(yellow, index, suspending...)
+//                    EWRITE(yellow, index, initially suspended)
 //                    cout << endl << "\t" << yellow << "initially suspended at line " << l << endl;
                 }
                 auto await_resume ()
                 {
-                    BWRITE(yellow, index, resuming)
+                    BWRITE(yellow, index, resuming...)
                     D01(yellow, index)
                     return 3;
                 }
@@ -447,9 +449,10 @@ struct [[nodiscard]] co_future <T>
                 {
                     return false;
                 }
-                coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro) noexcept
+                coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro, D0) noexcept
                 {
-                    EWRITE(yellow, f.index, finally suspended)
+                    D1(yellow, f.index)
+                    EWRITE(yellow, f.index, suspending...)
 //                    cout << "hi" << endl;
                     auto precursor = current_coro.promise().awaiting_coro;
                     if (precursor)
@@ -629,11 +632,12 @@ struct [[nodiscard]] co_future <T>
             D1(green, f.index)
 
             f.coro.promise().awaiting_coro = awaiting_coro;
-            EWRITE(green, f.index, await_suspended)
+            EWRITE(green, f.index, suspending...)
 //            f.coro.resume();
         }
-        auto await_resume (D0)
+        [[nodiscard]] auto await_resume (D0)
         {
+            EWRITE(green, f.index, resuming parent...)
             D1(green, f.index)
 //            return f.coro.promise().value;
             return 2;
@@ -643,7 +647,7 @@ struct [[nodiscard]] co_future <T>
     friend class awaitable;
     awaitable operator co_await ()
     {
-        BWRITE(green, index, co_waited)
+        BWRITE(green, index, co_awaited...)
 //        thread{[]{this_thread::sleep_for(2s);cout << "hi" << endl;}}.join();
 //        this_thread::sleep_for(2s);
         
@@ -659,7 +663,7 @@ co_future<int> Q () {
 }
 
 co_future<int> run () {
-    cout << co_await Q () << endl;
+    co_await Q ();
     co_return 0;
 }
 
@@ -682,6 +686,8 @@ int main(int argc, char const *argv[])
         cout << blue << endl << "=====================================================CREATED=====================================================" << endl << endl;
         (bool)aa;
         cout << blue << endl << "=====================================================RESUME_0=====================================================" << endl << endl;
+        (bool)aa;
+        cout << blue << endl << "=====================================================RESUME_1=====================================================" << endl << endl;
 
 //        (bool)aa;
 //        (bool)aa;
