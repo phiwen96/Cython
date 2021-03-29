@@ -358,48 +358,45 @@ struct Run
 
 
 
-template <typename T>
-struct co_promise_type{
+template <typename R, typename promise_type, typename T>
+struct co_promise_type {
     T value;
+    coroutine_handle <> awaiting_coro;
+    co_promise_type () {}
     co_promise_type (co_promise_type const&) = delete;
     co_promise_type& operator= (co_promise_type const&) = delete;
     co_promise_type& operator= (co_promise_type&&) = delete;
     
-    auto get_return_object () {return co_future {*this};}
-    auto initial_suspend () {
-        struct awaitable {
+    struct awaitables {
+        struct initial_suspend {
             auto await_ready () {return false;}
             auto await_suspend (coroutine_handle <> awaiting_coro) {}
-            auto await_resume () {return 3;}
+            auto await_resume () {}
         };
-        return awaitable {index};
-    }
-    auto final_suspend () noexcept {
-        struct awaitable {
-            co_promise_type const& f;
+        struct final_suspend {
+            promise_type const& f;
             auto await_ready () noexcept {return false;}
-            coroutine_handle <> await_suspend (coroutine_handle <co_promise_type> current_coro) noexcept {
-                auto precursor = current_coro.promise().awaiting_coro;
-                if (precursor) return precursor;
-//                return noop_coroutine();
+            auto await_suspend (coroutine_handle <promise_type> current_coro) noexcept {
+//                auto precursor = current_coro.promise().awaiting_coro;
+//                if (precursor) return precursor;//return noop_coroutine();
             }
             auto await_resume () noexcept {}
         };
-        return awaitable {*this};
-    }
-    auto yield_value (auto&& lambda) {
-        struct awaitable {
-            co_promise_type& p;
+        struct yield_value {
+            promise_type& p;
             auto await_ready () {return false;}
-            void await_suspend (coroutine_handle <co_promise_type> current_coro) {
+            void await_suspend (coroutine_handle <promise_type> current_coro) {
                 auto precursor = current_coro.promise().awaiting_coro;
-                if (precursor) precursor.resume();
-//                    return noop_coroutine();
+                if (precursor) precursor.resume();//return noop_coroutine();
             }
             auto await_resume () {}
         };
-        return awaitable {*this, index};
-    }
+    };
+    
+    auto get_return_object () {return R {static_cast<promise_type&>(*this)};}
+    auto initial_suspend () {return awaitables::initial_suspend();}
+    auto final_suspend () noexcept {return awaitables::final_suspend(*this);}
+    auto yield_value (auto&& lambda) {return awaitables::yield_value (*this, index);}
     auto return_value (auto&& v) {value = forward<decltype(v)>(v);}
     [[noreturn]] auto unhandled_exception () {terminate();}
 };
@@ -417,218 +414,95 @@ struct [[nodiscard]] co_future <T>
     co_future& operator= (co_future const&) = delete;
     co_future& operator= (co_future&&) = delete;
     
-    struct promise_type
-    {
-        promise_type (promise_type const&) = delete;
-        promise_type& operator= (promise_type const&) = delete;
-        promise_type& operator= (promise_type&&) = delete;
-        promise_type (D0) : index {antal++} {
-            
-            ++lol;
-//            out("promise_type::" +  h +          "              <--  \t\t" + s + "::"  + to_string(l));
-            D1 (yellow, index)
-        }
-        ~promise_type () {
-            --lol;
-//            out("~promise_type");
-        }
+    struct promise_type : co_promise_type <co_future, promise_type, T> {
+        using base = co_promise_type <co_future, promise_type, T>;
         int index;
         T value;
-        coroutine_handle <> awaiting_coro;
-        auto get_return_object (D0)
-        {
-            D1(yellow, index)
-//            out("get_return_object");
-            return co_future {*this};
-        }
-        auto initial_suspend (D0)
-        {
-            
-            struct awaitable
-            {
+        struct awaitables {
+            using base = typename base::awaitables;
+            struct initial_suspend : base::initial_suspend {
+                using base = typename base::initial_suspend;
                 int index;
-                auto await_ready (D0)
-                {
-                    bool ready = false;
-//                    if (ready){
-//                        BWRITE(yellow, index, initially resumed)
-//                    }
-//
-//                    else {
-//                        BWRITE(yellow, index, initially suspended)
-//                    }
-                        
+                auto await_ready (D0) -> decltype (base::await_ready()){
                     D1(yellow, index)
-                    
-                    return false;
+                    return base::await_ready ();
                 }
-                auto await_suspend (coroutine_handle <> awaiting_coro, D0)
-                {
-                    
+                auto await_suspend (coroutine_handle <> awaiting_coro, D0) -> decltype (base::await_suspend(awaiting_coro)){
                     D1(yellow, index)
                     EWRITE(yellow, index, suspending...)
-//                    EWRITE(yellow, index, initially suspended)
-//                    cout << endl << "\t" << yellow << "initially suspended at line " << l << endl;
+                    return base::await_suspend(awaiting_coro);
                 }
-                auto await_resume ()
-                {
+                auto await_resume () -> decltype (base::await_resume()){
                     BWRITE(yellow, index, resuming...)
                     D01(yellow, index)
-                    return 3;
+                    return base::await_resume ();
                 }
             };
-
-//            return suspend_always {};
-            return awaitable {index};
-        }
-        auto final_suspend () noexcept
-        {
-            struct awaitable
-            {
+            struct final_suspend : base::final_suspend {
+                using base = typename base::final_suspend;
                 promise_type const& f;
-                auto await_ready () noexcept
-                {
-                    return false;
+                auto await_ready () noexcept -> decltype (base::await_ready ()) {
+                    return base::await_ready ();
                 }
-                coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro, D0) noexcept
-                {
+                auto await_suspend (coroutine_handle <promise_type> current_coro, D0) noexcept -> decltype (base::await_suspend (current_coro)){
                     D1(yellow, f.index)
                     EWRITE(yellow, f.index, finally suspending...)
-//                    cout << "hi" << endl;
-                    auto precursor = current_coro.promise().awaiting_coro;
-                    if (precursor)
-                    {
-//                        cout << current_coro.promise().i << endl;
-//                        async(launch::async, [&precursor]{precursor.resume(); cout << "hi" << endl;});
-//                        precursor.resume();
-                        return precursor;
-                    }
-                    return noop_coroutine();
+                    return base::await_suspend (current_coro);
                 }
-                
-                auto await_resume () noexcept
-                {
-//                    return 3;
+                auto await_resume () noexcept -> decltype (base::await_resume ()) {
+                    return base::await_resume ();
                 }
             };
-
-            return awaitable {*this};
-        }
-        
-        auto yield_value (int i, D0) {
-            D1(yellow, index)
-//            return suspend_always{};
-            return suspend_never{};
-        }
-        
-        auto yield_value (auto&& lambda, D0)
-        requires requires(){
-            lambda();
-        }
-        {
-            D1(yellow, index)
-
-            struct awaitable
-            {
+            struct yield_value : base::yield_value {
                 promise_type& p;
                 int index;
-                auto await_ready (D0)
-                {
-                    D1(yellow, index)
+                auto await_ready (D0){
+                    D1(yellow, index);
                     return false;
                 }
-                void await_suspend (coroutine_handle <promise_type> current_coro, D0)
-                {
-                    D1(yellow, index)
-//                    if (current_coro.address() == p.awaiting_coro.address())
-//                        cout << "dmfkmdkfmdkmf" << endl;
-                    auto precursor = current_coro.promise().awaiting_coro;
-                    if (precursor)
-                    {
-//                        cout << current_coro.promise().i << endl;
-//                        async(launch::async, [&precursor]{precursor.resume(); cout << "hi" << endl;});
-//                        precursor.resume();
-//                        return precursor;
-                    }
-                    
-//                    return noop_coroutine();
+                auto await_suspend (coroutine_handle <promise_type> current_coro, D0) -> decltype (base::await_suspend (current_coro)) {
+                    D1(yellow, index);
+                    return base::await_suspend (current_coro);
                 }
-                auto await_resume ()
-                {
-                    D01(yellow, index)
-//                    return 8;
+                auto await_resume () -> decltype (base::await_resume ()) {
+                    D01(yellow, index);
+                    return base::await_resume ();
                 }
             };
-            return awaitable {*this, index};
-//            return suspend_always {};
-//            return suspend_never {};
-        }
-        
-        
-        auto return_value (auto&& v, D0)
-        {
-            D1(yellow, index)
-            value = forward<decltype(v)>(v);
-        }
-        [[noreturn]]
-        auto unhandled_exception ()
-        {
-            terminate();
-        }
+        };
+        promise_type (D0) : index {antal++} {++lol; D1 (yellow, index)}
+        ~promise_type () {--lol;}
+        auto get_return_object (D0){D1(yellow, index); return base::get_return_object();}
+        typename awaitables::initial_suspend initial_suspend (D0){return  {{}, {index}};}
+        typename awaitables::final_suspend final_suspend () noexcept{return  {{*this}, {*this}};}
+        typename awaitables::yield_value yield_value (int i, D0) {D1(yellow, index); return {{*this}, {*this, index}};}
+        auto return_value (auto&& v, D0){D1(yellow, index); base::return_value (forward<decltype(v)>(v));}
+        [[noreturn]] auto unhandled_exception (){base::unhandled_exception ();}
     };
-    promise_type& promise () {
-        return coro.promise();
-    }
+    promise_type& promise () {return coro.promise();}
     int index;
     coroutine_handle <promise_type> coro;
-    co_future (promise_type& p) : coro {coroutine_handle<promise_type>::from_promise (p)}
-    {
-//        promise().out("co_future");
+    co_future (promise_type& p) : coro {coroutine_handle<promise_type>::from_promise (p)} {
         ++co_future<>::current_threads;
-//        p.index = antal;
         index = p.index;
     }
-    co_future (co_future&& other) : coro {exchange (other.coro, {})}
-    {
+    co_future (co_future&& other) : coro {exchange (other.coro, {})} {
         index = other.index;
-//        promise().out("co_future");
         ++co_future<>::current_threads;
         coro.promise().index = antal;
     }
-    ~co_future (){//D01(green, index)
-//        promise().out("~co_future");
-//        --co_future<>::current_threads;
-//        cout << "~co_task" << coro.promise().i << endl;
-        if (not coro)
-            throw runtime_error (":O");
-        if (coro)
-            coro.destroy();
+    ~co_future (){
+        if (not coro) throw runtime_error (":O");
+        if (coro) coro.destroy();
     }
-    void run ()
-    {
-        if (not coro.done ())
-        {
-            coro.resume ();
-        }
-    }
-    operator bool ()
-    {
-        if (not coro.done ())
-        {
-            coro.resume ();
-        }
+    operator bool (){
+        if (not coro.done ()) coro.resume ();
         return not coro.done ();
     }
-    auto get () -> decltype (auto)
-    {
-        return coro.promise().value;
-    }
-
-    
+    auto get () -> decltype (auto) {return coro.promise().value;}
     struct awaitable;
     friend class awaitable;
-    auto operator co_await ()
-    {
+    auto operator co_await () {
         BWRITE(green, index, co_awaited...)
         return awaitable {coro, index};
     }
@@ -636,54 +510,35 @@ struct [[nodiscard]] co_future <T>
 
 
 template <typename T, typename Promise>
-struct co_awaitable
-{
+struct co_awaitable {
     using promise_type = Promise;
     using return_type = T;
     coroutine_handle <promise_type> h;
-    
     co_awaitable (coroutine_handle <promise_type> h) :  h (h) {}
-    
-    bool await_ready ()
-    {
-        return false;
-    }
-    void await_suspend (coroutine_handle <> awaiting_coro)
-    {
-        
-    }
-    [[nodiscard]] return_type await_resume ()
-    {
-        return 2;
-    }
+    bool await_ready (){return false;}
+    void await_suspend (coroutine_handle <> awaiting_coro){}
+    [[nodiscard]] return_type await_resume (){return 2;}
 };
 
 
 template <class T>
-struct co_future<T>::awaitable : co_awaitable <T, promise_type>
-{
+struct co_future<T>::awaitable : co_awaitable <T, promise_type> {
     using parent = co_awaitable <T, promise_type>;
     int index;
     awaitable (coroutine_handle <promise_type> h, int index) : parent {h}, index {index} {}
-  
-    bool await_ready (If (Debug) (D0)())
-    {
+    bool await_ready (If (Debug) (D0)()) {
         If (Debug) (D1 (green, index)) ()
         return parent::await_ready ();
     }
-    void await_suspend (coroutine_handle <> awaiting_coro If (Debug) (,D0) ())
-    {
+    void await_suspend (coroutine_handle <> awaiting_coro If (Debug) (,D0) ()){
         If (Debug) (D1 (green, index)  EWRITE (green, index, suspending...)) ()
         parent::await_suspend (awaiting_coro);
     }
-    [[nodiscard]] T await_resume (If(Debug)(D0)())
-    {
+    [[nodiscard]] T await_resume (If(Debug)(D0)()){
         If (Debug) (D1 (green, index)   EWRITE (green, index, resuming parent...))()
-        if constexpr (not is_same_v<T, void>)
-        {
+        if constexpr (not is_same_v<T, void>){
             return parent::await_resume ();
-        } else
-        {
+        } else{
             parent::await_resume ();
         }
     }
