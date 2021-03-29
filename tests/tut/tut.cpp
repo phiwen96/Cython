@@ -697,11 +697,19 @@ co_future<int> run () {
 
 int main(int argc, char const *argv[])
 {
+    LoggingOutputStreambuf logger( std::cout );
+    MyStream s;
+//    s << "tjo" << endl;
+//    s.print();
+    cout << "bajs" << endl;
+    
+    return 0;
     cout << info  << "================================================================================================================" << endl << endl;
     {
         auto aa = run();
 //        (bool)aa;
     }
+    
     
 //    (bool)aa;
 //    Timer<true> t ("time");
