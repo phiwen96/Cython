@@ -25,3 +25,6 @@
 [submodule "dependencies/ph_debug"]
 	path = dependencies/ph_debug
 	url = https://github.com/phiwen96/ph_debug
+[submodule "dependencies/ph_color"]
+	path = dependencies/ph_color
+	url = https://github.com/phiwen96/ph_color
