@@ -655,11 +655,60 @@ struct CTP
     
 };
 
-atomic <int> current_threads = 0;
 
+
+template <typename...>
+struct co_future;
+
+template <>
+struct co_future <>
+{
+    inline static atomic <int> current_threads = 0;
+    inline static atomic <bool> running = false;
+};
+
+struct thr : thread
+{
+//    using thread::thread;
+    inline static atomic <int> current_threads = 0;
+    
+    thr() noexcept : thread {} {
+        ++current_threads;
+    }
+    thr( thr&& other ) noexcept : thread {(thread&&)other} {
+        ++current_threads;
+    }
+    template< class Function, class... Args >
+    explicit thr( Function&& f, Args&&... args ) : thread {forward<Function>(f), forward<Args>(args)...} {
+        ++current_threads;
+    }
+    
+    ~thr () {
+        --current_threads;
+    }
+};
+
+
+atomic <bool> running {true};
+
+struct Run
+{
+    Run(Run const&) = delete;
+    Run(Run&&) = delete;
+    Run& operator=(Run const&) = delete;
+    Run& operator=(Run &&) = delete;
+
+    Run(){
+        ++co_future<>::current_threads;
+    }
+    ~Run () {
+        --co_future<>::current_threads;
+//        running.store(false);
+    }
+};
 
 template <typename T>
-struct [[nodiscard]] co_future
+struct [[nodiscard]] co_future <T>
 {
     co_future () = delete;
     co_future (co_future const&) = delete;
@@ -734,8 +783,11 @@ struct [[nodiscard]] co_future
             lambda();
         }
         {
+//            async (launch::async, forward<decltype(lambda)>(lambda)).get();
+//            ++co_future<>::current_threads;
             thread{forward<decltype(lambda)>(lambda)}.detach();
-//            j.detach();
+//            --co_future<>::current_threads;
+
             cout << "cool " << i << endl;
             value = i;
             
@@ -907,10 +959,11 @@ struct [[nodiscard]] co_future
 
 co_future<int> D ()
 {
+    
     cout << "****" << endl;
     cout << "D:" << this_thread::get_id() << endl;
     cout << "~****" << endl;
-    co_yield []{current_threads++;this_thread::sleep_for(2s);current_threads--;};
+    co_yield []()noexcept{this_thread::sleep_for(2s);};
 //
 //    this_thread::sleep_for(2s);
     co_return 5;
@@ -920,7 +973,7 @@ co_future<int> C ()
     cout << "*" << endl;
     cout << "C:" << this_thread::get_id() << endl;
     cout << "~*" << endl;
-    co_yield []{current_threads++;this_thread::sleep_for(2s);current_threads--;};
+    co_yield []{this_thread::sleep_for(2s);};
 //    this_thread::sleep_for(2s);
 
 //    this_thread::sleep_for(2s);
@@ -932,7 +985,9 @@ co_future<int> B ()
 //    int i = co_await C();
     
     cout << "~**" << endl;
-    co_yield []{current_threads++;this_thread::sleep_for(2s);current_threads--;};
+//    co_yield []{this_thread::sleep_for(2s);};
+
+    co_yield []{++co_future<>::current_threads;this_thread::sleep_for(2s);--co_future<>::current_threads;};
 //    cout << "mythread:" << this_thread::get_id() << endl;
 //    this_thread::sleep_for(2s);
     co_return co_await C() + co_await D();
@@ -940,6 +995,12 @@ co_future<int> B ()
 
 co_future<int> A ()
 {
+
+//    co_yield []{++co_future<>::current_threads;this_thread::sleep_for(2s);--co_future<>::current_threads;};
+
+//    ++co_future<>::current_threads;
+
+//    thr::current_threads;
     cout << "***" << endl;
 //    cout << "mythread:" << this_thread::get_id() << endl;
 //    co_await D();
@@ -948,23 +1009,31 @@ co_future<int> A ()
     cout << "mythread:" << this_thread::get_id() << endl;
 //    co_await B();
     cout << "A:" << this_thread::get_id() << endl;
-
+    
     
     cout << "~***" << endl;
     co_return co_await B() + 2;
 }
 
+void run () {
+  
+    co_future<int> a = A();
+    a.run();
+    cout << a.get() << endl;
+}
+
 int main(int argc, char const *argv[])
 {
 
+    Timer<true> t ("time");
 //    thread t{[]{co_future a = A(); a.run();}};
 //    t.join();
+    run();
     
-    Timer<true> t ("time");
-    co_future<int> a = A();
-    a.run();
+    
 //    cout << "baaaaajs" << endl;
-    while (current_threads) {
+    while (co_future<>::current_threads) {
+//        this_thread::sleep_for(1ms);
 //        cout << "threads:" << current_threads << endl;
     }
     
@@ -973,7 +1042,6 @@ int main(int argc, char const *argv[])
 //    async ([a = A()]()mutable ->co_future{(bool)a;}).get();
 
     cout << "---------------" << endl;
-    cout << a.get() << endl;
 //    (bool)a;
 //    (bool)a;
 //    co_task coro = a();
