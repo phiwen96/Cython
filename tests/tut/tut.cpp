@@ -19,33 +19,15 @@
 
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
+#include <ph_color/color.hpp>
 
 using namespace std;
 using namespace experimental;
 using namespace ph::concepts;
 using namespace chrono_literals;
 
-namespace Color {
-    enum Code {
-        FG_RED      = 31,
-        FG_GREEN    = 32,
-        FG_BLUE     = 34,
-        FG_DEFAULT  = 39,
-        BG_RED      = 41,
-        BG_GREEN    = 42,
-        BG_BLUE     = 44,
-        BG_DEFAULT  = 49
-    };
-    class Modifier {
-        Code code;
-    public:
-        Modifier(Code pCode) : code(pCode) {}
-        friend std::ostream&
-        operator<<(std::ostream& os, const Modifier& mod) {
-            return os << "\033[" << mod.code << "m";
-        }
-    };
-}
+
+
 
 
     
@@ -308,12 +290,12 @@ struct thr : thread
     }
 };
 
-void out (string&& s, string&& s2, int index) {
+void out (auto& color, string&& s, string&& s2, int index) {
     for(int i = 0; i < index; ++i)
     {
-        cout << "\t";
+        color << "\t";
     }
-    cout << "[" << index << "] " << s << setw(20) << s2 << endl;
+    color << "[" << index << "] " << s << setw(20) << s2 << endl;
 }
 string info =
 R"V0G0N(
@@ -323,8 +305,8 @@ await_resume    always called
 )V0G0N";
 
 #define D0 string h = to_string (__LINE__), string s = __builtin_FUNCTION(), int l = __builtin_LINE()
-#define D1(index) out(string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
-#define D01(index) out(string (__FUNCTION__), to_string(__LINE__), index);
+#define D1(color, index) out(color, string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
+#define D01(color, index) out(color, string (__FUNCTION__), to_string(__LINE__), index);
 atomic <bool> running {true};
 atomic <int> antal = 0;
 atomic <int> lol = 0;
@@ -362,7 +344,7 @@ struct [[nodiscard]] co_future <T>
         promise_type (D0) : index {antal++} {
             ++lol;
 //            out("promise_type::" +  h +          "              <--  \t\t" + s + "::"  + to_string(l));
-            D1 (index)
+            D1 (yellow, index)
         }
         
         ~promise_type () {
@@ -378,28 +360,29 @@ struct [[nodiscard]] co_future <T>
         char i = ++nr + 97;
         auto get_return_object (D0)
         {
-            D1(index)
+            D1(yellow, index)
 //            out("get_return_object");
             return co_future {*this};
         }
         auto initial_suspend (D0)
         {
-            D1(index)
+            D1(yellow, index)
             struct awaitable
             {
                 int index;
                 auto await_ready (D0)
                 {
-                    D1(index)
-                    return false;
+                    D1(yellow, index)
+                    return true;
                 }
                 auto await_suspend (coroutine_handle <> awaiting_coro, D0)
                 {
-                    D1(index)
+                    D1(yellow, index)
                 }
                 auto await_resume ()
                 {
-                    D01(index)
+                    D01(yellow, index)
+                    return 3;
                 }
             };
 
@@ -438,7 +421,7 @@ struct [[nodiscard]] co_future <T>
         }
         
         auto yield_value (int i, D0) {
-            D1(index)
+            D1(yellow, index)
 //            return suspend_always{};
             return suspend_never{};
         }
@@ -448,7 +431,7 @@ struct [[nodiscard]] co_future <T>
             lambda();
         }
         {
-            D1(index)
+            D1(yellow, index)
             thr{forward<decltype(lambda)>(lambda)}.detach();
 //            lambda();
 //            async (launch::async, forward<decltype(lambda)>(lambda)).get();
@@ -465,12 +448,12 @@ struct [[nodiscard]] co_future <T>
                 int index;
                 auto await_ready (D0)
                 {
-                    D1(index)
+                    D1(yellow, index)
                     return false;
                 }
                 void await_suspend (coroutine_handle <promise_type> current_coro, D0)
                 {
-                    D1(index)
+                    D1(yellow, index)
 //                    if (current_coro.address() == p.awaiting_coro.address())
 //                        cout << "dmfkmdkfmdkmf" << endl;
                     auto precursor = current_coro.promise().awaiting_coro;
@@ -486,7 +469,7 @@ struct [[nodiscard]] co_future <T>
                 }
                 auto await_resume ()
                 {
-                    D01(index)
+                    D01(yellow, index)
 //                    return 8;
                 }
             };
@@ -498,7 +481,7 @@ struct [[nodiscard]] co_future <T>
         
         auto return_value (auto&& v, D0)
         {
-            D1(index)
+            D1(yellow, index)
             value = forward<decltype(v)>(v);
         }
         [[noreturn]]
@@ -526,14 +509,14 @@ struct [[nodiscard]] co_future <T>
         ++co_future<>::current_threads;
         coro.promise().index = antal;
     }
-    ~co_future ()
-    {
+    ~co_future (){D01(green, index)
 //        promise().out("~co_future");
 //        --co_future<>::current_threads;
 //        cout << "~co_task" << coro.promise().i << endl;
         if (not coro)
             throw runtime_error (":O");
-        coro.destroy();
+        if (coro)
+            coro.destroy();
     }
     void run ()
     {
@@ -580,7 +563,7 @@ struct [[nodiscard]] co_future <T>
         
         auto await_ready (D0)
         {
-            D1(f.index)
+            D1(green, f.index)
 //            f.promise().out("await_ready");
             return false;
         }
@@ -592,14 +575,16 @@ struct [[nodiscard]] co_future <T>
 //#define SLOW
         auto await_suspend (coroutine_handle <> awaiting_coro, D0)
         {
-            D1(f.index)
+            D1(green, f.index)
 
             f.coro.promise().awaiting_coro = awaiting_coro;
+//            f.coro.resume();
         }
         auto await_resume (D0)
         {
-            D1(f.index)
-            return f.coro.promise().value;
+            D1(green, f.index)
+//            return f.coro.promise().value;
+            return 2;
 //            return f.coro;
         }
     };
@@ -672,10 +657,10 @@ co_future<int> A ()
 }
 
 co_future<int> Q () {
-    cout << "Q" << endl;
+//    cout << "Q" << endl;
 //    co_yield []{this_thread::sleep_for(2s);};
-    cout << "QQQQQQ" << endl;
-    co_yield 4;
+//    cout << "QQQQQQ" << endl;
+//    co_yield 4;
     
     co_return 3;
 }
@@ -683,21 +668,25 @@ co_future<int> Q () {
 co_future<int> run () {
     
 //    cout << "run" << endl;
-    int aa = co_await  Q ();
-    cout << "1111111111" << endl;
+//    int aa = co_await  Q ();
+//    cout << "1111111111" << endl;
 
 //    int bb = co_await Q ();
-    cout << aa << "==" << endl;
+//    cout << aa << "==" << endl;
 //    cout << bb << "==" << endl;
     co_return 0;
 }
 
+
+
+
+
 int main(int argc, char const *argv[])
 {
-    cout << info << endl << "================================================================================================================" << endl << endl;
+    white << info << endl << red << "================================================================================================================" << endl << endl;
     {
         auto aa = run();
-        (bool)aa;
+//        (bool)aa;
     }
     
 //    (bool)aa;
@@ -739,6 +728,8 @@ int main(int argc, char const *argv[])
     
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
-    cout << endl << "================================================================================================================" << endl << endl;
+//    cout  <<"hej"<< _color::red << "================================================================================================================" << endl << endl;
+    red << endl << "================================================================================================================" << endl << endl;
+
     return 0;
 }

@@ -78,6 +78,9 @@ endif ()
 if (NOT TARGET ph_debug)
 	add_subdirectory (dependencies/ph_debug)
 endif ()
+if (NOT TARGET ph_color)
+	add_subdirectory (dependencies/ph_color)
+endif ()
 
 
 
