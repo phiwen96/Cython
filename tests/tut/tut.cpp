@@ -19,10 +19,36 @@
 
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
+
 using namespace std;
 using namespace experimental;
 using namespace ph::concepts;
 using namespace chrono_literals;
+
+namespace Color {
+    enum Code {
+        FG_RED      = 31,
+        FG_GREEN    = 32,
+        FG_BLUE     = 34,
+        FG_DEFAULT  = 39,
+        BG_RED      = 41,
+        BG_GREEN    = 42,
+        BG_BLUE     = 44,
+        BG_DEFAULT  = 49
+    };
+    class Modifier {
+        Code code;
+    public:
+        Modifier(Code pCode) : code(pCode) {}
+        friend std::ostream&
+        operator<<(std::ostream& os, const Modifier& mod) {
+            return os << "\033[" << mod.code << "m";
+        }
+    };
+}
+
+
+    
 
 class Semaphore {
     const size_t num_permissions;
@@ -252,7 +278,7 @@ struct co_future;
 template <>
 struct co_future <>
 {
-    inline static atomic <int> current_threads = 0;
+    inline static atomic <int> current_threads = -1;
 };
 
 struct thr : thread
@@ -282,9 +308,26 @@ struct thr : thread
     }
 };
 
+void out (string&& s, string&& s2, int index) {
+    for(int i = 0; i < index; ++i)
+    {
+        cout << "\t";
+    }
+    cout << "[" << index << "] " << s << setw(20) << s2 << endl;
+}
+string info =
+R"V0G0N(
+await_ready     always called
+await_suspend   only called if about to suspend
+await_resume    always called
+)V0G0N";
 
+#define D0 string h = to_string (__LINE__), string s = __builtin_FUNCTION(), int l = __builtin_LINE()
+#define D1(index) out(string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
+#define D01(index) out(string (__FUNCTION__), to_string(__LINE__), index);
 atomic <bool> running {true};
-
+atomic <int> antal = 0;
+atomic <int> lol = 0;
 struct Run
 {
     Run(Run const&) = delete;
@@ -304,41 +347,64 @@ struct Run
 template <typename T>
 struct [[nodiscard]] co_future <T>
 {
+ 
+    
     co_future () = delete;
     co_future (co_future const&) = delete;
     co_future& operator= (co_future const&) = delete;
     co_future& operator= (co_future&&) = delete;
     struct promise_type
     {
+        
+        promise_type (promise_type const&) = delete;
+        promise_type& operator= (promise_type const&) = delete;
+        promise_type& operator= (promise_type&&) = delete;
+        promise_type (D0) : index {antal++} {
+            ++lol;
+//            out("promise_type::" +  h +          "              <--  \t\t" + s + "::"  + to_string(l));
+            D1 (index)
+        }
+        
+        ~promise_type () {
+            --lol;
+//            out("~promise_type");
+        }
+        
+        int index;
         T value;
         coroutine_handle <> awaiting_coro;
         vector <coroutine_handle <>> queues;
         inline static int nr = -1;
         char i = ++nr + 97;
-        auto get_return_object ()
+        auto get_return_object (D0)
         {
+            D1(index)
+//            out("get_return_object");
             return co_future {*this};
         }
-        auto initial_suspend ()
+        auto initial_suspend (D0)
         {
- 
+            D1(index)
             struct awaitable
             {
-                auto await_ready ()
+                int index;
+                auto await_ready (D0)
                 {
+                    D1(index)
                     return false;
                 }
-                auto await_suspend (coroutine_handle <> awaiting_coro)
+                auto await_suspend (coroutine_handle <> awaiting_coro, D0)
                 {
-                    
+                    D1(index)
                 }
                 auto await_resume ()
                 {
-                    
+                    D01(index)
                 }
             };
 
-            return suspend_always {};
+//            return suspend_always {};
+            return awaitable {index};
         }
         auto final_suspend () noexcept
         {
@@ -371,15 +437,23 @@ struct [[nodiscard]] co_future <T>
             return awaitable {};
         }
         
+        auto yield_value (int i, D0) {
+            D1(index)
+//            return suspend_always{};
+            return suspend_never{};
+        }
         
-        auto yield_value (auto&& lambda)
+        auto yield_value (auto&& lambda, D0)
         requires requires(){
             lambda();
         }
         {
+            D1(index)
+            thr{forward<decltype(lambda)>(lambda)}.detach();
+//            lambda();
 //            async (launch::async, forward<decltype(lambda)>(lambda)).get();
 //            ++co_future<>::current_threads;
-            thr{forward<decltype(lambda)>(lambda)}.detach();
+//            thr{forward<decltype(lambda)>(lambda)}.detach();
 //            --co_future<>::current_threads;
 
             cout << "cool " << i << endl;
@@ -388,36 +462,43 @@ struct [[nodiscard]] co_future <T>
             struct awaitable
             {
                 promise_type& p;
-                auto await_ready ()
+                int index;
+                auto await_ready (D0)
                 {
+                    D1(index)
                     return false;
                 }
-                void await_suspend (coroutine_handle <promise_type> current_coro)
+                void await_suspend (coroutine_handle <promise_type> current_coro, D0)
                 {
+                    D1(index)
 //                    if (current_coro.address() == p.awaiting_coro.address())
 //                        cout << "dmfkmdkfmdkmf" << endl;
-//                    auto precursor = current_coro.promise().awaiting_coro;
-//                    if (precursor)
-//                    {
-////                        cout << current_coro.promise().i << endl;
-////                        async(launch::async, [&precursor]{precursor.resume(); cout << "hi" << endl;});
-////                        precursor.resume();
+                    auto precursor = current_coro.promise().awaiting_coro;
+                    if (precursor)
+                    {
+//                        cout << current_coro.promise().i << endl;
+//                        async(launch::async, [&precursor]{precursor.resume(); cout << "hi" << endl;});
+//                        precursor.resume();
 //                        return precursor;
-//                    }
+                    }
+                    
 //                    return noop_coroutine();
                 }
                 auto await_resume ()
                 {
+                    D01(index)
 //                    return 8;
                 }
             };
-//            return awaitable {*this};
-            return suspend_never {};
+            return awaitable {*this, index};
+//            return suspend_always {};
+//            return suspend_never {};
         }
         
         
-        auto return_value (auto&& v)
+        auto return_value (auto&& v, D0)
         {
+            D1(index)
             value = forward<decltype(v)>(v);
         }
         [[noreturn]]
@@ -426,19 +507,30 @@ struct [[nodiscard]] co_future <T>
             terminate();
         }
     };
-    
+    promise_type& promise () {
+        return coro.promise();
+    }
+    int index;
     coroutine_handle <promise_type> coro;
     co_future (promise_type& p) : coro {coroutine_handle<promise_type>::from_promise (p)}
     {
-        
+//        promise().out("co_future");
+        ++co_future<>::current_threads;
+//        p.index = antal;
+        index = p.index;
     }
     co_future (co_future&& other) : coro {exchange (other.coro, {})}
     {
-        
+        index = other.index;
+//        promise().out("co_future");
+        ++co_future<>::current_threads;
+        coro.promise().index = antal;
     }
     ~co_future ()
     {
-        cout << "~co_task" << coro.promise().i << endl;
+//        promise().out("~co_future");
+//        --co_future<>::current_threads;
+//        cout << "~co_task" << coro.promise().i << endl;
         if (not coro)
             throw runtime_error (":O");
         coro.destroy();
@@ -486,9 +578,10 @@ struct [[nodiscard]] co_future <T>
     {
         co_future& f;
         
-        auto await_ready ()
+        auto await_ready (D0)
         {
-            
+            D1(f.index)
+//            f.promise().out("await_ready");
             return false;
         }
 //            auto await_suspend (coroutine_handle <> awaiting_coro)
@@ -497,46 +590,15 @@ struct [[nodiscard]] co_future <T>
 ////                return coro;
 //            }
 //#define SLOW
-        auto await_suspend (coroutine_handle <> awaiting_coro)
+        auto await_suspend (coroutine_handle <> awaiting_coro, D0)
         {
-#ifdef SLOW
-            cout << "slow" << endl;
+            D1(f.index)
+
             f.coro.promise().awaiting_coro = awaiting_coro;
-            return f.coro;
-#else
-//            ++current_threads;
-            f.coro.promise().awaiting_coro = awaiting_coro;
-            f.coro.resume();//current_threads--;
-//            return f.coro;
-//            thread{[a = f.coro, awaiting_coro]()mutable{
-////                cout << this_thread::get_id() << endl;
-////                this_thread::sleep_for(2s);
-//
-//                a.promise().awaiting_coro = awaiting_coro;
-//                a.resume();;current_threads--;}
-//
-//            }.detach();
-#endif
-            
-//            f.coro.promise().awaiting_coro = awaiting_coro;
-//            f.coro.resume();
-//            async(launch::async, [a = f.coro, awaiting_coro]()mutable{this_thread::sleep_for(2s);a.promise().awaiting_coro = awaiting_coro; a.resume();}).get();
-            
-            
-            
-//            cout << f.coro.promise().i << ":" << awaiting_coro.promise().i << endl;
-//            if (not f.ready) {
-//                f.queues.push_back(awaiting_coro);
-////                async (launch::async, []()mutable{this_thread::sleep_for(2s);});
-////                return awaiting_coro;
-//            }
-//            return f.coro;
-//            cout << f.coro.promise().i << endl;
-//                cout << awaiting_coro.promise().i << endl;
-//            awaiting_coro.resume();
         }
-        auto await_resume ()
+        auto await_resume (D0)
         {
+            D1(f.index)
             return f.coro.promise().value;
 //            return f.coro;
         }
@@ -573,7 +635,7 @@ co_future<int> C ()
 //    this_thread::sleep_for(2s);
     co_return 6;
 }
-co_future<int> B ()
+co_future <int> B ()
 {
     cout << "**" << endl;
 //    int i = co_await C();
@@ -609,33 +671,58 @@ co_future<int> A ()
     co_return co_await B() + 2;
 }
 
-void run () {
-  
-    co_future<int> a = A();
-    a.run();
-    cout << a.get() << endl;
+co_future<int> Q () {
+    cout << "Q" << endl;
+//    co_yield []{this_thread::sleep_for(2s);};
+    cout << "QQQQQQ" << endl;
+    co_yield 4;
+    
+    co_return 3;
+}
+
+co_future<int> run () {
+    
+//    cout << "run" << endl;
+    int aa = co_await  Q ();
+    cout << "1111111111" << endl;
+
+//    int bb = co_await Q ();
+    cout << aa << "==" << endl;
+//    cout << bb << "==" << endl;
+    co_return 0;
 }
 
 int main(int argc, char const *argv[])
 {
-
-    Timer<true> t ("time");
+    cout << info << endl << "================================================================================================================" << endl << endl;
+    {
+        auto aa = run();
+        (bool)aa;
+    }
+    
+//    (bool)aa;
+//    Timer<true> t ("time");
 //    thread t{[]{co_future a = A(); a.run();}};
 //    t.join();
-    run();
+//    run();
     
     
+//    return 0;
 //    cout << "baaaaajs" << endl;
-    while (co_future<>::current_threads) {
+    while (lol) {
+        cout << lol << endl;
+//        cout << co_future<>::current_threads << endl;
 //        this_thread::sleep_for(1ms);
 //        cout << "threads:" << current_threads << endl;
     }
-    
+//    cout << "......" << endl;
+//    cout << aa.get() << endl;
+//    cout << "......" << endl;
 
 //    (bool)a;
 //    async ([a = A()]()mutable ->co_future{(bool)a;}).get();
 
-    cout << "---------------" << endl;
+//    cout << "---------------" << endl;
 //    (bool)a;
 //    (bool)a;
 //    co_task coro = a();
@@ -652,6 +739,6 @@ int main(int argc, char const *argv[])
     
 //	int result = Catch::Session().run( argc, argv );
 //	return result;
-    cout << "==================" << endl;
+    cout << endl << "================================================================================================================" << endl << endl;
     return 0;
 }

@@ -13,6 +13,18 @@ add_test (NAME ${self}test COMMAND ${self})
 # set (ENV{yeah} "echo bajs")
 
 
+# add_custom_command(TARGET ${self} POST_BUILD COMMAND "osascript -e 'tell app \"Terminal\" to do script \"echo bajs\"'")
+# add_custom_command(TARGT ${self} POST_BUILD /bin/sh osascript -e 'tell app \"Terminal\" to do script \"echo bajs\"')
+
+# add_custom_command(TARGET ${self} POST_BUILD COMMAND "osascript -e 'tell app \"Terminal\" to do script \"echo bajs\"'")
+
+# cmake_language(EVAL CODE "add_custom_command(TARGT ${self} POST_BUILD COMMAND osascript -e \'tell app \"Terminal\" to do script \"echo bajs\"\')")
+set(where $ENV{${self}})
+# add_custom_command(TARGET ${self}
+#         POST_BUILD
+#         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run.sh
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+# )
 
 
 ph_run ()

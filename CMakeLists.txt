@@ -129,3 +129,6 @@ endif()
 
 # cmake CC=/usr/bin/gcc CXX=/usr/bin/g++ cmake ... -Wno-dev -DCMAKE_CONFIGURATION_TYPES="Debug;Release;Kuk" -S . -B xbuild -GXcode && cmake --open xbuild
 # -DCMAKE_C_COMPILER=/usr/local/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/local/bin/x86_64-apple-darwin20-g++-10
+
+
+
