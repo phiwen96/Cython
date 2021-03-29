@@ -463,6 +463,7 @@ Task<int> area () {
 
 struct [[nodiscard]] co_task
 {
+    co_task () = delete;
     co_task (co_task const&) = delete;
     co_task& operator= (co_task const&) = delete;
     co_task& operator= (co_task&&) = delete;
@@ -489,7 +490,7 @@ struct [[nodiscard]] co_task
                 }
                 auto await_resume ()
                 {
-
+                    
                 }
             };
 
@@ -530,23 +531,33 @@ struct [[nodiscard]] co_task
             
             struct awaitable
             {
+                coroutine_handle<promise_type> co;
                 auto await_ready ()
                 {
-                    return false;
+                    return true;
                 }
-                auto await_suspend (coroutine_handle <> awaiting_coro)
+                void await_suspend (coroutine_handle <promise_type> current_coro)
                 {
-                    
-//                    return awaiting_coro.promise().awaiting_coro;
+//                    co = current_coro;
+//                    return current_coro.promise().awaiting_coro;
+//                    auto precursor = current_coro.promise().awaiting_coro;
+//                    if (precursor)
+//                    {
+//                      return precursor;
+//                    }
+//                    return noop_coroutine();
+//                    return current_coro;
 //                    return suspend_always {};
+
                 }
                 auto await_resume ()
                 {
-                    
+                    return 8;
+//                    return co;
                 }
             };
-
             return awaitable {};
+//            return suspend_always {};
         }
         auto return_void ()
         {
@@ -611,7 +622,6 @@ struct [[nodiscard]] co_task
             auto await_resume ()
             {
                 return coro;
-//                return 10;
             }
         };
         
@@ -630,7 +640,8 @@ co_task c ()
 co_task b ()
 {
     cout << "b0" << endl;
-//    co_yield 11;
+    int i = co_yield 11;
+    cout << i << endl;
     co_await c ();
     cout << "b1" << endl;
     
