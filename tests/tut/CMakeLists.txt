@@ -9,6 +9,7 @@ target_include_directories (${self} PRIVATE ph::color ${PROJECT_SOURCE_DIR}/depe
 target_link_libraries (${self} PRIVATE ph::color /Users/philipwenkel/GitHub/Cython/dependencies/cppcoro/build/darwin_x64_clang12.0.5_optimised/lib/libcppcoro.a ${PROJECT_NAME} ph::debug ph::time ph::coroutines ph::concepts ph::macros ph::type_list const_str Catch2::Catch2 ${Boost_LIBRARIES})
 ph_precompile (TARGET ${self} PUBLIC PCH ${std_pch} ${boost_pch})
 add_test (NAME ${self}test COMMAND ${self}) 
+target_compile_definitions(${self} PRIVATE $<IF:$<CONFIG:Debug>,Debug=1,Debug=0> $<IF:$<CONFIG:Release>,Release=1,Release=0> )
 # set (ENV{run} "$<TARGET_FILE:teslib>")
 # set (ENV{yeah} "echo bajs")
 
