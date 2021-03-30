@@ -623,7 +623,7 @@ struct co_handle <> : coroutine_handle <>{
     }
     template <class T>
     co_handle (T&& h, debug_called_from) : base {forward<T>(h)}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
-        debug_class_print_called_from(cyan, 0);
+//        debug_class_print_called_from(cyan, 0);
     }
 };
 
@@ -649,17 +649,27 @@ struct co_handle <promise> : coroutine_handle <promise>{
     co_handle (U&& h, debug_called_from) : base {h}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
         debug_class_print_called_from(cyan, 0);
     }
-    static auto from_promise (promise& p, debug_called_from) -> decltype (auto) {
-        debug_class_print_called_from(cyan, 0);
+    static auto from_promise (promise& p, bool write_out = true, debug_called_from) -> decltype (auto) {
+        if (write_out)
+            debug_class_print_called_from(cyan, 0);
         return base::from_promise (p);
+    }
+    
+    static co_handle <promise> from_promise (promise& p, string const& called_function, int called_line) {
+        return {base::from_promise (p), called_function, called_line};
+    }
+    
+private:
+    co_handle (coroutine_handle <promise> handle, string const& _called_from_function, int _called_from_line) : base::coroutine_handle {handle}, called_from_function {_called_from_function}, called_from_line {_called_from_line}{
+        debug_class_print_called_from (cyan, 0)
     }
 };
 
 struct ReturnObject {
     #define class_name "ReturnObject"
     struct promise_type;
-    co_handle <promise_type> handle;
-    ReturnObject (co_handle<promise_type> handle, debug_called_from) : handle {handle} {debug_class_print_called_from (red, 0);}
+    co_handle <promise_type>& handle;
+    ReturnObject (co_handle<promise_type>& handle, debug_called_from) : handle {handle} {debug_class_print_called_from (red, 0);}
     operator co_handle<> () {
         return handle;
     }
@@ -668,9 +678,11 @@ struct ReturnObject {
     
     struct promise_type {
         #define class_name "ReturnObject::promise_type"
-
-        promise_type (debug_called_from) {debug_class_print_called_from(red, 0);}
-        co_function_return_value get_return_object(debug_called_from) {debug_class_print_called_from(red, 0); return {co_handle<promise_type>::from_promise(*this)}; }
+        
+        co_handle <promise_type> my_handle;
+ 
+        promise_type (debug_called_from) : my_handle {co_handle<promise_type>::from_promise(*this, _called_from_function, _called_from_line)} {debug_class_print_called_from(red, 0);}
+        co_function_return_value get_return_object(debug_called_from) {debug_class_print_called_from(red, 0); return my_handle; }
         suspend_never initial_suspend(debug_called_from) {debug_class_print_called_from(red, 0); return {}; }
         suspend_never final_suspend(debug_called_from) noexcept {debug_class_print_called_from(red, 0); return {}; }
         void unhandled_exception(debug_called_from) {debug_class_print_called_from(red, 0);}
