@@ -306,32 +306,13 @@ string format_string (T&&... s) {
     ((ss << left << setw(30) << left << forward<T>(s) << setw(30)), ...);
     return ss.str();
 }
-void out (auto color, string&& s, string&& s2, int index) {
-    for(int i = 0; i < index; ++i)
-    {
-        cout << "\t";
-    }
-//    cout << right << setw(0) << "[" << index << "] " << s << left << "\t" << s2 << endl;
-//    cout << s << internal << std::setfill('*') << setw(40) << s2 << "\n";
-//    Green b;
-    cout << black << " •  " << color;
-    cout << left << setw(60) << s;
-    cout << setw(20);
-    cout  <<  setw(30) << s2  << "kuk" << "\t" << endl;
-//    cout << format_string(s, "|", s2) << endl;
-//         << setw(4) << hourlyRate << "\n";
-
-//    color << "[" << index << "] " << s << setw(20) << s2 << endl;
-}
 
 
 
 
-#define debug_called_from string _function_line = to_string (__LINE__), string _called_from_function = __builtin_FUNCTION(), int _called_from_line = __builtin_LINE()
-#define debug_print_called_from(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  _function_line, _called_from_function + "::"  + to_string(_called_from_line), index); cout << white;
-#define D01(color, index) cout << color; out(string (color), string (__FUNCTION__), to_string(__LINE__), index); cout << white;
-#define BWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << white << " B  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl; cout << white;
-#define EWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << cyan << " E  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl; cout << white;
+
+
+
 
 atomic <bool> running {true};
 atomic <int> antal = 0;
@@ -620,7 +601,7 @@ struct co_handle <> : coroutine_handle <> {
     
     
     co_handle (debug_called_from) : called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
-        cout << called_from_function << endl;
+//        cout << called_from_function << endl;
     }
     
 //
@@ -645,16 +626,20 @@ struct ReturnObject {
 
 struct Awaitable {
     co_handle <> * hp_;
-    bool await_ready(debug_called_from) {debug_print_called_from (yellow, 0)  return false; }
+    bool await_ready(debug_called_from) {
+//        debug_print_called_from (yellow, 0)
+        return false;
+    }
     void await_suspend (co_handle <> h, debug_called_from) {
-        out(yellow, "storing {" + _called_from_function + "}'s handle into {" + hp_ -> called_from_function + "}'s handle", _called_from_function + "::" + to_string (_called_from_line), 0);
+        out("hej", text{"kuk", green, white}, "hora");
+        out ("storing {", text {_called_from_function, blue}, "}'s handle into {" + hp_ -> called_from_function + "}'s handle", _called_from_function + "::" + to_string (_called_from_line));
 //        D1(yellow, 0)
         //        cout << "FFFF" << endl;
 //        hp_->resume();
         *hp_ = h;
     }
     void await_resume (debug_called_from) {
-        debug_print_called_from (yellow, 0)
+//        debug_print_called_from (yellow, 0)
     }
 };
 
@@ -687,6 +672,9 @@ ReturnObject counter(co_handle<>& a) {
 
 
 int main(int argc, char const *argv[]) {
+//    cout << "tji" << endl;
+//    out (0, "hej", "då");
+//    return 0;
     co_handle <> h;
 
     counter(h);
