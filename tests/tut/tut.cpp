@@ -195,13 +195,12 @@ ReturnObject counter (debug_called_from) {
     
 //    debug_class_print_called_from(magenta, 0);
     co_handle<ReturnObject::promise_type> mains_handle = co_await co_get_promise <ReturnObject::promise_type> {};
-    cout << "got mains handle... resuming it!" << endl;
+    debug_class_print_called_from (yellow, 0, string (yellow) + "got mains handle... resuming it!")
 //  Awaitable a {continuation_out};
     for (int i = 0; ; ++i){
-        cout << "counter::iterating" << endl;
 //        promise.handle->promise
         co_await suspend_always {};
-        debug_class_print_called_from (yellow, 0, "iterating")
+        debug_class_print_called_from (yellow, 0, string (yellow) + "resuming")
     }
     
     
@@ -242,7 +241,8 @@ int main(int argc, char const *argv[]) {
     
 //    cout << endl << lines << endl << endl;
     for (int i = 0; i < 2; ++i) {
-        debug_class_print_called_from(yellow, 0)
+//        debug_class_print_called_from(yellow, 0)
+        debug_class_print_called_from (yellow, 0, string (yellow) + "waking up counter!")
         h ();
         cout << h.promise().value << endl;
     }
