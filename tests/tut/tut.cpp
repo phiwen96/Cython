@@ -582,6 +582,31 @@ struct co_handle <T> : coroutine_handle <T> {
     
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <>
 struct co_handle <> : coroutine_handle <> {
     using base = coroutine_handle <>;
@@ -631,9 +656,10 @@ struct Awaitable {
         return false;
     }
     void await_suspend (co_handle <> h, debug_called_from) {
+        string color = hp_->called_from_function == h.called_from_function ? blue : green;
 //        out("hej", text{"kuk", green, white}, "hora");
         debug_print_called_from(yellow, 0);
-        cout << "storing {" << text {_called_from_function, blue} << "}'s handle into {" << blue << hp_ -> called_from_function << white << "}'s handle" <<  _called_from_function + "::" + to_string (_called_from_line) << endl;
+        cout << "storing {" << text {_called_from_function, blue} << "}'s handle into {" << color << hp_ -> called_from_function << white << "}'s handle" <<  _called_from_function + "::" + to_string (_called_from_line) << endl;
 //        D1(yellow, 0)
         //        cout << "FFFF" << endl;
 //        hp_->resume();
