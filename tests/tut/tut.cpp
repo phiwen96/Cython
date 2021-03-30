@@ -631,15 +631,15 @@ struct Awaitable {
         return false;
     }
     void await_suspend (co_handle <> h, debug_called_from) {
-        out("hej", text{"kuk", green, white}, "hora");
-        out ("storing {", text {_called_from_function, blue}, "}'s handle into {" + hp_ -> called_from_function + "}'s handle", _called_from_function + "::" + to_string (_called_from_line));
+//        out("hej", text{"kuk", green, white}, "hora");
+        cout << "storing {" << text {_called_from_function, blue} << "}'s handle into {" << blue << hp_ -> called_from_function << white << "}'s handle" <<  _called_from_function + "::" + to_string (_called_from_line) << endl;
 //        D1(yellow, 0)
         //        cout << "FFFF" << endl;
 //        hp_->resume();
         *hp_ = h;
     }
     void await_resume (debug_called_from) {
-//        debug_print_called_from (yellow, 0)
+        debug_print_called_from (yellow, 0)
     }
 };
 
