@@ -632,6 +632,7 @@ struct Awaitable {
     }
     void await_suspend (co_handle <> h, debug_called_from) {
 //        out("hej", text{"kuk", green, white}, "hora");
+        debug_print_called_from(yellow, 0);
         cout << "storing {" << text {_called_from_function, blue} << "}'s handle into {" << blue << hp_ -> called_from_function << white << "}'s handle" <<  _called_from_function + "::" + to_string (_called_from_line) << endl;
 //        D1(yellow, 0)
         //        cout << "FFFF" << endl;
@@ -673,7 +674,7 @@ ReturnObject counter(co_handle<>& a) {
 
 int main(int argc, char const *argv[]) {
 //    cout << "tji" << endl;
-//    out (0, "hej", "då");
+    
 //    return 0;
     co_handle <> h;
 
