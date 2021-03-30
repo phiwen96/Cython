@@ -315,7 +315,7 @@ void out (auto color, string&& s, string&& s2, int index) {
 //    cout << s << internal << std::setfill('*') << setw(40) << s2 << "\n";
 //    Green b;
     cout << black << " •  " << color;
-    cout << left << setw(30) << s;
+    cout << left << setw(60) << s;
     cout << setw(20);
     cout  <<  setw(30) << s2  << "kuk" << "\t" << endl;
 //    cout << format_string(s, "|", s2) << endl;
@@ -327,11 +327,11 @@ void out (auto color, string&& s, string&& s2, int index) {
 
 
 
-#define D0 string h = to_string (__LINE__), string s = __builtin_FUNCTION(), int l = __builtin_LINE()
-#define D1(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  h, s + "::"  + to_string(l), index);
-#define D01(color, index) cout << color; out(string (color), string (__FUNCTION__), to_string(__LINE__), index);
-#define BWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << white << " B  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl;
-#define EWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << cyan << " E  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl;
+#define D0 string _function_line = to_string (__LINE__), string _called_from_function = __builtin_FUNCTION(), int _called_from_line = __builtin_LINE()
+#define D1(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  _function_line, _called_from_function + "::"  + to_string(_called_from_line), index); cout << white;
+#define D01(color, index) cout << color; out(string (color), string (__FUNCTION__), to_string(__LINE__), index); cout << white;
+#define BWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << white << " B  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl; cout << white;
+#define EWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << cyan << " E  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl; cout << white;
 
 atomic <bool> running {true};
 atomic <int> antal = 0;
@@ -362,6 +362,7 @@ template <typename R, typename promise_type, typename T>
 struct co_promise_type {
     T value;
     coroutine_handle <> awaiting_coro;
+    
     co_promise_type () {}
     co_promise_type (co_promise_type const&) = delete;
     co_promise_type& operator= (co_promise_type const&) = delete;
@@ -376,9 +377,10 @@ struct co_promise_type {
         struct final_suspend {
             promise_type const& f;
             auto await_ready () noexcept {return false;}
-            auto await_suspend (coroutine_handle <promise_type> current_coro) noexcept {
+            coroutine_handle <> await_suspend (coroutine_handle <promise_type> current_coro) noexcept {
 //                auto precursor = current_coro.promise().awaiting_coro;
-//                if (precursor) return precursor;//return noop_coroutine();
+//                if (precursor) return precursor;
+//                return noop_coroutine();
             }
             auto await_resume () noexcept {}
         };
@@ -403,7 +405,7 @@ struct co_promise_type {
 
 
 
-
+int aaa = 0;
 
 
 template <typename T>
@@ -447,6 +449,7 @@ struct [[nodiscard]] co_future <T>
                 auto await_suspend (coroutine_handle <promise_type> current_coro, D0) noexcept -> decltype (base::await_suspend (current_coro)){
                     D1(yellow, f.index)
                     EWRITE(yellow, f.index, finally suspending...)
+                    cout << f.value << ":" << current_coro.promise().value << endl;
                     return base::await_suspend (current_coro);
                 }
                 auto await_resume () noexcept -> decltype (base::await_resume ()) {
@@ -483,6 +486,8 @@ struct [[nodiscard]] co_future <T>
     int index;
     coroutine_handle <promise_type> coro;
     co_future (promise_type& p) : coro {coroutine_handle<promise_type>::from_promise (p)} {
+//        cout << index << endl;
+//        cout << aaa++ << endl;
         ++co_future<>::current_threads;
         index = p.index;
     }
@@ -516,8 +521,8 @@ struct co_awaitable {
     coroutine_handle <promise_type> h;
     co_awaitable (coroutine_handle <promise_type> h) :  h (h) {}
     bool await_ready (){return false;}
-    void await_suspend (coroutine_handle <> awaiting_coro){}
-    [[nodiscard]] return_type await_resume (){return 2;}
+    void await_suspend (coroutine_handle <> awaiting_coro){h.promise().awaiting_coro = awaiting_coro;}
+    [[nodiscard]] return_type await_resume (){return h.promise().value;}
 };
 
 
@@ -531,7 +536,8 @@ struct co_future<T>::awaitable : co_awaitable <T, promise_type> {
         return parent::await_ready ();
     }
     void await_suspend (coroutine_handle <> awaiting_coro If (Debug) (,D0) ()){
-        If (Debug) (D1 (green, index)  EWRITE (green, index, suspending...)) ()
+        
+        If (Debug) (D1 (green, index)  EWRITE (green, index, getting a handle to the coroutine that will be suspended. suspending...)) ()
         parent::await_suspend (awaiting_coro);
     }
     [[nodiscard]] T await_resume (If(Debug)(D0)()){
@@ -544,6 +550,15 @@ struct co_future<T>::awaitable : co_awaitable <T, promise_type> {
     }
 };
 
+/**
+ await_ready()
+ 
+ hallå är du redo eller ska jag vänta???!!!
+ 
+ okej, här får du mitt nummer hör av dig när du är klar.
+ 
+ sen await_resume
+ */
 
 
 
@@ -552,18 +567,23 @@ struct co_future<T>::awaitable : co_awaitable <T, promise_type> {
 
 
 
+co_future<int> C () {
+    co_return 4;
+}
 
-
-
-
+co_future<int> G () {
+    co_await C ();
+    co_return 3;
+}
 
 co_future<int> Q () {
-    co_return 3;
+    co_await G ();
+    co_return 2;
 }
 
 co_future<int> run () {
     co_await Q ();
-    co_return 0;
+    co_return 1;
 }
 
 string info =
@@ -573,14 +593,113 @@ await_suspend   only called if about to suspend
 await_resume    called when resuming coro
 )V0G0N";
 
+template <typename... T>
+struct co_handle;
+
+template <typename T>
+struct co_handle <T> : coroutine_handle <T> {
+    
+};
+
+template <>
+struct co_handle <> : coroutine_handle <> {
+    using base = coroutine_handle <>;
+    using base::coroutine_handle;
+    using base::operator=;
+    using base::operator bool;
+    using base::operator();
+    using base::done;
+    using base::address;
+    using base::from_address;
+    using base::destroy;
+    using base::resume;
+    
+    string called_from_function;
+    int called_from_line;
+    
+    
+    
+    co_handle (D0) : called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
+        cout << called_from_function << endl;
+    }
+    
+//
+    template <class T>
+    co_handle (T&& h, D0) : base {forward<T>(h)}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
+//        cout << called_from_function << endl;
+//        cout << "ohh assigning handle" << endl;
+//        cout << typeid(h).name() << endl;
+    }
+
+};
+
+struct ReturnObject {
+  struct promise_type {
+    ReturnObject get_return_object() { return {}; }
+    suspend_never initial_suspend() { return {}; }
+    suspend_never final_suspend() noexcept { return {}; }
+    void unhandled_exception() {}
+      void return_void () {}
+  };
+};
+
+struct Awaitable {
+    co_handle <> * hp_;
+    bool await_ready(D0) {D1(yellow, 0)  return false; }
+    void await_suspend (co_handle <> h, D0) {
+        out(yellow, "storing {" + _called_from_function + "}'s handle into {" + hp_ -> called_from_function + "}'s handle", _called_from_function + "::" + to_string (_called_from_line), 0);
+//        D1(yellow, 0)
+        //        cout << "FFFF" << endl;
+//        hp_->resume();
+        *hp_ = h;
+    }
+    void await_resume(D0) {
+        D1(yellow, 0)
+    }
+};
+
+ReturnObject counter(co_handle<>& a) {
+    cout << "...counter" << endl;
+
+//  Awaitable a {continuation_out};
+    for (int i = 0; ; ++i){
+        
+        co_await Awaitable {&a};
+    }
+    
+    
+//    co_await Awaitable {a};
+//  for (unsigned i = 0; i < 1; ++i) {
+//      cout << "00" << endl;
+
+//    co_await *a; // creates a callable object coroutine_handle <> whose invocation continues execution of the current function
+      /**
+       The compiler creates a coroutine handle and passes
+       it to the method a.await_suspend (coroutine_handle).
+       */
+      
+
+//    std::cout << "counter: " << i << std::endl;
+//  }
+    cout << "counter..." << endl;
+    
+}
 
 
+int main(int argc, char const *argv[]) {
+    co_handle <> h;
 
+    counter(h);
+    cout << "hi" << endl;
+    h.resume(); // resume can only be called on suspended coroutines
+//    cout << a.hp_ -> done() << endl; // done can only be called on suspended coroutines
+//    a.hp_ -> resume();
+//     for (int i = 0; i < 3; ++i) {
+//       std::cout << "In main1 function\n";
+//       h();
+//     }
 
-
-
-int main(int argc, char const *argv[])
-{
+    return 0;
 //    return 0;
 //    LoggingOutputStreambuf logger( std::cout );
     
