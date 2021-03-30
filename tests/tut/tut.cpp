@@ -327,8 +327,8 @@ void out (auto color, string&& s, string&& s2, int index) {
 
 
 
-#define D0 string _function_line = to_string (__LINE__), string _called_from_function = __builtin_FUNCTION(), int _called_from_line = __builtin_LINE()
-#define D1(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  _function_line, _called_from_function + "::"  + to_string(_called_from_line), index); cout << white;
+#define debug_called_from string _function_line = to_string (__LINE__), string _called_from_function = __builtin_FUNCTION(), int _called_from_line = __builtin_LINE()
+#define debug_print_called_from(color, index) cout << color; out(string (color), string (__FUNCTION__) + string ("::") +  _function_line, _called_from_function + "::"  + to_string(_called_from_line), index); cout << white;
 #define D01(color, index) cout << color; out(string (color), string (__FUNCTION__), to_string(__LINE__), index); cout << white;
 #define BWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << white << " B  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl; cout << white;
 #define EWRITE(color, index, ...) for(int _j = 0; _j < index; ++_j)cout << "\t"; cout << cyan << " E  " << color; cout << BOOST_PP_STRINGIZE (__VA_ARGS__) << endl; cout << white;
@@ -425,12 +425,12 @@ struct [[nodiscard]] co_future <T>
             struct initial_suspend : base::initial_suspend {
                 using base = typename base::initial_suspend;
                 int index;
-                auto await_ready (D0) -> decltype (base::await_ready()){
-                    D1(yellow, index)
+                auto await_ready (debug_called_from) -> decltype (base::await_ready()){
+                    debug_print_called_from(yellow, index)
                     return base::await_ready ();
                 }
-                auto await_suspend (coroutine_handle <> awaiting_coro, D0) -> decltype (base::await_suspend(awaiting_coro)){
-                    D1(yellow, index)
+                auto await_suspend (coroutine_handle <> awaiting_coro, debug_called_from) -> decltype (base::await_suspend(awaiting_coro)){
+                    debug_print_called_from(yellow, index)
                     EWRITE(yellow, index, suspending...)
                     return base::await_suspend(awaiting_coro);
                 }
@@ -446,8 +446,8 @@ struct [[nodiscard]] co_future <T>
                 auto await_ready () noexcept -> decltype (base::await_ready ()) {
                     return base::await_ready ();
                 }
-                auto await_suspend (coroutine_handle <promise_type> current_coro, D0) noexcept -> decltype (base::await_suspend (current_coro)){
-                    D1(yellow, f.index)
+                auto await_suspend (coroutine_handle <promise_type> current_coro, debug_called_from) noexcept -> decltype (base::await_suspend (current_coro)){
+                    debug_print_called_from(yellow, f.index)
                     EWRITE(yellow, f.index, finally suspending...)
                     cout << f.value << ":" << current_coro.promise().value << endl;
                     return base::await_suspend (current_coro);
@@ -459,12 +459,12 @@ struct [[nodiscard]] co_future <T>
             struct yield_value : base::yield_value {
                 promise_type& p;
                 int index;
-                auto await_ready (D0){
-                    D1(yellow, index);
+                auto await_ready (debug_called_from){
+                    debug_print_called_from(yellow, index);
                     return false;
                 }
-                auto await_suspend (coroutine_handle <promise_type> current_coro, D0) -> decltype (base::await_suspend (current_coro)) {
-                    D1(yellow, index);
+                auto await_suspend (coroutine_handle <promise_type> current_coro, debug_called_from) -> decltype (base::await_suspend (current_coro)) {
+                    debug_print_called_from(yellow, index);
                     return base::await_suspend (current_coro);
                 }
                 auto await_resume () -> decltype (base::await_resume ()) {
@@ -473,13 +473,13 @@ struct [[nodiscard]] co_future <T>
                 }
             };
         };
-        promise_type (D0) : index {antal++} {++lol; D1 (yellow, index)}
+        promise_type (debug_called_from) : index {antal++} {++lol; debug_print_called_from (yellow, index)}
         ~promise_type () {--lol;}
-        auto get_return_object (D0){D1(yellow, index); return base::get_return_object();}
-        typename awaitables::initial_suspend initial_suspend (D0){return  {{}, {index}};}
+        auto get_return_object (debug_called_from){debug_print_called_from(yellow, index); return base::get_return_object();}
+        typename awaitables::initial_suspend initial_suspend (debug_called_from){return  {{}, {index}};}
         typename awaitables::final_suspend final_suspend () noexcept{return  {{*this}, {*this}};}
-        typename awaitables::yield_value yield_value (int i, D0) {D1(yellow, index); return {{*this}, {*this, index}};}
-        auto return_value (auto&& v, D0){D1(yellow, index); base::return_value (forward<decltype(v)>(v));}
+        typename awaitables::yield_value yield_value (int i, debug_called_from) {debug_print_called_from(yellow, index); return {{*this}, {*this, index}};}
+        auto return_value (auto&& v, debug_called_from){debug_print_called_from(yellow, index); base::return_value (forward<decltype(v)>(v));}
         [[noreturn]] auto unhandled_exception (){base::unhandled_exception ();}
     };
     promise_type& promise () {return coro.promise();}
@@ -531,17 +531,17 @@ struct co_future<T>::awaitable : co_awaitable <T, promise_type> {
     using parent = co_awaitable <T, promise_type>;
     int index;
     awaitable (coroutine_handle <promise_type> h, int index) : parent {h}, index {index} {}
-    bool await_ready (If (Debug) (D0)()) {
-        If (Debug) (D1 (green, index)) ()
+    bool await_ready (If (Debug) (debug_called_from)()) {
+        If (Debug) (debug_print_called_from (green, index)) ()
         return parent::await_ready ();
     }
-    void await_suspend (coroutine_handle <> awaiting_coro If (Debug) (,D0) ()){
+    void await_suspend (coroutine_handle <> awaiting_coro If (Debug) (,debug_called_from) ()){
         
-        If (Debug) (D1 (green, index)  EWRITE (green, index, getting a handle to the coroutine that will be suspended. suspending...)) ()
+        If (Debug) (debug_print_called_from (green, index)  EWRITE (green, index, getting a handle to the coroutine that will be suspended. suspending...)) ()
         parent::await_suspend (awaiting_coro);
     }
-    [[nodiscard]] T await_resume (If(Debug)(D0)()){
-        If (Debug) (D1 (green, index)   EWRITE (green, index, resuming parent...))()
+    [[nodiscard]] T await_resume (If(Debug)(debug_called_from)()){
+        If (Debug) (debug_print_called_from (green, index)   EWRITE (green, index, resuming parent...))()
         if constexpr (not is_same_v<T, void>){
             return parent::await_resume ();
         } else{
@@ -619,13 +619,13 @@ struct co_handle <> : coroutine_handle <> {
     
     
     
-    co_handle (D0) : called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
+    co_handle (debug_called_from) : called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
         cout << called_from_function << endl;
     }
     
 //
     template <class T>
-    co_handle (T&& h, D0) : base {forward<T>(h)}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
+    co_handle (T&& h, debug_called_from) : base {forward<T>(h)}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
 //        cout << called_from_function << endl;
 //        cout << "ohh assigning handle" << endl;
 //        cout << typeid(h).name() << endl;
@@ -645,16 +645,16 @@ struct ReturnObject {
 
 struct Awaitable {
     co_handle <> * hp_;
-    bool await_ready(D0) {D1(yellow, 0)  return false; }
-    void await_suspend (co_handle <> h, D0) {
+    bool await_ready(debug_called_from) {debug_print_called_from (yellow, 0)  return false; }
+    void await_suspend (co_handle <> h, debug_called_from) {
         out(yellow, "storing {" + _called_from_function + "}'s handle into {" + hp_ -> called_from_function + "}'s handle", _called_from_function + "::" + to_string (_called_from_line), 0);
 //        D1(yellow, 0)
         //        cout << "FFFF" << endl;
 //        hp_->resume();
         *hp_ = h;
     }
-    void await_resume(D0) {
-        D1(yellow, 0)
+    void await_resume (debug_called_from) {
+        debug_print_called_from (yellow, 0)
     }
 };
 
