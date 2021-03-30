@@ -605,7 +605,7 @@ struct co_handle;
 
 template <>
 struct co_handle <> : coroutine_handle <>{
-    #define class_name co_handle<>
+    #define class_name "co_handle<>"
     using base = coroutine_handle <>;
     using base::coroutine_handle;
     using base::operator=;
@@ -629,7 +629,7 @@ struct co_handle <> : coroutine_handle <>{
 
 template <typename promise>
 struct co_handle <promise> : coroutine_handle <promise>{
-    #define class_name co_handle<promise>
+    #define class_name "co_handle<promise>"
     using base = coroutine_handle <promise>;
 //    using base::coroutine_handle;
 //    using base::operator=;
@@ -656,7 +656,7 @@ struct co_handle <promise> : coroutine_handle <promise>{
 };
 
 struct ReturnObject {
-    #define class_name ReturnObject
+    #define class_name "ReturnObject"
     struct promise_type;
     co_handle <promise_type> handle;
     ReturnObject (co_handle<promise_type> handle, debug_called_from) : handle {handle} {debug_class_print_called_from (red, 0);}
@@ -667,7 +667,7 @@ struct ReturnObject {
     using co_function_return_value = ReturnObject;
     
     struct promise_type {
-        #define class_name ReturnObject::promise_type
+        #define class_name "ReturnObject::promise_type"
 
         promise_type (debug_called_from) {debug_class_print_called_from(red, 0);}
         co_function_return_value get_return_object(debug_called_from) {debug_class_print_called_from(red, 0); return {co_handle<promise_type>::from_promise(*this)}; }
@@ -679,14 +679,20 @@ struct ReturnObject {
 };
 
 struct Awaitable {
-    #define class_name Awaitable
+    #define class_name "Awaitable"
     co_handle <> * hp_;
     bool await_ready(debug_called_from) {
 //        debug_print_called_from (yellow, 0)
         return false;
     }
     void await_suspend (co_handle <> h, debug_called_from) {
-        string color = hp_->called_from_function == h.called_from_function ? blue : green;
+        string color;
+        if (hp_) {
+            color = hp_->called_from_function == h.called_from_function ? blue : green;
+        }
+        else {
+            color = blue;
+        }
 //        out("hej", text{"kuk", green, white}, "hora");
         debug_class_print_called_from(yellow, 0);
         
@@ -734,6 +740,10 @@ ReturnObject counter(debug_called_from) {
 
 
 int main(int argc, char const *argv[]) {
+    debug_called_from_none
+    
+#define class_name "MAIN"
+    
 //    cout << "tji" << endl;
   
 //    return 0;
@@ -755,10 +765,14 @@ int main(int argc, char const *argv[]) {
     cout << white;
     
     co_handle <> h = counter();
-
+    cout << endl << lines << endl << endl;
+    for (int i = 0; i < 2; ++i) {
+        debug_class_print_called_from(yellow, 0)
+        h ();
+    }
 //    ReturnObject obj = ;
 //    cout << "hi" << endl;
-    h.resume();
+//    h.resume();
     cout << endl << white << lines << endl;
     return 0;
     
