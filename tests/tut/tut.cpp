@@ -20,6 +20,7 @@
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
 #include <ph_color/color.hpp>
+#include <ph_coroutines/handle.hpp>
 
 using namespace std;
 using namespace experimental;
@@ -38,274 +39,36 @@ using namespace chrono_literals;
 
 
 
-template <typename... promise>
-struct co_handle;
 
 
-template <>
-struct co_handle <> : coroutine_handle <>{
-    #define class_name "co_handle<>"
-    using base = coroutine_handle <>;
-    using base::coroutine_handle;
-    using base::operator=;
-    using base::operator bool;
-    using base::operator();
-    using base::done;
-    using base::address;
-    using base::from_address;
-    using base::destroy;
-    using base::resume;
-    string called_from_function;
-    int called_from_line;
-    co_handle (debug_called_from) : called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
-        debug_class_print_called_from(cyan, 0);
-    }
-    template <class T>
-    co_handle (T&& h, debug_called_from) : base {forward<T>(h)}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
-//        debug_class_print_called_from(cyan, 0);
-    }
-    ~co_handle () {
-        cout << class_name << "::" << __FUNCTION__ << red << "OBS!! " << "potential memory leak!" << endl;
-        base::~coroutine_handle ();
-    }
-    auto operator co_await () {
-        
-    }
+
+
+struct resumable {
+    
 };
 
-template <typename promise>
-struct co_handle <promise> : coroutine_handle <promise>{
-    #define class_name "co_handle<promise>"
-    using base = coroutine_handle <promise>;
-//    using base::coroutine_handle;
-//    using base::operator=;
-    using base::operator bool;
-//    using base::operator();
-    using base::done;
-    using base::address;
-    using base::from_address;
-    using base::destroy;
-//    using base::resume;
-    string called_from_function;
-    int called_from_line;
-    co_handle (debug_called_from) : base {}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
-        debug_class_print_called_from (cyan, 0);
-    }
-//    template <class U>
-    co_handle& operator= (co_handle const& other) {
-        called_from_function = other.called_from_function;
-        called_from_line = other.called_from_line;
-        base::operator= (static_cast <coroutine_handle <promise> const&> (other));
-        return *this;
-    }
-    co_handle& operator= (co_handle&& other) {
-        swap (called_from_function, other.called_from_function);
-        swap (called_from_function, other.called_from_line);
-        base::operator= (static_cast <coroutine_handle <promise>&&> (other));
-        return *this;
-    }
-//    template <typename U>
-    co_handle (promise& h) : base {h.my_handle}, called_from_function {h.my_handle.called_from_function}, called_from_line {h.my_handle.called_from_line} {
-        
-    }
-    
-    /**
-     someone is copying a co_handle!!
-     */
-    co_handle (co_handle const& h) : base {h}, called_from_function {h.called_from_function}, called_from_line {h.called_from_line} {
-
-    }
-    co_handle (co_handle && h) : base {static_cast<coroutine_handle<promise>&&>(h)}, called_from_function {move (h.called_from_function)}, called_from_line {h.called_from_line} {
-
-    }
-    co_handle (coroutine_handle <promise> const& h, debug_called_from) : base {h}, called_from_function {_called_from_function}, called_from_line {_called_from_line} {
-//        if constexpr (is_same_v <U, co_handle <promise>>) {
-//            cout << "kmkm" << endl;
-//            co_handle me = static_cast<co_handle<promise>&>(h);
-//            called_from_function = me.called_from_function;
-//            called_from_line = me.called_from_line;
-//        } else {
-//            debug_class_print_called_from(cyan, 0);
-//
-//        }
-    }
-    co_handle (coroutine_handle <promise> && h, debug_called_from) : base {h}, called_from_function {move (_called_from_function)}, called_from_line {_called_from_line} {
-
-    }
-    static auto from_promise (promise& p, bool write_out = true, debug_called_from) -> decltype (auto) {
-        if (write_out)
-            debug_class_print_called_from(cyan, 0);
-        return base::from_promise (p);
-    }
-    
-    static co_handle <promise> from_promise (promise& p, string const& _called_from_function, int _called_from_line, int _called_line = __builtin_LINE ()) {
-        debug_class_print_called_from (cyan, 0)
-        return {base::from_promise (p), _called_from_function, _called_line};
-    }
-//    co_handle (co_handle const& handle) : base::coroutine_handle {handle} {
-//        cout << "yay" << endl;
-//    }
-    
-private:
-    /**
-     copying handle
-     */
-    co_handle (coroutine_handle <promise> handle, string const& _called_from_function, int _called_from_line) : base::coroutine_handle {handle}, called_from_function {_called_from_function}, called_from_line {_called_from_line}{
-//        debug_class_print_called_from (cyan, 0)
-    }
-};
-
-struct ReturnObject {
-    #define class_name "ReturnObject"
-    struct promise_type;
-    co_handle <promise_type>& handle;
-    ReturnObject (co_handle<promise_type>& handle, debug_called_from) : handle {handle} {debug_class_print_called_from (red, 0);}
-    operator co_handle<promise_type> () {
-        return handle.promise();
-    }
-    void operator()() const {
-        handle ();
-    }
-    using co_function_return_value = ReturnObject;
-    
-    struct promise_type {
-        #define class_name "ReturnObject::promise_type"
-        
-        co_handle <promise_type> my_handle;
-        int value;
-        
-        promise_type (debug_called_from) : my_handle {co_handle<promise_type>::from_promise (*this, _called_from_function, _called_from_line)} {debug_class_print_called_from (red, 0);}
-        co_function_return_value get_return_object(debug_called_from) {debug_class_print_called_from(red, 0); return my_handle; }
-        suspend_never initial_suspend(debug_called_from) {debug_class_print_called_from(red, 0); return {}; }
-        suspend_never final_suspend(debug_called_from) noexcept {debug_class_print_called_from(red, 0); return {}; }
-        void unhandled_exception(debug_called_from) {debug_class_print_called_from(red, 0);}
-        void return_void (debug_called_from) {debug_class_print_called_from(red, 0);}
-    };
-};
-
-struct Awaitable {
-    #define class_name "Awaitable"
-    co_handle <> * hp_;
-    bool await_ready(debug_called_from) {
-//        debug_print_called_from (yellow, 0)
-        return false;
-    }
-    void await_suspend (co_handle <> h, debug_called_from) {
-        string color;
-        if (hp_) {
-            color = hp_->called_from_function == h.called_from_function ? blue : green;
-        }
-        else {
-            color = blue;
-        }
-//        out("hej", text{"kuk", green, white}, "hora");
-        debug_class_print_called_from(yellow, 0);
-        
-        cout << endl << "storing {" << text {_called_from_function, blue} << "}'s handle into {" << color << hp_ -> called_from_function << white << "}'s handle.   " <<  _called_from_function + "::" + to_string (_called_from_line) << endl << endl;
-//        D1(yellow, 0)
-        //        cout << "FFFF" << endl;
-//        hp_->resume();
-        *hp_ = h;
-    }
-    void await_resume (debug_called_from) {
-        debug_class_print_called_from (yellow, 0)
-    }
-};
-
-template <typename Promise>
-struct co_callers_handle
-{
-#define class_name "co_callers_handle"
-    co_handle <Promise>* callers_handle;
-    
-    constexpr bool await_ready () noexcept {
-        return false;
-    }
-    bool await_suspend (co_handle <Promise> h, debug_called_from) noexcept {
-        callers_handle = &h.promise().my_handle;
-        return false;
-    }
-    co_handle <Promise>& await_resume () noexcept {
-        return *callers_handle;
-    }
-};
-
-template <typename Promise>
-struct co_my_handle {
-#define class_name "co_my_handle"
-    co_handle <Promise> my_handle;
-    
-    constexpr bool await_ready () noexcept {
-        return false;
-    }
-    bool await_suspend (co_handle <Promise> h, debug_called_from) noexcept {
-        my_handle = h;
-        return false;
-    }
-    co_handle <Promise> await_resume () noexcept {
-        return my_handle;
-    }
-};
 
 #define class_name "FUNCTION"
 #define PRINT(x) debug_class_print_called_from (yellow, 0, string (yellow) + x);
 
-ReturnObject counter (debug_called_from) {
-    int i = 0;
+
+
+
+resumable counter (debug_called_from) {
+    debug_class_print_called_from (yellow, 0)
+
     
-    auto& mains_handle = co_await co_callers_handle <ReturnObject::promise_type> {};
-    auto aa = co_await co_my_handle<ReturnObject::promise_type> {};
-    aa.resume();
-    cout << aa.called_from_function << endl;
+    cout << "yo" << endl;
+//    co_yield 3;
+
     
-    cout << mains_handle.called_from_function << endl;
-    
-    if (i == 0) {
-        ++i;
-        mains_handle.resume();
-    }
-    cout << "kiss" << endl;
-//    cout << my_promise->my_handle.called_from_function << endl;
-    
-    
-    
-//    PRINT ("got mains handle... resuming it!")
-//    mains_handle.resume();
- 
-//    int i = 0;
-//    
-//
-//
-//
-//
-    for (int i = 0; ; ++i){
-//        if (i <= 0)
-//            my_promise.my_handle.resume();
-//        promise.handle->promise
-//        co_await suspend_always {};
-//        mains_handle.resume();
-        mains_handle.promise().value++;
-        co_await suspend_always {};
-//        co_await suspend_always {};
-        PRINT("resuming")
-    }
-    
-    
-//    co_await Awaitable {a};
-//  for (unsigned i = 0; i < 1; ++i) {
-//      cout << "00" << endl;
 
 //    co_await *a; // creates a callable object coroutine_handle <> whose invocation continues execution of the current function
       /**
        The compiler creates a coroutine handle and passes
        it to the method a.await_suspend (coroutine_handle).
        */
-      
-
-//    std::cout << "counter: " << i << std::endl;
-//  }
     cout << "counter..." << endl;
-    
 }
 
 
@@ -325,8 +88,12 @@ int main(int argc, char const *argv[]) {
     cout << white;
 //    co_handle<ReturnObject::promise_type> my_handle;
     int i = 0;
-    co_handle <ReturnObject::promise_type> counters_handle = counter ();
-    cout << counters_handle.called_from_function << endl;
+//    resumable counters_handle = counter ();
+//    cout << counters_handle.called_from_function << endl;
+//    counters_handle ();
+//    counters_handle ();
+//    counters_handle ();
+
 //    if (i <= 0){
 //        ++i;
 //        counters_handle ();
@@ -335,7 +102,7 @@ int main(int argc, char const *argv[]) {
 //    cout << endl << lines << endl << endl;
     for (int i = 0; i < 2; ++i) {
 //        debug_class_print_called_from(yellow, 0)
-        debug_class_print_called_from (yellow, 0, counters_handle.promise().value, string (yellow) + "waking up counter!")
+//        debug_class_print_called_from (yellow, 0, counters_handle.promise().value, string (yellow) + "waking up counter!")
 //        counters_handle ();
 //        h ();
 //        cout << h.promise().value << endl;
