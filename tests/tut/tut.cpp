@@ -54,6 +54,7 @@ struct resumable {
         }
         auto initial_suspend () {
             thread{[&] () mutable {
+//                this_thread::sleep_for(1s);
                 resume();
             }}.detach();
             return suspend_always {};
@@ -67,7 +68,6 @@ struct resumable {
                 }
                 coroutine_handle<> await_suspend (coroutine_handle <promise_type> thisCoro) noexcept {
                     auto& promise = thisCoro.promise();
-
                     if (promise.m_continuation) {
                         return static_cast <coroutine_handle<>> (promise.m_continuation);
                     }
@@ -153,7 +153,8 @@ resumable counter4 (debug_called_from) {
 //    debug_class_print_called_from (yellow, 0)
     co_await suspend_never{};
 //    co_await suspend_always {};
-    
+    this_thread::sleep_for(1s);
+
     cout << "hi" << endl;
     cout << "counter4..." << endl;
     co_return 2;
@@ -172,6 +173,7 @@ resumable counter2 (debug_called_from) {
 //    debug_class_print_called_from (yellow, 0)
     co_await counter3();
     co_await counter4();
+    
     cout << "hi" << endl;
     cout << "counter2..." << endl;
     co_return 2;
@@ -216,7 +218,7 @@ int main(int argc, char const *argv[]) {
     int i = 0;
     resumable r = counter ();
     cout << green << lines << endl << white;
-    this_thread::sleep_for(1s);
+    this_thread::sleep_for(5s);
 //    r.resume();
 //    r.resume();
 
