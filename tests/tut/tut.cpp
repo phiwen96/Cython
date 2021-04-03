@@ -48,8 +48,8 @@ using namespace chrono_literals;
 
 
 
-
-task <string> async_read_file (filesystem::path const& p) {
+template <bool threading = true>
+task <string, threading> async_read_file (filesystem::path const& p) {
     auto ss = ostringstream {};
     ifstream input_file(p);
     if (!input_file.is_open()) {
@@ -61,12 +61,23 @@ task <string> async_read_file (filesystem::path const& p) {
     co_return ss.str();
 }
 
+task <void> async_write_file (filesystem::path const& p, string const& s) {
+    ofstream output_file;
+    output_file.open (p);
+    if (!output_file.is_open()) {
+        cerr << "Could not open the file - '"
+             << p << "'" << endl;
+        exit (EXIT_FAILURE);
+    }
+    output_file << s;
+}
+
 
 #define class_name "FUNCTION"
 #define PRINT(x) debug_class_print_called_from (yellow, 0, string (yellow) + x);
 
 task <int>  counter4 (debug_called_from) {
-//    debug_class_print_called_from (yellow, 0)
+    debug_class_print_called_from (yellow, 0)
     co_await suspend_never{};
 //    co_await suspend_always {};
     this_thread::sleep_for(1s);
@@ -76,7 +87,7 @@ task <int>  counter4 (debug_called_from) {
     co_return 2;
 }
 task <int> counter3 (debug_called_from) {
-//    debug_class_print_called_from (yellow, 0)
+    debug_class_print_called_from (yellow, 0)
     co_await suspend_never{};
 //    co_await suspend_always {};
 
@@ -86,7 +97,7 @@ task <int> counter3 (debug_called_from) {
 }
 
 task <int> counter2 (debug_called_from) {
-//    debug_class_print_called_from (yellow, 0)
+    debug_class_print_called_from (yellow, 0)
     co_await counter3();
     co_await counter4();
     
@@ -96,7 +107,7 @@ task <int> counter2 (debug_called_from) {
 }
 
 task <int> counter (debug_called_from) {
-//    debug_class_print_called_from (yellow, 0)
+    debug_class_print_called_from (yellow, 0)
 
     
     co_await counter2 ();
@@ -116,16 +127,22 @@ task <int> counter (debug_called_from) {
 }
 
 
-task <int> run () {
-    
-    task <string> t1 = async_read_file ("kuk");
-    
+task <int, false> run () {
+    cout << "hi" << endl;
+    task <string> t1 = async_read_file ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
     string s1 = co_await t1;
+    cout << "hi" << endl;
+//    string s2 = co_await async_read_file <false> ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
     
-    task r = counter ();
-    task r2 = counter ();
-    co_await r;
-    co_await r2;
+    
+    cout << s1 << endl;
+//    cout << s2 << endl;
+
+    
+//    task r = counter ();
+//    task r2 = counter ();
+//    co_await r;
+//    co_await r2;
     cout << "done" << endl;
 }
 
@@ -147,7 +164,8 @@ int main(int argc, char const *argv[]) {
         
     run ();
     cout << green << lines << endl << white;
-    this_thread::sleep_for(5s);
+    counter();
+    this_thread::sleep_for(2s);
 //    r.resume();
 //    r.resume();
 
