@@ -21,6 +21,7 @@
 #include <cppcoro/sync_wait.hpp>
 #include <ph_color/color.hpp>
 #include <ph_coroutines/handle.hpp>
+#include <ph_coroutines/task.hpp>
 //#include <ph_coroutines/timer.hpp>
 
 using namespace std;
@@ -45,111 +46,26 @@ using namespace chrono_literals;
 
 
 
-struct resumable {
-#define class_name "resumable"
-    struct promise_type {
-        coroutine_handle <> m_continuation;
-        resumable get_return_object () {
-            return resumable {*this};
-        }
-        auto initial_suspend () {
-            thread{[&] () mutable {
-//                this_thread::sleep_for(1s);
-                resume();
-            }}.detach();
-            return suspend_always {};
-        }
-        
-        auto final_suspend () noexcept {
-            
-            struct awaitable {
-                bool await_ready () noexcept {
-                    return false;
-                }
-                coroutine_handle<> await_suspend (coroutine_handle <promise_type> thisCoro) noexcept {
-                    auto& promise = thisCoro.promise();
-                    if (promise.m_continuation) {
-                        return static_cast <coroutine_handle<>> (promise.m_continuation);
-                    }
-                    return noop_coroutine();
-                }
-                void await_resume () noexcept {
-                    
-                }
-            };
-            return awaitable {};
-        }
-        template <typename T>
-        auto yield_value (T&& lambda) {
-            struct awaitable {
-                bool await_ready () noexcept {
-                    return false;
-                }
-                coroutine_handle<> await_suspend (coroutine_handle <promise_type> thisCoro) noexcept {
-//                    thread {[this, thisCoro]()mutable{
-//                        thisCoro.resume();
-//                    }}.detach();
-
-//                    cout << "fdfd" << endl;
-                    auto& promise = thisCoro.promise();
-                    if (promise.m_continuation) {
-                        return static_cast <coroutine_handle<>> (promise.m_continuation);
-                    }
-                    return noop_coroutine();
-                }
-                void await_resume () noexcept {
-                    
-                }
-            };
-            return awaitable {};
-        }
-        auto return_value (int i) {
-            
-        }
-        auto unhandled_exception () {
-            throw runtime_error ("oops");
-        }
-        bool done () {
-            return coroutine_handle<promise_type>::from_promise(*this).done();
-//            return m_handle.done();
-        }
-        bool resume () {
-            if (not coroutine_handle<promise_type>::from_promise(*this).done())
-                coroutine_handle<promise_type>::from_promise(*this).resume();
-            
-            return not coroutine_handle<promise_type>::from_promise(*this).done();
-        }
-    };
-    auto resume () {
-        return m_promise.resume();
-    }
-    
-    bool await_ready () {
-        return m_promise.done();
-    }
-    auto await_suspend (coroutine_handle <> continuation) noexcept {
-        m_promise.m_continuation = continuation;
-        return true;
-//        return coroutine_handle<promise_type>::from_promise (m_promise);
-    }
-    void await_resume () {
-        
-    }
-    promise_type& m_promise;
-    resumable (resumable const&) = delete;
-    resumable (promise_type& promise) : m_promise {promise} {}
-    resumable (resumable&& o) : m_promise {o.m_promise} {}
-    resumable& operator=(resumable&&) = delete;
-    resumable& operator=(resumable const&) = delete;
-};
 
 
+
+task <string> async_read_file (filesystem::path const& p) {
+    auto ss = ostringstream {};
+    ifstream input_file(p);
+    if (!input_file.is_open()) {
+        cerr << "Could not open the file - '"
+             << p << "'" << endl;
+        exit (EXIT_FAILURE);
+    }
+    ss << input_file.rdbuf();
+    co_return ss.str();
+}
 
 
 #define class_name "FUNCTION"
 #define PRINT(x) debug_class_print_called_from (yellow, 0, string (yellow) + x);
 
-resumable counter4 (debug_called_from) {
+task <int>  counter4 (debug_called_from) {
 //    debug_class_print_called_from (yellow, 0)
     co_await suspend_never{};
 //    co_await suspend_always {};
@@ -159,7 +75,7 @@ resumable counter4 (debug_called_from) {
     cout << "counter4..." << endl;
     co_return 2;
 }
-resumable counter3 (debug_called_from) {
+task <int> counter3 (debug_called_from) {
 //    debug_class_print_called_from (yellow, 0)
     co_await suspend_never{};
 //    co_await suspend_always {};
@@ -169,7 +85,7 @@ resumable counter3 (debug_called_from) {
     co_return 2;
 }
 
-resumable counter2 (debug_called_from) {
+task <int> counter2 (debug_called_from) {
 //    debug_class_print_called_from (yellow, 0)
     co_await counter3();
     co_await counter4();
@@ -179,7 +95,7 @@ resumable counter2 (debug_called_from) {
     co_return 2;
 }
 
-resumable counter (debug_called_from) {
+task <int> counter (debug_called_from) {
 //    debug_class_print_called_from (yellow, 0)
 
     
@@ -200,9 +116,22 @@ resumable counter (debug_called_from) {
 }
 
 
+task <int> run () {
+    
+    task <string> t1 = async_read_file ("kuk");
+    
+    string s1 = co_await t1;
+    
+    task r = counter ();
+    task r2 = counter ();
+    co_await r;
+    co_await r2;
+    cout << "done" << endl;
+}
 
 int main(int argc, char const *argv[]) {
  
+    
     string info {""};
     debug_called_from_none
     
@@ -215,8 +144,8 @@ int main(int argc, char const *argv[]) {
 
     cout << white;
 //    coroutine_handle<ReturnObject::promise_type> my_handle;
-    int i = 0;
-    resumable r = counter ();
+        
+    run ();
     cout << green << lines << endl << white;
     this_thread::sleep_for(5s);
 //    r.resume();
