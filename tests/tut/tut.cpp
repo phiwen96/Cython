@@ -48,28 +48,29 @@ using namespace chrono_literals;
 
 
 
-task <string> async_read_file (filesystem::path const& p) {
-//    auto ss = ostringstream {};
-//    ifstream input_file(p);
-//    if (!input_file.is_open()) {
-//        cerr << "Could not open the file - '"
-//             << p << "'" << endl;
-//        exit (EXIT_FAILURE);
-//    }
-//    ss << input_file.rdbuf();
-//    co_return ss.str();
-    co_return "bajs";
-}
-
-task <void> async_write_file (filesystem::path const& p, string const& s) {
-    ofstream output_file;
-    output_file.open (p);
-    if (!output_file.is_open()) {
+auto async_read_file (auto&& p) -> task <string>
+{
+    auto ss = ostringstream {};
+    ifstream input_file (fwd (p));
+    if (!input_file.is_open()) {
         cerr << "Could not open the file - '"
              << p << "'" << endl;
         exit (EXIT_FAILURE);
     }
-    output_file << s;
+    ss << input_file.rdbuf();
+    co_return ss.str();
+}
+
+auto async_write_file (auto&& path, auto&& str) -> task <void>
+{
+    ofstream output_file;
+    output_file.open (fwd (path));
+    if (!output_file.is_open()) {
+        cerr << "Could not open the file - '"
+             << path << "'" << endl;
+        exit (EXIT_FAILURE);
+    }
+    output_file << fwd (str);
 }
 
 
@@ -110,7 +111,8 @@ task <int> counter3 (debug_called_from) {
     co_return 2;
 }
 
-task <int> counter2 (debug_called_from) {
+auto counter2 (debug_called_from) -> task <int>
+{
     debug_class_print_called_from (yellow, 0)
     Timer<true> t {"hej"};
 //    co_await counter5();
@@ -165,13 +167,13 @@ task <int> counterr (debug_called_from) {
 
 task <int> run () {
     cout << "run" << endl;
-    task <string> t1 = async_read_file ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
-    string s1 = co_await t1;
+//    task <string> t1 = async_read_file ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
+    cout <<  co_await async_read_file ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in") << endl;
     cout << "run." << endl;
 //    string s2 = co_await async_read_file <false> ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
     
     
-    cout << s1 << endl;
+//    cout << s1 << endl;
 //    cout << s2 << endl;
 
     
@@ -200,11 +202,26 @@ task <int> testing () {
     co_await Sleep {2s};
 }
 
+auto testing2 () -> task <int>
+{
+    int i = 3;
+    co_return i;
+}
 
 
+auto testing3 () -> task <int>
+{
+    for (int i = 0; i < 10000; ++i)
+    {
+        co_await testing2 ();
+    }
+    co_return 4;
+}
 
 
 int main(int argc, char const *argv[]) {
+   
+    
     char const* lines = "================================================================================================================";
 
     
@@ -222,6 +239,8 @@ int main(int argc, char const *argv[]) {
     cout << red << lines << endl << endl;
 
     cout << white;
+    run().wait();
+//    return 0;
 //    coroutine_handle<ReturnObject::promise_type> my_handle;
         
 //    run ();
