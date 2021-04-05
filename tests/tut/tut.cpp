@@ -112,6 +112,7 @@ task <int> counter3 (debug_called_from) {
 
 task <int> counter2 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
+    Timer<true> t {"hej"};
 //    co_await counter5();
 //    co_await counter4();
 //    co_await counter3();
@@ -198,6 +199,10 @@ struct Sleep {
 task <int> testing () {
     co_await Sleep {2s};
 }
+
+
+
+
 
 int main(int argc, char const *argv[]) {
     char const* lines = "================================================================================================================";
