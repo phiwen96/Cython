@@ -48,8 +48,7 @@ using namespace chrono_literals;
 
 
 
-template <bool threading = true>
-task <string, threading> async_read_file (filesystem::path const& p) {
+task <string> async_read_file (filesystem::path const& p) {
 //    auto ss = ostringstream {};
 //    ifstream input_file(p);
 //    if (!input_file.is_open()) {
@@ -77,20 +76,18 @@ task <void> async_write_file (filesystem::path const& p, string const& s) {
 #define class_name "FUNCTION"
 #define PRINT(x) debug_class_print_called_from (yellow, 0, string (yellow) + x);
 
-template <bool cont_multithreading = true>
-task <int, true, cont_multithreading>  counter5 (debug_called_from) {
+task <int>  counter5 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
 //    co_await suspend_never{};
 //    co_await suspend_always {};
-    this_thread::sleep_for (2s);
+    this_thread::sleep_for (3s);
 
 //    cout << "hi" << endl;
     cout << "counter5..." << endl;
     co_return 2;
 }
 
-template <bool cont_multithreading = true>
-task <int, true, cont_multithreading>  counter4 (debug_called_from) {
+task <int>  counter4 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
 //    co_await suspend_never{};
 //    co_await suspend_always {};
@@ -101,11 +98,10 @@ task <int, true, cont_multithreading>  counter4 (debug_called_from) {
     co_return 2;
 }
 
-template <bool cont_multithreading = true>
-task <int, true, cont_multithreading> counter3 (debug_called_from) {
+task <int> counter3 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
 //    co_await suspend_never{};
-    this_thread::sleep_for (2s);
+    this_thread::sleep_for (1s);
 
 //    co_await suspend_always {};
 
@@ -114,18 +110,22 @@ task <int, true, cont_multithreading> counter3 (debug_called_from) {
     co_return 2;
 }
 
-template <bool cont_multithreading = true>
-task <int, true, cont_multithreading> counter2 (debug_called_from) {
+task <int> counter2 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
+//    co_await counter5();
 //    co_await counter4();
 //    co_await counter3();
-    auto c5 = counter5 <cont_multithreading> ();
-    auto c4 = counter4 <cont_multithreading> ();
-    auto c3 = counter3 <cont_multithreading> ();
+    auto c5 = counter5 ();
+    auto c4 = counter4 ();
+    auto c3 = counter3 ();
 
     co_await c5;
+    cout << "yay5" << endl;
     co_await c4;
+    cout << "yay4" << endl;
     co_await c3;
+    cout << "yay3" << endl;
+
     
     
 //    cout << "hi" << endl;
@@ -148,9 +148,9 @@ task <int> counter (debug_called_from) {
     co_return 2;
 }
 
-task <int, false> counterr (debug_called_from) {
+task <int> counterr (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-    co_await counter2 <false> ();
+    co_await counter2 ();
 
 //    co_await *a; // creates a callable object coroutine_handle <> whose invocation continues execution of the current function
       /**
@@ -162,7 +162,7 @@ task <int, false> counterr (debug_called_from) {
 }
 
 
-task <int, false> run () {
+task <int> run () {
     cout << "run" << endl;
     task <string> t1 = async_read_file ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
     string s1 = co_await t1;
@@ -181,16 +181,38 @@ task <int, false> run () {
     cout << "done" << endl;
 }
 
+struct Sleep {
+    bool await_ready () {
+        return duration == duration.zero ();
+    }
+    void await_suspend (coroutine_handle<> coro) {
+        this_thread::sleep_for (duration);
+        coro ();
+    }
+    void await_resume () {
+        cout << "done!" << endl;
+    }
+    chrono::seconds duration;
+};
+
+task <int> testing () {
+    co_await Sleep {2s};
+}
+
 int main(int argc, char const *argv[]) {
- 
-    
-    string info {""};
-    debug_called_from_none
-    
-
-
-    
     char const* lines = "================================================================================================================";
+
+    
+//    testing().wait();
+//    cout << lines << endl;
+//    return 0;
+//
+//    string info {""};
+//    debug_called_from_none
+    
+
+
+    
 //    cout << white << lines << info << endl << white << lines << endl;// << red << lines << white << info  << red << lines << endl << endl;
     cout << red << lines << endl << endl;
 
@@ -199,11 +221,16 @@ int main(int argc, char const *argv[]) {
         
 //    run ();
     cout << green << lines << endl << white;
-    counter();
-//    counterr();
-    this_thread::sleep_for(3s);
+//    counter();
+    auto t = counter();
+    t.wait();
+//    for (auto& th : threadss)
+//        th.join();
+    
+//    threadss.clear();
+//    this_thread::sleep_for(3s);
     cout << yellow << lines << endl << white;
-    counterr();
+//    counterr();
 //    r.resume();
 //    r.resume();
 
