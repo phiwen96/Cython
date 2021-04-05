@@ -77,37 +77,55 @@ task <void> async_write_file (filesystem::path const& p, string const& s) {
 #define class_name "FUNCTION"
 #define PRINT(x) debug_class_print_called_from (yellow, 0, string (yellow) + x);
 
-task <int>  counter4 (debug_called_from) {
+template <bool cont_multithreading = true>
+task <int, true, cont_multithreading>  counter5 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
 //    co_await suspend_never{};
 //    co_await suspend_always {};
     this_thread::sleep_for (2s);
 
-    cout << "hi" << endl;
+//    cout << "hi" << endl;
+    cout << "counter5..." << endl;
+    co_return 2;
+}
+
+template <bool cont_multithreading = true>
+task <int, true, cont_multithreading>  counter4 (debug_called_from) {
+    debug_class_print_called_from (yellow, 0)
+//    co_await suspend_never{};
+//    co_await suspend_always {};
+    this_thread::sleep_for (2s);
+
+//    cout << "hi" << endl;
     cout << "counter4..." << endl;
     co_return 2;
 }
-task <int> counter3 (debug_called_from) {
+
+template <bool cont_multithreading = true>
+task <int, true, cont_multithreading> counter3 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
 //    co_await suspend_never{};
     this_thread::sleep_for (2s);
 
 //    co_await suspend_always {};
 
-    cout << "hi" << endl;
+//    cout << "hi" << endl;
     cout << "counter3..." << endl;
     co_return 2;
 }
 
-task <int> counter2 (debug_called_from) {
+template <bool cont_multithreading = true>
+task <int, true, cont_multithreading> counter2 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-    co_await counter4();
-    co_await counter3();
-//    task <int> c4 = counter4();
-//    task <int> c3 = counter3();
-//
-//    co_await c4;
-//    co_await c3;
+//    co_await counter4();
+//    co_await counter3();
+    auto c5 = counter5 <cont_multithreading> ();
+    auto c4 = counter4 <cont_multithreading> ();
+    auto c3 = counter3 <cont_multithreading> ();
+
+    co_await c5;
+    co_await c4;
+    co_await c3;
     
     
 //    cout << "hi" << endl;
@@ -130,16 +148,16 @@ task <int> counter (debug_called_from) {
     co_return 2;
 }
 
-task <int> counterr (debug_called_from) {
+task <int, false> counterr (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-    co_await counter2 ();
+    co_await counter2 <false> ();
 
 //    co_await *a; // creates a callable object coroutine_handle <> whose invocation continues execution of the current function
       /**
        The compiler creates a coroutine handle and passes
        it to the method a.await_suspend (coroutine_handle).
        */
-    cout << "counter..." << endl;
+    cout << "counterr..." << endl;
     co_return 2;
 }
 
@@ -183,7 +201,9 @@ int main(int argc, char const *argv[]) {
     cout << green << lines << endl << white;
     counter();
 //    counterr();
-//    this_thread::sleep_for(5s);
+    this_thread::sleep_for(3s);
+    cout << yellow << lines << endl << white;
+    counterr();
 //    r.resume();
 //    r.resume();
 
@@ -208,7 +228,7 @@ int main(int argc, char const *argv[]) {
 //        cout << h.promise().value << endl;
     }
 
-    cout << red << endl << lines << endl;
+//    cout << red << endl << lines << endl;
 
 
 
