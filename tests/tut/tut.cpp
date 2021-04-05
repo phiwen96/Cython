@@ -50,15 +50,16 @@ using namespace chrono_literals;
 
 template <bool threading = true>
 task <string, threading> async_read_file (filesystem::path const& p) {
-    auto ss = ostringstream {};
-    ifstream input_file(p);
-    if (!input_file.is_open()) {
-        cerr << "Could not open the file - '"
-             << p << "'" << endl;
-        exit (EXIT_FAILURE);
-    }
-    ss << input_file.rdbuf();
-    co_return ss.str();
+//    auto ss = ostringstream {};
+//    ifstream input_file(p);
+//    if (!input_file.is_open()) {
+//        cerr << "Could not open the file - '"
+//             << p << "'" << endl;
+//        exit (EXIT_FAILURE);
+//    }
+//    ss << input_file.rdbuf();
+//    co_return ss.str();
+    co_return "bajs";
 }
 
 task <void> async_write_file (filesystem::path const& p, string const& s) {
@@ -78,9 +79,9 @@ task <void> async_write_file (filesystem::path const& p, string const& s) {
 
 task <int>  counter4 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-    co_await suspend_never{};
+//    co_await suspend_never{};
 //    co_await suspend_always {};
-    this_thread::sleep_for(1s);
+    this_thread::sleep_for (2s);
 
     cout << "hi" << endl;
     cout << "counter4..." << endl;
@@ -88,7 +89,9 @@ task <int>  counter4 (debug_called_from) {
 }
 task <int> counter3 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-    co_await suspend_never{};
+//    co_await suspend_never{};
+    this_thread::sleep_for (2s);
+
 //    co_await suspend_always {};
 
     cout << "hi" << endl;
@@ -98,24 +101,38 @@ task <int> counter3 (debug_called_from) {
 
 task <int> counter2 (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-    co_await counter3();
     co_await counter4();
+    co_await counter3();
+//    task <int> c4 = counter4();
+//    task <int> c3 = counter3();
+//
+//    co_await c4;
+//    co_await c3;
     
-    cout << "hi" << endl;
+    
+//    cout << "hi" << endl;
     cout << "counter2..." << endl;
     co_return 2;
 }
 
+
+
 task <int> counter (debug_called_from) {
     debug_class_print_called_from (yellow, 0)
-
-    
     co_await counter2 ();
-    
-    cout << "yo" << endl;
-//    co_yield 3;
-//    co_await suspend_always {};
 
+//    co_await *a; // creates a callable object coroutine_handle <> whose invocation continues execution of the current function
+      /**
+       The compiler creates a coroutine handle and passes
+       it to the method a.await_suspend (coroutine_handle).
+       */
+    cout << "counter..." << endl;
+    co_return 2;
+}
+
+task <int> counterr (debug_called_from) {
+    debug_class_print_called_from (yellow, 0)
+    co_await counter2 ();
 
 //    co_await *a; // creates a callable object coroutine_handle <> whose invocation continues execution of the current function
       /**
@@ -128,10 +145,10 @@ task <int> counter (debug_called_from) {
 
 
 task <int, false> run () {
-    cout << "hi" << endl;
+    cout << "run" << endl;
     task <string> t1 = async_read_file ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
     string s1 = co_await t1;
-    cout << "hi" << endl;
+    cout << "run." << endl;
 //    string s2 = co_await async_read_file <false> ("/Users/philipwenkel/GitHub/Cython/tests/apptest/sources/a.hpp.in");
     
     
@@ -162,10 +179,11 @@ int main(int argc, char const *argv[]) {
     cout << white;
 //    coroutine_handle<ReturnObject::promise_type> my_handle;
         
-    run ();
+//    run ();
     cout << green << lines << endl << white;
     counter();
-    this_thread::sleep_for(2s);
+//    counterr();
+//    this_thread::sleep_for(5s);
 //    r.resume();
 //    r.resume();
 
