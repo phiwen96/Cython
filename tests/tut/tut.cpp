@@ -16,12 +16,17 @@
 #include <semaphore>
 #include <condition_variable>
 #include <exception>
+#include <const_str/const_str.hpp>
 
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
 #include <ph_color/color.hpp>
 #include <ph_coroutines/handle.hpp>
 #include <ph_coroutines/task.hpp>
+#include <ph_coroutines/statemachine.hpp>
+#include <ph_coroutines/i_am_co_awaited.hpp>
+#include <ph_coroutines/i_was_co_awaited_and_now_i_am_suspending.hpp>
+
 //#include <ph_coroutines/timer.hpp>
 
 using namespace std;
@@ -218,11 +223,331 @@ auto testing3 () -> task <int>
     co_return 4;
 }
 
+struct Open{};
+struct Close{};
+struct Knock{};
+
+StateMachine getDoor (string answer)
+{
+    for (;;)
+    {
+    //closed
+        auto e = co_await Event <Open, Knock> {};
+        
+        if (std::holds_alternative <Knock> (e))
+        {
+          cout << "Come in, it's open!" << endl;
+        }
+
+        else if (std::holds_alternative <Open> (e))
+        { // open
+            cout << "opening door" << endl;
+            co_await Event <Close> {};
+        }
+    }
+}
+
+
+
+
+machine parse ()
+{
+    goto zero;
+    
+    zero:
+    cout << "zero" << endl;
+    
+    string nr {""};
+    for (;;)
+    {
+        char found = co_await "0123456789";//co_await ('c', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+//        co_yield found - '0';
+        nr += found;
+        goto one;
+    }
+    
+    one:
+    cout << "one" << endl;
+
+    for (;;)
+    {
+        char found = co_await "+-0123456789";
+        
+        switch (found)
+        {
+            case '+':
+                co_yield stoi (nr);
+//                goto two;
+                goto three;
+                
+            case '-':
+                co_yield stoi (nr);
+                goto four;
+                
+            default:
+                nr += found;
+                break;
+        }
+    }
+    
+    two:
+    cout << "two" << endl;
+
+    for (;;)
+    {
+        char found = co_await "+-0123456789";
+        switch (found)
+        {
+            case '-':
+                goto four;
+                
+            case '+':
+                break;
+                
+            default:
+                goto three;
+                break;
+        }
+    }
+    
+
+
+    
+    four:
+    cout << "four" << endl;
+
+    for (;;)
+    {
+        char found = co_await "+-0123456789";
+        switch (found)
+        {
+            case '-':
+                goto two;
+                break;
+                
+            case '+':
+                break;
+                
+            default:
+                goto three;
+                break;
+        }
+    }
+    
+//    two:
+//
+//    three:
+    
+three:
+    cout << "three" << endl;
+    
+    auto child = parse ();
+    
+    for (;;)
+    {
+        
+//        char found = co_await (Any {});
+//        child.process (found);
+//        co_yield child;
+        co_await parse();
+    }
+    
+
+    
+}
+
+machine parse2 (char c)
+{
+    machine parser = parse ();
+    for (;;)
+    {
+        parser.process (c);
+        co_await suspend_always {};
+    }
+//    co_await c;
+}
+machine helper (string const& str)
+{
+    auto parser = parse ();
+    for (auto const& c : str)
+    {
+        parser.process(c);
+//        co_await parse()
+    }
+//    cout << "::::::" << endl;
+//
+//    for (auto const& c : str)
+//    {
+//        parse2 (c);
+////        co_await parse()
+//    }
+    
+}
+
+
+
+struct mytask
+{
+    struct promise_type
+    {
+        int m_value;
+        
+        promise_type (d0) : m_function_name {_called_from_function}
+        {
+            d1 (green, 0)
+        }
+        auto get_return_object () noexcept -> decltype (auto)
+        {
+            return mytask {coroutine_handle <promise_type>::from_promise(*this)};
+        }
+        auto initial_suspend () noexcept -> decltype (auto)
+        {
+            return suspend_always {};
+        }
+        auto final_suspend () noexcept -> decltype (auto)
+        {
+            return i_was_co_awaited_and_now_i_am_suspending {};
+        }
+        [[noreturn]] auto unhandled_exception () -> decltype (auto)
+        {
+            throw runtime_error ("oops");
+        }
+        
+        /**
+         co_return value;
+         */
+        [[nodiscard]] auto return_value (int value) noexcept  -> decltype (auto)
+        {
+            m_value = value;
+        }
+        
+        /**
+            i am co_awaiting another function!
+         
+            When we are (in our own coro-function) co_awaiting another function!
+         */
+        auto await_transform (mytask&& i_co_awaited_this_function) -> decltype (auto)
+        {
+            return i_am_co_awaited {move (i_co_awaited_this_function.m_coro)};
+        }
+        
+        /**
+         i am co_awaiting another function!
+         
+            When we are (in our own coro-function) co_awaiting another function!
+         */
+        auto await_transform (mytask const& i_co_awaited_this_function) -> decltype (auto)
+        {
+            return i_am_co_awaited {i_co_awaited_this_function.m_coro};
+        }
+        
+        string m_function_name;
+        coroutine_handle <> m_parent;
+    };
+    
+    auto resume ()
+    {
+        if (m_coro.done())
+        {
+            throw runtime_error ("can't resume coro, it is already done!");
+        }
+        return m_coro.resume();
+    }
+    auto is_ready ()
+    {
+        return m_coro.done();
+    }
+    ~mytask ()
+    {
+        if (m_coro)
+        {
+            m_coro.destroy();
+        }
+    }
+    mytask (coroutine_handle<promise_type> coro) : m_coro {coro}
+    {
+
+    }
+    mytask (mytask&& other) : m_coro {exchange (other.m_coro, {})}
+    {
+
+    }
+    mytask (mytask const&) = delete;
+    mytask& operator=(mytask const&) = delete;
+    mytask& operator=(mytask&&) = delete;
+
+    
+    /**
+     I am co_awaited by another coroutine!
+     */
+//    auto operator co_await () const& noexcept
+//    {
+//        return i_am_co_awaited {m_coro};
+//    }
+    
+        
+private:
+    coroutine_handle <promise_type> m_coro;
+};
+
+mytask task3 ()
+{
+    cout << "task3..." << endl;
+//    co_await suspend_always {};
+    cout << "...task3" << endl;
+    co_return 3;
+}
+
+mytask task2 ()
+{
+    cout << "task2..." << endl;
+    auto aa = task3 ();
+    co_await aa;
+//    co_await suspend_always {};
+    co_await task3 ();
+    cout << "...task2" << endl;
+    co_return 2;
+}
+
+mytask task1 ()
+{
+    cout << "task1..." << endl;
+    co_await task2 ();
+    cout << "...task1" << endl;
+    co_return 1;
+}
 
 int main(int argc, char const *argv[]) {
-   
-    
     char const* lines = "================================================================================================================";
+    cout << red << lines << white << endl;
+
+
+    mytask t1 = task1();
+    t1.resume ();
+//    t1.resume ();
+//    t1.resume ();
+        
+    
+    return 0;
+    
+    
+    helper ("10+3+8+7");
+    
+    return 0;
+    
+    
+    
+    
+    auto door = getDoor ("Occupied!");
+//    door.onEvent (Close {}); // Open -> Closed
+    door.onEvent (Open {});
+
+//    door.onEvent (Open {});  // Closed -> Open
+    return 0;
+    door.onEvent (Knock {});
+    door.onEvent (Close {}); // Closed -> Closed
+
+    return 0;
 
     
 //    testing().wait();
@@ -236,9 +561,7 @@ int main(int argc, char const *argv[]) {
 
     
 //    cout << white << lines << info << endl << white << lines << endl;// << red << lines << white << info  << red << lines << endl << endl;
-    cout << red << lines << endl << endl;
-
-    cout << white;
+ 
     run().wait();
 //    return 0;
 //    coroutine_handle<ReturnObject::promise_type> my_handle;
