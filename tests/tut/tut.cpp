@@ -4,8 +4,6 @@
 #include <concepts>
 #include <ph_concepts/concepts.hpp>
 //#include <ph_coroutines/coroutines.hpp>
-#include <ph_coroutines/generator/generator.hpp>
-#include <ph_coroutines/generator/iterator.hpp>
 #include <ph_coroutines/promise.hpp>
 #include <ph_time/time.hpp>
 #include <ph_time/Date.hpp>
@@ -390,16 +388,17 @@ machine helper (string const& str)
 template <typename _value_type>
 struct mytask
 {
+    using interface_type = mytask;
     using value_type = _value_type;
-    using promise_type = co_promise <mytask>;
+    using promise_type = co_promise <interface_type>;
+    using initial_suspend_awaitable_type = suspend_always;
+    using final_suspend_awaitable_type = i_was_co_awaited_and_now_i_am_suspending;
+    using await_transform_awaitable_type = i_am_co_awaited <promise_type>;
 
-    struct awaitable
-    {
-        using initial_type = suspend_always;
-        using final_type = i_was_co_awaited_and_now_i_am_suspending;
-        using transform_type = i_am_co_awaited <promise_type>;
-    };
+    
+    
  
+//    static_assert (ph::concepts::coroutines::interface_type <mytask>, "oops");
     
     auto resume ()
     {
@@ -457,8 +456,8 @@ mytask <int> task3 ()
 mytask <int> task2 ()
 {
     cout << "task2..." << endl;
-//    auto aa = task3 ();
-//    co_await aa;
+    mytask <int> aa = task3 ();
+    co_await aa;
 //    co_await suspend_always {};
     int i = co_await task3 ();
     cout << "...task2" << endl;
