@@ -26,6 +26,7 @@
 #include <ph_coroutines/statemachine.hpp>
 #include <ph_coroutines/i_am_co_awaited.hpp>
 #include <ph_coroutines/i_was_co_awaited_and_now_i_am_suspending.hpp>
+#include <ph_coroutines/co_promise.hpp>
 
 //#include <ph_coroutines/timer.hpp>
 
@@ -386,64 +387,19 @@ machine helper (string const& str)
 
 
 
+template <typename _value_type>
 struct mytask
 {
-    struct promise_type
+    using value_type = _value_type;
+    using promise_type = co_promise <mytask>;
+
+    struct awaitable
     {
-        int m_value;
-        
-        promise_type (d0) : m_function_name {_called_from_function}
-        {
-            d1 (green, 0)
-        }
-        auto get_return_object () noexcept -> decltype (auto)
-        {
-            return mytask {coroutine_handle <promise_type>::from_promise(*this)};
-        }
-        auto initial_suspend () noexcept -> decltype (auto)
-        {
-            return suspend_always {};
-        }
-        auto final_suspend () noexcept -> decltype (auto)
-        {
-            return i_was_co_awaited_and_now_i_am_suspending {};
-        }
-        [[noreturn]] auto unhandled_exception () -> decltype (auto)
-        {
-            throw runtime_error ("oops");
-        }
-        
-        /**
-         co_return value;
-         */
-        [[nodiscard]] auto return_value (int value) noexcept  -> decltype (auto)
-        {
-            m_value = value;
-        }
-        
-        /**
-            i am co_awaiting another function!
-         
-            When we are (in our own coro-function) co_awaiting another function!
-         */
-        auto await_transform (mytask&& i_co_awaited_this_function) -> decltype (auto)
-        {
-            return i_am_co_awaited {move (i_co_awaited_this_function.m_coro)};
-        }
-        
-        /**
-         i am co_awaiting another function!
-         
-            When we are (in our own coro-function) co_awaiting another function!
-         */
-        auto await_transform (mytask const& i_co_awaited_this_function) -> decltype (auto)
-        {
-            return i_am_co_awaited {i_co_awaited_this_function.m_coro};
-        }
-        
-        string m_function_name;
-        coroutine_handle <> m_parent;
+        using initial_type = suspend_always;
+        using final_type = i_was_co_awaited_and_now_i_am_suspending;
+        using transform_type = i_am_co_awaited <promise_type>;
     };
+ 
     
     auto resume ()
     {
@@ -464,7 +420,7 @@ struct mytask
             m_coro.destroy();
         }
     }
-    mytask (coroutine_handle<promise_type> coro) : m_coro {coro}
+    mytask (coroutine_handle <promise_type> coro) : m_coro {coro}
     {
 
     }
@@ -486,11 +442,11 @@ struct mytask
 //    }
     
         
-private:
+
     coroutine_handle <promise_type> m_coro;
 };
 
-mytask task3 ()
+mytask <int> task3 ()
 {
     cout << "task3..." << endl;
 //    co_await suspend_always {};
@@ -498,18 +454,18 @@ mytask task3 ()
     co_return 3;
 }
 
-mytask task2 ()
+mytask <int> task2 ()
 {
     cout << "task2..." << endl;
-    auto aa = task3 ();
-    co_await aa;
+//    auto aa = task3 ();
+//    co_await aa;
 //    co_await suspend_always {};
-    co_await task3 ();
+    int i = co_await task3 ();
     cout << "...task2" << endl;
     co_return 2;
 }
 
-mytask task1 ()
+mytask <int> task1 ()
 {
     cout << "task1..." << endl;
     co_await task2 ();
@@ -517,7 +473,61 @@ mytask task1 ()
     co_return 1;
 }
 
-int main(int argc, char const *argv[]) {
+
+
+
+
+
+
+
+
+F <int> f3 ()
+{
+    cout << "f3..." << endl;
+    cout << "...f3" << endl;
+
+    co_return 3;
+}
+
+F <int> f2 ()
+{
+    cout << "f2..." << endl;
+
+    int i = co_await f3 ();
+    cout << "...f2" << endl;
+
+    co_return 3;
+}
+
+F <int> f1 ()
+{
+    cout << "f1..." << endl;
+    co_await f2 ();
+    cout << "...f1" << endl;
+
+    co_return 3;
+}
+
+
+auto main (int argc, char const *argv[]) -> int
+{
+    
+    F <int> f = f1();
+    f.resume();
+    
+    
+    return 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     char const* lines = "================================================================================================================";
     cout << red << lines << white << endl;
 
