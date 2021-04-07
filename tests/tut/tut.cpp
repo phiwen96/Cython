@@ -456,8 +456,8 @@ mytask <int> task3 ()
 mytask <int> task2 ()
 {
     cout << "task2..." << endl;
-    mytask <int> aa = task3 ();
-    co_await aa;
+//    mytask <int> aa = task3 ();
+//    co_await aa;
 //    co_await suspend_always {};
     int i = co_await task3 ();
     cout << "...task2" << endl;
@@ -508,14 +508,122 @@ F <int> f1 ()
 }
 
 
+template <typename value_type>
+struct F2
+{
+    struct promise_type
+    {
+        value_type m_value;
+        coroutine_handle<> m_parent;
+        auto get_return_object ()
+        {
+            return F2 {coroutine_handle<promise_type>::from_promise (*this)};
+        }
+        auto return_value (value_type value)
+        {
+            m_value = value;
+        }
+        auto unhandled_exception ()
+        {
+            
+        }
+        auto initial_suspend ()
+        {
+            return suspend_always {};
+        }
+        auto final_suspend () noexcept
+        {
+            struct awaitable
+            {
+                auto await_ready () noexcept
+                {
+                    return false;
+                }
+                auto await_suspend (coroutine_handle<promise_type> m_handle) noexcept -> coroutine_handle<>
+                {
+                    if (m_handle.promise().m_parent)
+                        return m_handle.promise().m_parent;
+                    else
+                        return noop_coroutine();
+                }
+                auto await_resume () noexcept
+                {
+                    
+                }
+            };
+            return awaitable {};
+        }
+        auto await_transform (F2 f)
+        {
+            struct awaitable
+            {
+                coroutine_handle<promise_type> m_handle;
+                auto await_ready ()
+                {
+                    return false;
+                }
+                auto await_suspend (coroutine_handle<> function_that_coawaited_me)
+                {
+                    m_handle.promise().m_parent = function_that_coawaited_me;
+                    return m_handle;
+                }
+                auto await_resume ()
+                {
+                    return m_handle.promise().m_value;
+                }
+            };
+            return awaitable {f.m_handle};
+        }
+        
+    };
+    coroutine_handle<promise_type> m_handle;
+    F2 (coroutine_handle<promise_type> handle) : m_handle {handle}
+    {
+        
+    }
+    F2 (F2&& other) : m_handle {exchange (other.m_handle, {})}
+    {
+        
+    }
+    auto resume ()
+    {
+        return m_handle.resume();
+    }
+};
+F2 <int> ff2()
+{
+    cout << "ff2..." << endl;
+
+    cout << "...ff2" << endl;
+    co_return 3;
+}
+F2 <int> ff1()
+{
+    cout << "ff1..." << endl;
+    co_await ff2 ();
+    cout << "...ff1" << endl;
+    co_return 2;
+}
+F2 <int> ff0()
+{
+    cout << "ff0..." << endl;
+    co_await ff1 ();
+    cout << "...ff0" << endl;
+    co_return 2;
+}
+
+
 auto main (int argc, char const *argv[]) -> int
 {
-    
-    F <int> f = f1();
-    f.resume();
-    
-    
-    return 0;
+//    auto ff = ff0();
+//    ff.resume();
+//    return 0;
+//
+//    F <int> f = f1();
+//    f.resume();
+//
+//
+//    return 0;
     
     
     
