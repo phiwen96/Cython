@@ -25,6 +25,7 @@
 #include <ph_coroutines/i_am_co_awaited.hpp>
 #include <ph_coroutines/i_was_co_awaited_and_now_i_am_suspending.hpp>
 #include <ph_coroutines/co_promise.hpp>
+#include <ph_type_list/type_list.hpp>
 
 //#include <ph_coroutines/timer.hpp>
 
@@ -384,16 +385,25 @@ machine helper (string const& str)
 }
 
 
+struct bajs1
+{
+    void get_return_object () {cout << "tjo" << endl;}
+};
+
+struct bajs2
+{
+    
+};
 
 template <typename _value_type>
 struct mytask
 {
     using interface_type = mytask;
     using value_type = _value_type;
-    using promise_type = co_promise <interface_type>;
-    using initial_suspend_awaitable_type = suspend_always;
-    using final_suspend_awaitable_type = i_was_co_awaited_and_now_i_am_suspending;
-    using await_transform_awaitable_type = i_am_co_awaited <promise_type>;
+    using promise_type = co_promise <interface_type, suspend_always, i_was_co_awaited_and_now_i_am_suspending, i_am_co_awaited>;
+//    using initial_suspend_awaitable_type = suspend_always;
+//    using final_suspend_awaitable_type = i_was_co_awaited_and_now_i_am_suspending;
+//    using await_transform_awaitable_type = i_am_co_awaited <promise_type>;
 
     
     
@@ -420,6 +430,10 @@ struct mytask
         }
     }
     mytask (coroutine_handle <promise_type> coro) : m_coro {coro}
+    {
+
+    }
+    mytask (promise_type& p) : m_coro {coroutine_handle<promise_type>::from_promise (p)}
     {
 
     }
@@ -479,142 +493,323 @@ mytask <int> task1 ()
 
 
 
+struct has_parent {};
 
-F <int> f3 ()
+
+struct parser
 {
-    cout << "f3..." << endl;
-    cout << "...f3" << endl;
-
-    co_return 3;
-}
-
-F <int> f2 ()
-{
-    cout << "f2..." << endl;
-
-    int i = co_await f3 ();
-    cout << "...f2" << endl;
-
-    co_return 3;
-}
-
-F <int> f1 ()
-{
-    cout << "f1..." << endl;
-    co_await f2 ();
-    cout << "...f1" << endl;
-
-    co_return 3;
-}
-
-
-template <typename value_type>
-struct F2
-{
-    struct promise_type
+    using interface_type = parser;
+    using value_type = char;
+    
+    
+    template <typename promise_type>
+    struct promise
     {
-        value_type m_value;
-        coroutine_handle<> m_parent;
-        auto get_return_object ()
+        int m_tal;
+        mutable bool m_has_parent {false};
+        mutable bool m_has_child {false};
+        string m_wanted_chars;
+        char m_found_char;
+        char m_op {'+'};
+        promise* m_parent {nullptr};
+        
+//        auto yield_value ()
+        
+        auto final_suspend () noexcept -> void
         {
-            return F2 {coroutine_handle<promise_type>::from_promise (*this)};
+            if (m_has_parent)
+            {
+                cout << "hora" << endl;
+
+                m_parent -> m_has_parent = false;
+                auto& p = static_cast <promise_type&> (*this);
+                static_cast <promise_type*> (m_parent) -> m_current_coro = coroutine_handle <promise_type>::from_promise (static_cast <promise_type&> (*m_parent));
+            }
         }
-        auto return_value (value_type value)
-        {
-            m_value = value;
-        }
-        auto unhandled_exception ()
-        {
-            
-        }
-        auto initial_suspend ()
-        {
-            return suspend_always {};
-        }
-        auto final_suspend () noexcept
+        
+        auto yield_value (has_parent)
         {
             struct awaitable
             {
-                auto await_ready () noexcept
+                bool m_has_parent;
+                auto await_ready ()
                 {
-                    return false;
+                    return true;
                 }
-                auto await_suspend (coroutine_handle<promise_type> m_handle) noexcept -> coroutine_handle<>
-                {
-                    if (m_handle.promise().m_parent)
-                        return m_handle.promise().m_parent;
-                    else
-                        return noop_coroutine();
-                }
-                auto await_resume () noexcept
+                auto await_suspend (coroutine_handle<>)
                 {
                     
                 }
+                auto await_resume ()
+                {
+                    return m_has_parent;
+                }
             };
-            return awaitable {};
+            return awaitable {m_has_parent};
         }
-        auto await_transform (F2 f)
+        
+        auto yield_value (int i)
         {
+            m_tal += i;
+            return suspend_always {};
+        }
+        
+        auto await_transform (string&& str) -> decltype (auto)
+        {
+            swap (m_wanted_chars, str);
+            
             struct awaitable
             {
-                coroutine_handle<promise_type> m_handle;
+                promise& m_promise;
+
                 auto await_ready ()
                 {
                     return false;
                 }
-                auto await_suspend (coroutine_handle<> function_that_coawaited_me)
+                auto await_suspend (coroutine_handle<> parent)
                 {
-                    m_handle.promise().m_parent = function_that_coawaited_me;
-                    return m_handle;
+                    static_cast <promise_type&> (m_promise).m_this_function_co_awaited_me = parent;
+                    return true;
                 }
                 auto await_resume ()
                 {
-                    return m_handle.promise().m_value;
+                    return m_promise.m_found_char;
                 }
             };
-            return awaitable {f.m_handle};
+            return awaitable {static_cast <promise_type&> (static_cast<promise_type&>(*this).m_current_coro.promise())};
         }
         
+   
+        auto await_transform (parser const& child) -> decltype (auto)
+        {
+            static_cast <promise <promise_type>&> (child.m_promise).m_parent = this;
+            cout << "adding child" << endl;
+            m_has_child = true;
+            static_cast<promise <promise_type>&>(child.m_promise).m_has_parent = true;
+            static_cast <promise_type&> (*this).m_current_coro = coroutine_handle<promise_type>::from_promise (child.m_promise);
+//            using prom = typename parser::promise_type;
+            struct awaitable
+            {
+                promise_type& m_promise;
+
+                auto await_ready ()
+                {
+                    return false;
+                }
+                auto await_suspend (coroutine_handle<> parent)
+                {
+                    m_promise.m_this_function_co_awaited_me = parent;
+                    return true;
+//                    return coroutine_handle <promise_type>::from_promise (m_promise);
+                }
+                auto await_resume ()
+                {
+                    cout << "await_resume" << endl;
+                    
+                    return m_promise.m_found_char;
+                }
+            };
+            return awaitable {child.m_promise};
+        }
+        
+       
+        auto as_promise_type ()
+        {
+            
+        }
     };
-    coroutine_handle<promise_type> m_handle;
-    F2 (coroutine_handle<promise_type> handle) : m_handle {handle}
-    {
-        
-    }
-    F2 (F2&& other) : m_handle {exchange (other.m_handle, {})}
-    {
-        
-    }
+    using promise_type = co_promise2 <interface_type, suspend_never, i_was_co_awaited_and_now_i_am_suspending, i_am_co_awaited, promise>;
+    
     auto resume ()
     {
-        return m_handle.resume();
+        if (coroutine_handle <promise_type>::from_promise (m_promise).done())
+        {
+            throw runtime_error ("can't resume coro, it is already done!");
+        }
+        return coroutine_handle <promise_type>::from_promise (m_promise).resume();
     }
-};
-F2 <int> ff2()
-{
-    cout << "ff2..." << endl;
+    
+    auto operator()(char c) -> void
+    {
+//        cout << op << endl;
+        decltype (auto) p = static_cast <promise <promise_type>&> (m_promise.m_current_coro.promise());
+        for (auto const& cc : p.m_wanted_chars)
+        {
+            if (cc == c)
+            {
+                cout << "child=" << p.m_has_child << "  parent=" << p.m_has_parent << endl;
+                p.m_found_char = c;
+                
+                m_promise.m_current_coro.resume();
+//                coroutine_handle<promise_type>::from_promise(m_promise).resume();
+                break;
+            }
+        }
+//        static_cast <promise <promise_type>&> (m_promise).operator()(c);
+    }
 
-    cout << "...ff2" << endl;
-    co_return 3;
-}
-F2 <int> ff1()
+    parser& init_op (char c)
+    {
+        static_cast <promise <promise_type>&> (m_promise).m_op = c;
+        return *this;
+    }
+
+//    parser (coroutine_handle <promise_type> coro) : m_coro {coro}
+//    {
+//
+//    }
+
+    parser (promise_type& p) : m_promise {p}
+    {
+
+    }
+    parser (parser&& other) : m_promise {other.m_promise}
+    {
+
+    }
+    parser (parser const&) = delete;
+    parser& operator=(parser const&) = delete;
+    parser& operator=(parser&&) = delete;
+//    coroutine_handle <promise_type> m_coro;
+    promise_type& m_promise;
+
+};
+
+
+struct tree
 {
-    cout << "ff1..." << endl;
-    co_await ff2 ();
-    cout << "...ff1" << endl;
-    co_return 2;
-}
-F2 <int> ff0()
+    
+};
+
+parser p0 ()
 {
-    cout << "ff0..." << endl;
-    co_await ff1 ();
-    cout << "...ff0" << endl;
-    co_return 2;
-}
+    string lhs;
+
+    int nr {0};
+    bool minus {false};
+    int i {0};
+    
+    begin:
+    {
+        for (;;)
+        {
+            char c = co_await "+-123456789";
+            
+            switch (c)
+            {
+                case '+':
+                    break;
+                    
+                case '-':
+                    nr = !nr;
+                    break;
+                    
+                default:
+                    nr += pow (10, i) * (c - '0');
+                    ++i;
+                    goto number;
+            }
+        }
+    }
+    
+    number:
+    {
+        for (;;)
+        {
+            char c = co_await "+-0123456789";
+            
+            switch (c)
+            {
+                case '+':
+                    break;
+                    
+                case '-':
+                    nr = !nr;
+                    break;
+                    
+                default:
+                    nr += pow (10, i) * (c - '0');
+                    ++i;
+                    goto number;
+            }
+        }
+    }
+    
+    
+    for (;;)
+    {
+        char c = co_await "@+-0123456789";
+        if (c == '-')
+        {
+            bool has_par = co_yield has_parent {};
+            if (not has_par)
+            {
+                
+                cout << "hasnoparent" << endl;
+            } else
+            {
+                cout << "waiting" << endl;
+                co_await p0 ();
+            }
+            
+            cout << "yay" << endl;
+        } else if (c == '+')
+        {
+            
+        } else
+        {
+            lhs += c;
+        }
+       
+    }
+    
+    plus:
+    for (;;)
+    {
+        char c = co_await "+-";
+        switch (c)
+        {
+            case '+':
+                break;
+                
+            case '-':
+                break;
+                
+            default:
+                break;
+        }
+    }
+    
+    end:
+    co_return 1;
+//    has_child:
+//    auto aa = p0 ();
+//    for (;;)
+//    {
+//        cout << "has_child" << endl;
+//        co_await aa;
+//    }
+
+};
 
 
 auto main (int argc, char const *argv[]) -> int
 {
+    parser p = p0 ();
+    p ('2');
+    p ('-');
+    p ('7');
+    p ('-');
+    p ('7');
+    p ('8');
+    p ('9');
+//    p ('#');
+//    p ('b');
+//    p ('a');
+    
+    
+    
+   
 //    auto ff = ff0();
 //    ff.resume();
 //    return 0;
@@ -637,6 +832,7 @@ auto main (int argc, char const *argv[]) -> int
     
     char const* lines = "================================================================================================================";
     cout << red << lines << white << endl;
+    return 0;
 
 
     mytask t1 = task1();
